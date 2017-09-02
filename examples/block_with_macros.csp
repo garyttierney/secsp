@@ -1,0 +1,8 @@
+block my_block {
+    macro my_macro_name(type t) {
+        context c = user:role:t;
+    }
+
+    type my_type;
+    my_macro_name(my_type);
+}

@@ -94,9 +94,22 @@ pub enum Statement {
 /// A declaration statement.
 #[derive(Clone, Debug, PartialEq)]
 pub enum Declaration {
-    Block(Block),
-    Macro(Macro),
-    Symbol(SymbolType, Identifier, Option<Expr>),
+    Block {
+        is_abstract: bool,
+        qualifier: BlockType,
+        name: Identifier,
+        statements: Vec<Statement>,
+    },
+    Macro {
+        name: Identifier,
+        parameters: Vec<MacroParameter>,
+        statements: Vec<Statement>,
+    },
+    Symbol {
+        qualifier: SymbolType,
+        name: Identifier,
+        initializer: Option<Expr>,
+    },
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -106,6 +119,15 @@ pub enum Expr {
     Context(ContextExpr),
     LevelRange(Box<Expr>, Box<Expr>),
     CategoryRange(Identifier, Identifier),
+}
+
+impl Expr {
+    pub fn var<S>(value: S) -> Expr
+    where
+        S: Into<Identifier>,
+    {
+        Expr::Variable(value.into())
+    }
 }
 
 #[derive(Clone, Debug, PartialEq)]

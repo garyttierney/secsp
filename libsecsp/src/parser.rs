@@ -33,10 +33,15 @@ named!(pub statement<&[u8], Statement>,
   )
 );
 
+// Parse a list of 0 or more statements.
+named!(pub statement_list<&[u8], Vec<Statement>>, many0!(statement));
+
 /// Parse either a block or symbol declaration.
 named!(pub declaration<&[u8], Declaration>,
   alt!(
-    map!(block_declaration, Declaration::Block) | symbol_declaration
+    block_declaration
+    | macro_declaration
+    | symbol_declaration 
   )
 );
 
@@ -48,13 +53,13 @@ named!(pub symbol_declaration<&[u8], Declaration>,
     initializer: opt!(preceded!(tag!("="), expr)) >>
     char!(';') >>
 
-    (Declaration::Symbol(qualifier, name, initializer))
+    (Declaration::Symbol {qualifier, name, initializer})
   ))
 );
 
 /// Parse a `block` or `optional` container, named by an `Identifer` and containing
 /// a list of 0 or more `Statement`s.
-named!(pub block_declaration<&[u8], Block>,
+named!(pub block_declaration<&[u8], Declaration>,
   ws!(do_parse!(
     is_abstract: opt!(tag!("abstract")) >>
     qualifier: type_specifier >>
@@ -63,7 +68,7 @@ named!(pub block_declaration<&[u8], Block>,
     statements: many0!(statement) >>
     char!('}') >>
 
-    (Block {
+    (Declaration::Block {
       is_abstract: is_abstract.is_some(),
       qualifier,
       name,
@@ -72,16 +77,16 @@ named!(pub block_declaration<&[u8], Block>,
   ))
 );
 
-named!(pub macro_declaration<&[u8], Macro>,
+named!(pub macro_declaration<&[u8], Declaration>,
     ws!(do_parse!(
         tag!("macro") >>
         name: identifier >>
         parameters: delimited!(tag!("("), macro_param_list, tag!(")")) >>
         tag!("{") >>
-        statements: many0!(statement) >>
+        statements: statement_list >>
         tag!("}") >>
 
-        (Macro {
+        (Declaration::Macro {
             name,
             parameters,
             statements
@@ -93,17 +98,17 @@ named!(pub macro_param_list<&[u8], Vec<MacroParameter>>,
     ws!(do_parse!(
         first_param: macro_param >>
         rest_params: many0!(ws!(do_parse!(char!(',') >> param: macro_param >> (param)))) >>
-
+ 
         ({
             let mut params = rest_params.clone();
             params.insert(0, first_param);
-
+            
             params
         })
     ))
 );
 
-named!(pub macro_param<&[u8], MacroParameter>,
+named!(pub macro_param<&[u8], MacroParameter>, 
     ws!(do_parse!(
         qualifier: type_specifier >>
         name: identifier >>
@@ -128,11 +133,11 @@ named!(pub macro_argument_list<&[u8], Vec<Expr>>,
     ws!(do_parse!(
         first_param: expr >>
         rest_params: many0!(ws!(do_parse!(char!(',') >> param: expr >> (param)))) >>
-
+ 
         ({
             let mut params = rest_params.clone();
             params.insert(0, first_param);
-
+            
             params
         })
     ))
@@ -141,7 +146,7 @@ named!(pub macro_argument_list<&[u8], Vec<Expr>>,
 named!(pub expr<&[u8], Expr>,
   alt!(
     map!(context, Expr::Context)
-    | level_range
+    | level_range 
     | category_range
     | variable
   )
@@ -157,9 +162,9 @@ named!(pub level<&[u8], Expr>,
             sensitivity,
             categories: Box::from(categories)
         }))
-    )
+    ) 
     | variable
-  )
+  ) 
 );
 
 named!(pub level_range<&[u8], Expr>,
@@ -169,7 +174,7 @@ named!(pub level_range<&[u8], Expr>,
         (Expr::LevelRange(
             Box::from(range.0), Box::from(range.1)
         ))
-    ))
+    )) 
 );
 
 named!(pub category_range<&[u8], Expr>,
@@ -179,7 +184,7 @@ named!(pub category_range<&[u8], Expr>,
         (Expr::CategoryRange(
             range.0, range.1
         ))
-    ))
+    )) 
 );
 
 named!(pub context<&[u8], ContextExpr>,
@@ -190,9 +195,9 @@ named!(pub context<&[u8], ContextExpr>,
       char!(':') >>
       type_id: identifier >>
       level_range: opt!(complete!(preceded!(char!(':'), level_range))) >>
-
+      
       (ContextExpr {
-        user_id,
+        user_id, 
         role_id,
         type_id,
         level_range: level_range.map(|v| Box::from(v))
@@ -244,8 +249,8 @@ mod tests {
         let result = parse::<Expr, _>("s0-s1", level_range);
 
         if let Expr::LevelRange(low, high) = result {
-            assert_eq!(Expr::Variable("s0".into()), *low);
-            assert_eq!(Expr::Variable("s1".into()), *high);
+            assert_eq!(Expr::var("s0"), *low);
+            assert_eq!(Expr::var("s1"), *high);
         } else {
             panic!("Invalid value parsed");
         }
@@ -257,8 +262,8 @@ mod tests {
         let level_range = result.level_range.unwrap();
 
         if let &Expr::LevelRange(ref low, ref high) = level_range.as_ref() {
-            assert_eq!(Expr::Variable("s0".into()), **low);
-            assert_eq!(Expr::Variable("s1".into()), **high);
+            assert_eq!(Expr::var("s0"), **low);
+            assert_eq!(Expr::var("s1"), **high);
         } else {
             panic!("Invalid value parsed");
         }
@@ -266,30 +271,54 @@ mod tests {
 
     #[test]
     pub fn parse_block_decl() {
-        let result = parse::<Block, _>("block abc {}", block_declaration);
+        let result = parse::<Declaration, _>("abstract block abc {}", block_declaration);
 
-        assert_eq!("abc", result.name);
-        assert_eq!(false, result.is_abstract);
-        assert_eq!(BlockType::Block, result.qualifier);
+        match result {
+            Declaration::Block {
+                is_abstract,
+                qualifier,
+                statements,
+                name,
+            } => {
+                assert_eq!(true, is_abstract);
+                assert_eq!("abc", name);
+                assert_eq!(BlockType::Block, qualifier);
+            }
+            _ => panic!("Invalid value"),
+        }
     }
 
     #[test]
     pub fn parse_abstract_block_decl() {
-        let result = parse::<Block, _>("abstract block abc {}", block_declaration);
+        let result = parse::<Declaration, _>("abstract block abc {}", block_declaration);
 
-        assert_eq!("abc", result.name);
-        assert_eq!(true, result.is_abstract);
-        assert_eq!(BlockType::Block, result.qualifier);
+        match result {
+            Declaration::Block {
+                is_abstract,
+                qualifier,
+                statements,
+                name,
+            } => assert_eq!(true, is_abstract),
+            _ => panic!("Invalid value"),
+        }
     }
 
     #[test]
     pub fn parse_symbol_decl() {
         let result = parse::<Declaration, _>("type_attribute my_type;", symbol_declaration);
 
-        assert_eq!(
-            Declaration::Symbol(SymbolType::TypeAttribute, "my_type".into(), None),
-            result
-        );
+        match result {
+            Declaration::Symbol {
+                qualifier,
+                name,
+                initializer,
+            } => {
+                assert_eq!(SymbolType::TypeAttribute, qualifier);
+                assert_eq!("my_type", name);
+                assert_eq!(None, initializer)
+            }
+            _ => panic!("Invalid value parsed"),
+        }
     }
 
     #[test]
@@ -299,34 +328,45 @@ mod tests {
             symbol_declaration,
         );
 
-        if let Declaration::Symbol(ref sym_type, ref name, ref initializer) = result {
-            assert_eq!(SymbolType::Context, *sym_type);
-            assert_eq!("my_context", *name);
+        match result {
+            Declaration::Symbol {
+                qualifier,
+                name,
+                initializer,
+            } => {
+                assert_eq!(SymbolType::Context, qualifier);
+                assert_eq!("my_context", name);
 
-            match *initializer {
-                Some(Expr::Context(_)) => {}
-                _ => panic!("No initializer found"),
+                match initializer {
+                    Some(Expr::Context(_)) => {}
+                    _ => panic!("No initializer found"),
+                }
             }
-        } else {
-            panic!("Invalid value parsed");
+            _ => panic!("Invalid value parsed"),
         }
     }
 
     #[test]
     pub fn parse_macro_decl() {
-        let result = parse::<Macro, _>(
+        let result = parse::<Declaration, _>(
             "macro my_macro(type v, type v1) {
 
             }",
             macro_declaration,
         );
 
-        assert_eq!("my_macro", result.name);
-
-        let params = result.parameters;
-
-        assert_eq!("v", params[0].name);
-        assert_eq!("v1", params[1].name);
+        match result {
+            Declaration::Macro {
+                name,
+                parameters,
+                statements,
+            } => {
+                assert_eq!("my_macro", name);
+                assert_eq!("v", parameters[0].name);
+                assert_eq!("v1", parameters[1].name);
+            }
+            _ => panic!("Invalid value parsed"),
+        }
     }
 
     #[test]
@@ -335,7 +375,7 @@ mod tests {
 
         if let Statement::MacroCall(ref name, ref params) = result {
             assert_eq!("my_macro", name);
-            assert_eq!(Expr::Variable("type_name".into()), params[0])
+            assert_eq!(Expr::var("type_name"), params[0])
         } else {
             panic!("Invalid value parsed");
         }
