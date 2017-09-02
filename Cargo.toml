@@ -1,0 +1,10 @@
+[package]
+name = "csp"
+version = "0.1.0"
+authors = ["Gary Tierney <gary.tierney@gmx.com>"]
+description = "A C-style policy language for SELinux"
+
+[dependencies.nom]
+version = "3.2"
+default-features = true
+features = ["verbose-errors", "nightly"]
