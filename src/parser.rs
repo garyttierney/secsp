@@ -1,6 +1,6 @@
 use nom::{Err as NomErr, ErrorKind, IResult};
 use nom::IResult::*;
-use syntax;
+use syntax::*;
 
 /// Check if the given byte is valid in an identifier.
 fn is_identifier(c: u8) -> bool {
@@ -9,11 +9,11 @@ fn is_identifier(c: u8) -> bool {
 }
 
 named!(identifier_raw <&[u8], &[u8]>, take_while1!(is_identifier));
-named!(identifier <&[u8], syntax::Identifier>, map!(identifier_raw, |bytes: &[u8]| String::from_utf8(bytes.to_vec()).unwrap()));
+named!(identifier <&[u8], Identifier>, map!(identifier_raw, |bytes: &[u8]| String::from_utf8(bytes.to_vec()).unwrap()));
 
 /// Match an `identifier` against a built-in type specifier, returning
 /// an error if there is no match.
-pub fn type_specifier<T: syntax::TypeSpecifier>(i: &[u8]) -> IResult<&[u8], T> {
+pub fn type_specifier<T: TypeSpecifier>(i: &[u8]) -> IResult<&[u8], T> {
     let (remaining, identifier) = try_parse!(i, identifier);
     let type_specifier = T::from(identifier.as_ref());
 
@@ -24,94 +24,37 @@ pub fn type_specifier<T: syntax::TypeSpecifier>(i: &[u8]) -> IResult<&[u8], T> {
     Done(remaining, type_specifier.unwrap())
 }
 
+named!(pub variable<&[u8], Expr>, map!(identifier, Expr::Variable));
+
 /// Parse a declaration as a statement.
-named!(pub statement<&[u8], syntax::Statement>,
+named!(pub statement<&[u8], Statement>,
   alt!(
-    map!(declaration, |decl| syntax::Statement::Declaration(decl))
+    map!(declaration, Statement::Declaration)
   )
 );
 
 /// Parse either a block or symbol declaration.
-named!(pub declaration<&[u8], syntax::Declaration>,
+named!(pub declaration<&[u8], Declaration>,
   alt!(
-    map!(block_declaration, syntax::Declaration::Block) | symbol_declaration
+    map!(block_declaration, Declaration::Block) | symbol_declaration
   )
-);
-
-named!(pub expr<&[u8], syntax::Expr>,
-  alt!(
-    map!(context, syntax::Expr::Context) |
-    map!(identifier, syntax::Expr::Variable)
-  )
-);
-
-named!(pub level<&[u8], syntax::Expr>,
-  ws!(do_parse!(
-    sensitivity: identifier >>
-    char!(':') >>
-    categories: category_range >>
-
-    (syntax::Expr::Level(syntax::LevelExpr {
-      sensitivity,
-      categories: Box::from(categories)
-    }))
-  ))
-);
-
-named!(pub level_range<&[u8], syntax::Expr>,
-  ws!(do_parse!(
-    low: level >>
-    char!('-') >>
-    high: level >>
-
-    (syntax::Expr::LevelRange(
-      Box::from(low), Box::from(high)
-    ))
-  ))
-);
-
-named!(pub category_range<&[u8], syntax::Expr>,
-  ws!(do_parse!(
-    low: identifier >>
-    char!('.') >>
-    high: identifier >>
-
-    (syntax::Expr::CategoryRange(low, high))
-  ))
-);
-
-named!(pub context<&[u8], syntax::ContextExpr>,
-  ws!(do_parse!(
-      user_id: identifier >>
-      char!(':') >>
-      role_id: identifier >>
-      char!(':') >>
-      type_id: identifier >>
-      level_range: opt!(complete!(preceded!(char!(':'), level_range))) >>
-
-      (syntax::ContextExpr {
-        user_id,
-        role_id,
-        type_id,
-        level_range: level_range.map(|v| Box::from(v))
-      })
-  ))
 );
 
 /// Parse a single named `Symbol` declaration.
-named!(pub symbol_declaration<&[u8], syntax::Declaration>,
+named!(pub symbol_declaration<&[u8], Declaration>,
   ws!(do_parse!(
     qualifier: type_specifier >>
     name: identifier >>
+    initializer: opt!(preceded!(tag!("="), expr)) >>
     char!(';') >>
 
-    (syntax::Declaration::Symbol(qualifier, name))
+    (Declaration::Symbol(qualifier, name, initializer))
   ))
 );
 
 /// Parse a `block` or `optional` container, named by an `Identifer` and containing
 /// a list of 0 or more `Statement`s.
-named!(pub block_declaration<&[u8], syntax::Block>,
+named!(pub block_declaration<&[u8], Block>,
   ws!(do_parse!(
     is_abstract: opt!(tag!("abstract")) >>
     qualifier: type_specifier >>
@@ -120,7 +63,7 @@ named!(pub block_declaration<&[u8], syntax::Block>,
     statements: many0!(statement) >>
     char!('}') >>
 
-    (syntax::Block {
+    (Block {
       is_abstract: is_abstract.is_some(),
       qualifier,
       name,
@@ -129,20 +72,88 @@ named!(pub block_declaration<&[u8], syntax::Block>,
   ))
 );
 
+named!(pub expr<&[u8], Expr>,
+  alt!(
+    map!(context, Expr::Context)
+    | level_range
+    | category_range
+    | variable
+  )
+);
+
+named!(pub level<&[u8], Expr>,
+  alt_complete!(
+    do_parse!(
+        sensitivity: identifier >>
+        categories: category_range >>
+
+        (Expr::Level(LevelExpr {
+            sensitivity,
+            categories: Box::from(categories)
+        }))
+    )
+    | variable
+  )
+);
+
+named!(pub level_range<&[u8], Expr>,
+    ws!(do_parse!(
+        range: separated_pair!(level, eat_separator!(&b"-"[..]), level) >>
+
+        (Expr::LevelRange(
+            Box::from(range.0), Box::from(range.1)
+        ))
+    ))
+);
+
+named!(pub category_range<&[u8], Expr>,
+  ws!(do_parse!(
+        range: separated_pair!(identifier, eat_separator!(&b"."[..]), identifier) >>
+
+        (Expr::CategoryRange(
+            range.0, range.1
+        ))
+    ))
+);
+
+named!(pub context<&[u8], ContextExpr>,
+  ws!(do_parse!(
+      user_id: identifier >>
+      char!(':') >>
+      role_id: identifier >>
+      char!(':') >>
+      type_id: identifier >>
+      level_range: opt!(complete!(preceded!(char!(':'), level_range))) >>
+
+      (ContextExpr {
+        user_id,
+        role_id,
+        type_id,
+        level_range: level_range.map(|v| Box::from(v))
+      })
+  ))
+);
+
 #[cfg(test)]
 mod tests {
 
     use super::*;
-    use syntax::*;
+    use ::*;
 
     fn parse<O, P>(input: &str, parser: P) -> O
     where
         P: Fn(&[u8]) -> IResult<&[u8], O>,
     {
         let bytes = input.as_bytes();
-        let (remaining, result) = parser(bytes).unwrap();
+        let result = parser(bytes);
 
-        result
+        if result.is_err() {
+            panic!("Parse error: {}", result.unwrap_err());
+        }
+
+        let (remaining, output) = result.unwrap();
+
+        output
     }
 
     #[test]
@@ -161,6 +172,31 @@ mod tests {
         assert_eq!("role", result.role_id);
         assert_eq!("type", result.type_id);
         assert_eq!(true, result.level_range.is_none());
+    }
+
+    #[test]
+    pub fn parse_levelrange_expr() {
+        let result = parse::<Expr, _>("s0-s1", level_range);
+
+        if let Expr::LevelRange(low, high) = result {
+            assert_eq!(Expr::Variable("s0".into()), *low);
+            assert_eq!(Expr::Variable("s1".into()), *high);
+        } else {
+            panic!("Invalid value parsed");
+        }
+    }
+
+    #[test]
+    pub fn parse_context_expr_with_levelrange() {
+        let result = parse::<ContextExpr, _>("user:role:type:s0 - s1", context);
+        let level_range = result.level_range.unwrap();
+
+        if let &Expr::LevelRange(ref low, ref high) = level_range.as_ref() {
+            assert_eq!(Expr::Variable("s0".into()), **low);
+            assert_eq!(Expr::Variable("s1".into()), **high);
+        } else {
+            panic!("Invalid value parsed");
+        }
     }
 
     #[test]
@@ -186,8 +222,28 @@ mod tests {
         let result = parse::<Declaration, _>("type_attribute my_type;", symbol_declaration);
 
         assert_eq!(
-            Declaration::Symbol(SymbolType::TypeAttribute, "my_type".into()),
+            Declaration::Symbol(SymbolType::TypeAttribute, "my_type".into(), None),
             result
         );
+    }
+
+    #[test]
+    pub fn parse_symbol_decl_with_initializer() {
+        let result = parse::<Declaration, _>(
+            "context my_context = user:role:type:s0-s1;",
+            symbol_declaration,
+        );
+
+        if let Declaration::Symbol(ref sym_type, ref name, ref initializer) = result {
+            assert_eq!(SymbolType::Context, *sym_type);
+            assert_eq!("my_context", *name);
+
+            match *initializer {
+                Some(Expr::Context(_)) => {}
+                _ => panic!("No initializer found"),
+            }
+        } else {
+            panic!("Invalid value parsed");
+        }
     }
 }

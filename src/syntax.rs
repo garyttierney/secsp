@@ -75,6 +75,7 @@ impl TypeSpecifier for SymbolType {
             "user_attribute" => UserAttribute,
             "role" => Role,
             "role_attribute" => RoleAttribute,
+            "context" => Context,
             _ => return None,
         };
 
@@ -93,7 +94,7 @@ pub enum Statement {
 #[derive(Clone, Debug, PartialEq)]
 pub enum Declaration {
     Block(Block),
-    Symbol(SymbolType, Identifier),
+    Symbol(SymbolType, Identifier, Option<Expr>),
 }
 
 #[derive(Clone, Debug, PartialEq)]
