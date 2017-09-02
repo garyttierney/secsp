@@ -153,29 +153,31 @@ named!(pub expr<&[u8], Expr>,
 );
 
 named!(pub level<&[u8], Expr>,
-  alt_complete!(
     do_parse!(
         sensitivity: identifier >>
-        categories: category_range >>
+        tag!(":") >>
+        categories: category_range_or_id >>
 
         (Expr::Level(LevelExpr {
             sensitivity,
             categories: Box::from(categories)
         }))
     ) 
-    | variable
-  ) 
 );
+
+named!(level_or_id<&[u8], Expr>, alt_complete!(level | variable));
 
 named!(pub level_range<&[u8], Expr>,
     ws!(do_parse!(
-        range: separated_pair!(level, eat_separator!(&b"-"[..]), level) >>
+        range: separated_pair!(level_or_id, eat_separator!(&b"-"[..]), level_or_id) >>
 
         (Expr::LevelRange(
             Box::from(range.0), Box::from(range.1)
         ))
     )) 
 );
+
+named!(category_range_or_id<&[u8], Expr>, alt_complete!(category_range | variable));
 
 named!(pub category_range<&[u8], Expr>,
   ws!(do_parse!(
