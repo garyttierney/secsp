@@ -1,9 +1,14 @@
-use nom::{Err as NomErr, ErrorKind, IResult, Needed, ParseTo, sp};
-use nom::{alpha, is_alphanumeric, alphanumeric, digit, multispace, not_line_ending};
+use nom::{Err as NomErr, ErrorKind, IResult};
 use nom::IResult::*;
 use syntax;
 
-named!(identifier_raw <&[u8], &[u8]>, take_while!(is_alphanumeric));
+/// Check if the given byte is valid in an identifier.
+fn is_identifier(c: u8) -> bool {
+    let ch = char::from(c);
+    ch.is_alphanumeric() || ch == '_'
+}
+
+named!(identifier_raw <&[u8], &[u8]>, take_while1!(is_identifier));
 named!(identifier <&[u8], syntax::Identifier>, map!(identifier_raw, |bytes: &[u8]| String::from_utf8(bytes.to_vec()).unwrap()));
 
 /// Match an `identifier` against a built-in type specifier, returning
@@ -18,6 +23,13 @@ pub fn type_specifier<T: syntax::TypeSpecifier>(i: &[u8]) -> IResult<&[u8], T> {
 
     Done(remaining, type_specifier.unwrap())
 }
+
+/// Parse a declaration as a statement.
+named!(pub statement<&[u8], syntax::Statement>,
+  alt!(
+    map!(declaration, |decl| syntax::Statement::Declaration(decl))
+  )
+);
 
 /// Parse either a block or symbol declaration.
 named!(pub declaration<&[u8], syntax::Declaration>,
@@ -45,13 +57,14 @@ named!(pub block_declaration<&[u8], syntax::Declaration>,
     qualifier: type_specifier >>
     name: identifier >> 
     char!('{') >>
+    statements: many0!(statement) >>
     char!('}') >>
 
     (syntax::Declaration::Block(syntax::Block {
       is_abstract: is_abstract.is_some(),
       qualifier,
       name,
-      statements: vec![]
+      statements
     }))
   ))
 );
@@ -102,10 +115,10 @@ mod tests {
     #[test]
     pub fn parse_symbol_decl() {
         assert_eq!(
-            symbol_declaration(&b"type mytype;"[..]),
+            symbol_declaration(&b"type_attribute my_type;"[..]),
             complete(Declaration::Symbol(
-                SymbolType::Type,
-                String::from("mytype"),
+                SymbolType::TypeAttribute,
+                String::from("my_type"),
             ))
         );
     }
