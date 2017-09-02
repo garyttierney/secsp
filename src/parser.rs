@@ -29,7 +29,7 @@ named!(pub variable<&[u8], Expr>, map!(identifier, Expr::Variable));
 /// Parse a declaration as a statement.
 named!(pub statement<&[u8], Statement>,
   alt!(
-    map!(declaration, Statement::Declaration)
+    map!(declaration, Statement::Declaration) | macro_call
   )
 );
 
@@ -110,6 +110,30 @@ named!(pub macro_param<&[u8], MacroParameter>,
 
         (MacroParameter {
             qualifier, name
+        })
+    ))
+);
+
+named!(pub macro_call<&[u8], Statement>,
+    ws!(do_parse!(
+        name: identifier >>
+        arguments: delimited!(tag!("("), macro_argument_list, tag!(")")) >>
+        tag!(";") >>
+
+        (Statement::MacroCall(name, arguments))
+    ))
+);
+
+named!(pub macro_argument_list<&[u8], Vec<Expr>>,
+    ws!(do_parse!(
+        first_param: expr >>
+        rest_params: many0!(ws!(do_parse!(char!(',') >> param: expr >> (param)))) >>
+
+        ({
+            let mut params = rest_params.clone();
+            params.insert(0, first_param);
+
+            params
         })
     ))
 );
@@ -303,5 +327,17 @@ mod tests {
 
         assert_eq!("v", params[0].name);
         assert_eq!("v1", params[1].name);
+    }
+
+    #[test]
+    pub fn parse_macro_call() {
+        let result = parse::<Statement, _>("my_macro(type_name);", macro_call);
+
+        if let Statement::MacroCall(ref name, ref params) = result {
+            assert_eq!("my_macro", name);
+            assert_eq!(Expr::Variable("type_name".into()), params[0])
+        } else {
+            panic!("Invalid value parsed");
+        }
     }
 }

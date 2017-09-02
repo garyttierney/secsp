@@ -88,6 +88,7 @@ impl TypeSpecifier for SymbolType {
 pub enum Statement {
     /// A declaration statement, declaring either a `Block`, `Symbol`, or `Macro`.
     Declaration(Declaration),
+    MacroCall(Identifier, Vec<Expr>),
 }
 
 /// A declaration statement.
