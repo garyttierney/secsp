@@ -94,6 +94,7 @@ pub enum Statement {
 #[derive(Clone, Debug, PartialEq)]
 pub enum Declaration {
     Block(Block),
+    Macro(Macro),
     Symbol(SymbolType, Identifier, Option<Expr>),
 }
 
@@ -134,4 +135,17 @@ pub struct Block {
 
     /// The list of statements contained in thsi block.
     pub statements: Vec<Statement>,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct Macro {
+    pub name: Identifier,
+    pub parameters: Vec<MacroParameter>,
+    pub statements: Vec<Statement>,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct MacroParameter {
+    pub qualifier: SymbolType,
+    pub name: Identifier,
 }

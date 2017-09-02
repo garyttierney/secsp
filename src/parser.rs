@@ -72,6 +72,48 @@ named!(pub block_declaration<&[u8], Block>,
   ))
 );
 
+named!(pub macro_declaration<&[u8], Macro>,
+    ws!(do_parse!(
+        tag!("macro") >>
+        name: identifier >>
+        parameters: delimited!(tag!("("), macro_param_list, tag!(")")) >>
+        tag!("{") >>
+        statements: many0!(statement) >>
+        tag!("}") >>
+
+        (Macro {
+            name,
+            parameters,
+            statements
+        })
+    ))
+);
+
+named!(pub macro_param_list<&[u8], Vec<MacroParameter>>,
+    ws!(do_parse!(
+        first_param: macro_param >>
+        rest_params: many0!(ws!(do_parse!(char!(',') >> param: macro_param >> (param)))) >>
+
+        ({
+            let mut params = rest_params.clone();
+            params.insert(0, first_param);
+
+            params
+        })
+    ))
+);
+
+named!(pub macro_param<&[u8], MacroParameter>,
+    ws!(do_parse!(
+        qualifier: type_specifier >>
+        name: identifier >>
+
+        (MacroParameter {
+            qualifier, name
+        })
+    ))
+);
+
 named!(pub expr<&[u8], Expr>,
   alt!(
     map!(context, Expr::Context)
@@ -138,7 +180,6 @@ named!(pub context<&[u8], ContextExpr>,
 mod tests {
 
     use super::*;
-    use ::*;
 
     fn parse<O, P>(input: &str, parser: P) -> O
     where
@@ -245,5 +286,22 @@ mod tests {
         } else {
             panic!("Invalid value parsed");
         }
+    }
+
+    #[test]
+    pub fn parse_macro_decl() {
+        let result = parse::<Macro, _>(
+            "macro my_macro(type v, type v1) {
+
+            }",
+            macro_declaration,
+        );
+
+        assert_eq!("my_macro", result.name);
+
+        let params = result.parameters;
+
+        assert_eq!("v", params[0].name);
+        assert_eq!("v1", params[1].name);
     }
 }
