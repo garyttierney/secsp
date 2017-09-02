@@ -38,8 +38,8 @@ after_success:
 cache: 
   directories:
     - $HOME/.cargo
-    - $TRAVIS_BUILD_TARGET/kcov
-    - $TRAVIS_BUILD_TARGET/target
+    - kcov
+    - target
 
 env:
   global:
