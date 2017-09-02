@@ -96,6 +96,29 @@ pub enum Declaration {
     Symbol(SymbolType, Identifier),
 }
 
+#[derive(Clone, Debug, PartialEq)]
+pub enum Expr {
+    Variable(Identifier),
+    Level(LevelExpr),
+    Context(ContextExpr),
+    LevelRange(Box<Expr>, Box<Expr>),
+    CategoryRange(Identifier, Identifier),
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct ContextExpr {
+    pub user_id: Identifier,
+    pub role_id: Identifier,
+    pub type_id: Identifier,
+    pub level_range: Option<Box<Expr>>,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct LevelExpr {
+    pub sensitivity: Identifier,
+    pub categories: Box<Expr>,
+}
+
 /// A generic block statement containing an optional collection of other statements.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Block {

@@ -34,8 +34,68 @@ named!(pub statement<&[u8], syntax::Statement>,
 /// Parse either a block or symbol declaration.
 named!(pub declaration<&[u8], syntax::Declaration>,
   alt!(
-    block_declaration | symbol_declaration 
+    map!(block_declaration, syntax::Declaration::Block) | symbol_declaration
   )
+);
+
+named!(pub expr<&[u8], syntax::Expr>,
+  alt!(
+    map!(context, syntax::Expr::Context) |
+    map!(identifier, syntax::Expr::Variable)
+  )
+);
+
+named!(pub level<&[u8], syntax::Expr>,
+  ws!(do_parse!(
+    sensitivity: identifier >>
+    char!(':') >>
+    categories: category_range >>
+
+    (syntax::Expr::Level(syntax::LevelExpr {
+      sensitivity,
+      categories: Box::from(categories)
+    }))
+  ))
+);
+
+named!(pub level_range<&[u8], syntax::Expr>,
+  ws!(do_parse!(
+    low: level >>
+    char!('-') >>
+    high: level >>
+
+    (syntax::Expr::LevelRange(
+      Box::from(low), Box::from(high)
+    ))
+  ))
+);
+
+named!(pub category_range<&[u8], syntax::Expr>,
+  ws!(do_parse!(
+    low: identifier >>
+    char!('.') >>
+    high: identifier >>
+
+    (syntax::Expr::CategoryRange(low, high))
+  ))
+);
+
+named!(pub context<&[u8], syntax::ContextExpr>,
+  ws!(do_parse!(
+      user_id: identifier >>
+      char!(':') >>
+      role_id: identifier >>
+      char!(':') >>
+      type_id: identifier >>
+      level_range: opt!(complete!(preceded!(char!(':'), level_range))) >>
+
+      (syntax::ContextExpr {
+        user_id,
+        role_id,
+        type_id,
+        level_range: level_range.map(|v| Box::from(v))
+      })
+  ))
 );
 
 /// Parse a single named `Symbol` declaration.
@@ -51,7 +111,7 @@ named!(pub symbol_declaration<&[u8], syntax::Declaration>,
 
 /// Parse a `block` or `optional` container, named by an `Identifer` and containing
 /// a list of 0 or more `Statement`s.
-named!(pub block_declaration<&[u8], syntax::Declaration>,
+named!(pub block_declaration<&[u8], syntax::Block>,
   ws!(do_parse!(
     is_abstract: opt!(tag!("abstract")) >>
     qualifier: type_specifier >>
@@ -60,12 +120,12 @@ named!(pub block_declaration<&[u8], syntax::Declaration>,
     statements: many0!(statement) >>
     char!('}') >>
 
-    (syntax::Declaration::Block(syntax::Block {
+    (syntax::Block {
       is_abstract: is_abstract.is_some(),
       qualifier,
       name,
       statements
-    }))
+    })
   ))
 );
 
@@ -75,51 +135,59 @@ mod tests {
     use super::*;
     use syntax::*;
 
-    /// Utility function that returns a completed Result with an empty
-    /// input buffer and the given `value`.
-    fn complete<'a, O>(value: O) -> IResult<&'a [u8], O> {
-        Done(&b""[..], value)
+    fn parse<O, P>(input: &str, parser: P) -> O
+    where
+        P: Fn(&[u8]) -> IResult<&[u8], O>,
+    {
+        let bytes = input.as_bytes();
+        let (remaining, result) = parser(bytes).unwrap();
+
+        result
     }
 
     #[test]
     pub fn parse_type_specifier() {
-        assert_eq!(type_specifier(&b"type"[..]), complete(SymbolType::Type));
+        assert_eq!(
+            parse::<SymbolType, _>("type", type_specifier),
+            SymbolType::Type
+        );
+    }
+
+    #[test]
+    pub fn parse_context_expr() {
+        let result = parse::<ContextExpr, _>("user:role:type", context);
+
+        assert_eq!("user", result.user_id);
+        assert_eq!("role", result.role_id);
+        assert_eq!("type", result.type_id);
+        assert_eq!(true, result.level_range.is_none());
     }
 
     #[test]
     pub fn parse_block_decl() {
-        assert_eq!(
-            block_declaration(&b"block abc {}"[..]),
-            complete(Declaration::Block(Block {
-                is_abstract: false,
-                qualifier: BlockType::Block,
-                name: String::from("abc"),
-                statements: vec![],
-            }))
-        );
+        let result = parse::<Block, _>("block abc {}", block_declaration);
+
+        assert_eq!("abc", result.name);
+        assert_eq!(false, result.is_abstract);
+        assert_eq!(BlockType::Block, result.qualifier);
     }
 
     #[test]
     pub fn parse_abstract_block_decl() {
-        assert_eq!(
-            block_declaration(&b"abstract block abc {}"[..]),
-            complete(Declaration::Block(Block {
-                is_abstract: true,
-                qualifier: BlockType::Block,
-                name: String::from("abc"),
-                statements: vec![],
-            }))
-        );
+        let result = parse::<Block, _>("abstract block abc {}", block_declaration);
+
+        assert_eq!("abc", result.name);
+        assert_eq!(true, result.is_abstract);
+        assert_eq!(BlockType::Block, result.qualifier);
     }
 
     #[test]
     pub fn parse_symbol_decl() {
+        let result = parse::<Declaration, _>("type_attribute my_type;", symbol_declaration);
+
         assert_eq!(
-            symbol_declaration(&b"type_attribute my_type;"[..]),
-            complete(Declaration::Symbol(
-                SymbolType::TypeAttribute,
-                String::from("my_type"),
-            ))
+            Declaration::Symbol(SymbolType::TypeAttribute, "my_type".into()),
+            result
         );
     }
 }
