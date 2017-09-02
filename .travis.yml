@@ -11,13 +11,8 @@ addons:
 
 # run builds for all the trains (and more)
 rust:
-  - nightly
   - beta
-  # check it compiles on the latest stable compiler
   - stable
-  # and the first stable one (this should be bumped as the minimum
-  # Rust version required changes)
-  - 1.0.0
 
 # load travis-cargo
 before_script:
@@ -29,14 +24,16 @@ before_script:
 script:
   - |
       travis-cargo build &&
-      travis-cargo test &&
-      travis-cargo bench &&
-      travis-cargo --only stable doc
+      travis-cargo test
+
 after_success:
-  # measure code coverage and upload to coveralls.io (the verify
-  # argument mitigates kcov crashes due to malformed debuginfo, at the
-  # cost of some speed <https://github.com/huonw/travis-cargo/issues/12>)
   - travis-cargo coveralls --no-sudo --verify
+
+cache: 
+  directories:
+    - $HOME/.cargo
+    - $TRAVIS_BUILD_TARGET/kcov
+    - $TRAVIS_BUILD_TARGET/target
 
 env:
   global:
