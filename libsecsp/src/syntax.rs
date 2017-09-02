@@ -5,7 +5,7 @@ pub trait TypeSpecifier: Sized {
     /// Try and match `value` against a known type for this `TypeSpecifier`.
     fn from(value: &str) -> Option<Self>;
 
-    fn to(&self) -> &'static str;
+    fn to_cil(&self) -> &'static str;
 }
 
 /// Types of built-in containers.
@@ -31,7 +31,7 @@ impl TypeSpecifier for BlockType {
         Some(spec)
     }
 
-    fn to(&self) -> &'static str {
+    fn to_cil(&self) -> &'static str {
         use self::BlockType::*;
 
         match *self {
@@ -93,7 +93,7 @@ impl TypeSpecifier for SymbolType {
         Some(spec)
     }
 
-    fn to(&self) -> &'static str {
+    fn to_cil(&self) -> &'static str {
         use self::SymbolType::*;
 
         match *self {
@@ -144,7 +144,12 @@ pub enum Declaration {
 pub enum Expr {
     Variable(Identifier),
     Level(LevelExpr),
-    Context(ContextExpr),
+    Context {
+        user_id: Identifier,
+        role_id: Identifier,
+        type_id: Identifier,
+        level_range: Option<Box<Expr>>,
+    },
     LevelRange(Box<Expr>, Box<Expr>),
     CategoryRange(Identifier, Identifier),
 }

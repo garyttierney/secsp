@@ -1,6 +1,19 @@
 use secsp::syntax::*;
 use std::io::{Error as IoError, Write};
 
+pub trait CilType: TypeSpecifier {
+    fn requires_initializer(&self) -> bool;
+}
+
+impl CilType for SymbolType {
+    fn requires_initializer(&self) -> bool {
+        match *self {
+            SymbolType::Context => true,
+            _ => false,
+        }
+    }
+}
+
 pub fn show_statement<F>(f: &mut F, stmt: &Statement) -> Result<(), IoError>
 where
     F: Write,
@@ -39,7 +52,7 @@ where
             ref qualifier,
             ref name,
             ref initializer,
-        } => show_symbol_declaration(f, qualifier, name, initializer)?,
+        } => show_symbol_declaration(f, qualifier, name, initializer.as_ref())?,
         Declaration::Block {
             ref is_abstract,
             ref qualifier,
@@ -71,7 +84,7 @@ where
         try!(write!(
             f,
             "({} {})",
-            parameter.qualifier.to(),
+            parameter.qualifier.to_cil(),
             parameter.name
         ));
     }
@@ -97,7 +110,7 @@ pub fn show_block_declaration<F>(
 where
     F: Write,
 {
-    try!(writeln!(f, "({} {}", qualifier.to(), name));
+    try!(writeln!(f, "({} {}", qualifier.to_cil(), name));
 
     if is_abstract {
         try!(writeln!(f, "(blockabstract {})", name));
@@ -112,16 +125,23 @@ where
     Ok(())
 }
 
-pub fn show_symbol_declaration<F>(
+pub fn show_symbol_declaration<F, T: CilType>(
     f: &mut F,
-    qualifier: &SymbolType,
+    qualifier: &T,
     name: &String,
-    initializer: &Option<Expr>,
+    _initializer: Option<&Expr>,
 ) -> Result<(), IoError>
 where
     F: Write,
 {
-    try!(write!(f, "({} {})", qualifier.to(), name));
+    if qualifier.requires_initializer() {
+        let expr = _initializer.unwrap_or_else(|| panic!("No initializer given"));
+        try!(write!(f, "({} {} ", qualifier.to_cil(), name));
+        show_expr(f, expr)?;
+        try!(write!(f, ")"));
+    } else {
+        try!(write!(f, "({} {})", qualifier.to_cil(), name));
+    }
 
     Ok(())
 }
@@ -132,8 +152,38 @@ where
 {
     match *expr {
         Expr::Variable(ref id) => try!(write!(f, "{}", id)),
+        Expr::Context {
+            ref user_id,
+            ref role_id,
+            ref type_id,
+            ref level_range,
+        } => show_context_expr(f, user_id, role_id, type_id, level_range.as_ref())?,
         _ => {}
     };
+
+    Ok(())
+}
+
+pub fn show_context_expr<F>(
+    f: &mut F,
+    user_id: &String,
+    role_id: &String,
+    type_id: &String,
+    level_range_ref: Option<&Box<Expr>>,
+) -> Result<(), IoError>
+where
+    F: Write,
+{
+    if level_range_ref.is_some() {
+        let level_range_ptr: &Box<Expr> = level_range_ref.unwrap();
+        let level_range = level_range_ptr.as_ref();
+
+        try!(write!(f, "({} {} {} ", user_id, role_id, type_id));
+        show_expr(f, level_range)?;
+        try!(write!(f, ")"));
+    } else {
+        try!(write!(f, "({} {} {})", user_id, role_id, type_id));
+    }
 
     Ok(())
 }

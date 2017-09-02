@@ -145,7 +145,7 @@ named!(pub macro_argument_list<&[u8], Vec<Expr>>,
 
 named!(pub expr<&[u8], Expr>,
   alt!(
-    map!(context, Expr::Context)
+    context
     | level_range 
     | category_range
     | variable
@@ -187,7 +187,7 @@ named!(pub category_range<&[u8], Expr>,
     )) 
 );
 
-named!(pub context<&[u8], ContextExpr>,
+named!(pub context<&[u8], Expr>,
   ws!(do_parse!(
       user_id: identifier >>
       char!(':') >>
@@ -196,7 +196,7 @@ named!(pub context<&[u8], ContextExpr>,
       type_id: identifier >>
       level_range: opt!(complete!(preceded!(char!(':'), level_range))) >>
       
-      (ContextExpr {
+      (Expr::Context {
         user_id, 
         role_id,
         type_id,
@@ -236,12 +236,22 @@ mod tests {
 
     #[test]
     pub fn parse_context_expr() {
-        let result = parse::<ContextExpr, _>("user:role:type", context);
+        let result = parse::<Expr, _>("user:role:type", context);
 
-        assert_eq!("user", result.user_id);
-        assert_eq!("role", result.role_id);
-        assert_eq!("type", result.type_id);
-        assert_eq!(true, result.level_range.is_none());
+        match result {
+            Expr::Context {
+                user_id,
+                role_id,
+                type_id,
+                level_range,
+            } => {
+                assert_eq!("user", user_id);
+                assert_eq!("role", role_id);
+                assert_eq!("type", type_id);
+                assert_eq!(true, level_range.is_none());
+            }
+            _ => panic!("Invalid value parsed"),
+        }
     }
 
     #[test]
@@ -258,16 +268,26 @@ mod tests {
 
     #[test]
     pub fn parse_context_expr_with_levelrange() {
-        let result = parse::<ContextExpr, _>("user:role:type:s0 - s1", context);
-        let level_range = result.level_range.unwrap();
+        let result = parse::<Expr, _>("user:role:type:s0 - s1", context);
 
-        if let &Expr::LevelRange(ref low, ref high) = level_range.as_ref() {
-            assert_eq!(Expr::var("s0"), **low);
-            assert_eq!(Expr::var("s1"), **high);
-        } else {
-            panic!("Invalid value parsed");
+        match result {
+            Expr::Context {
+                user_id,
+                role_id,
+                type_id,
+                level_range,
+            } => {
+                if let &Expr::LevelRange(ref low, ref high) = level_range.unwrap().as_ref() {
+                    assert_eq!(Expr::var("s0"), **low);
+                    assert_eq!(Expr::var("s1"), **high);
+                } else {
+                    panic!("No level range found");
+                }
+            }
+            _ => panic!("Invalid value parsed"),
         }
     }
+
 
     #[test]
     pub fn parse_block_decl() {
@@ -338,7 +358,12 @@ mod tests {
                 assert_eq!("my_context", name);
 
                 match initializer {
-                    Some(Expr::Context(_)) => {}
+                    Some(Expr::Context {
+                             user_id,
+                             role_id,
+                             type_id,
+                             level_range,
+                         }) => {}
                     _ => panic!("No initializer found"),
                 }
             }
