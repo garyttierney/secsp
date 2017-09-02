@@ -26,14 +26,14 @@ before_script:
 # the main build
 script:
   - |
-      cargo build &&
-      cargo test &&
-      cargo bench &&
-      cargo doc
+      cargo build --all &&
+      cargo test --all &&
+      cargo bench --all &&
+      cargo doc 
 
 after_success:
 # measure code coverage and upload to coveralls.io
-  - cargo coveralls
+  - cargo coveralls --all
 
 cache: 
   directories:
