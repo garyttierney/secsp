@@ -4,6 +4,8 @@ pub type Identifier = String;
 pub trait TypeSpecifier: Sized {
     /// Try and match `value` against a known type for this `TypeSpecifier`.
     fn from(value: &str) -> Option<Self>;
+
+    fn to(&self) -> &'static str;
 }
 
 /// Types of built-in containers.
@@ -27,6 +29,15 @@ impl TypeSpecifier for BlockType {
         };
 
         Some(spec)
+    }
+
+    fn to(&self) -> &'static str {
+        use self::BlockType::*;
+
+        match *self {
+            Block => "block",
+            Optional => "optional",
+        }
     }
 }
 
@@ -80,6 +91,23 @@ impl TypeSpecifier for SymbolType {
         };
 
         Some(spec)
+    }
+
+    fn to(&self) -> &'static str {
+        use self::SymbolType::*;
+
+        match *self {
+            Type => "type",
+            TypeAttribute => "typeattribute",
+            User => "user",
+            UserAttribute => "userattribute",
+            Role => "role",
+            RoleAttribute => "roleattribute",
+            Context => "context",
+            Sensitivity => "sensitivity",
+            LevelRange => "levelrange",
+            Category => "category",
+        }
     }
 }
 
