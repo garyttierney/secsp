@@ -1,3 +1,5 @@
+//! AST types for the `secsp` parser.  The root component of all ASTs is a `Statement`.
+
 pub type Identifier = String;
 
 /// A type-specifier that can be converted to and from a string.

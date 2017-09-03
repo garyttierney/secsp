@@ -31,7 +31,7 @@ named!(pub level_range<&[u8], Expr>,
 named!(category_range_or_id<&[u8], Expr>, alt_complete!(category_range | variable));
 
 named!(pub category_range<&[u8], Expr>,
-  ws!(do_parse!(
+    ws!(do_parse!(
         range: separated_pair!(identifier, eat_separator!(&b"."[..]), identifier) >>
 
         (Expr::CategoryRange(
@@ -100,12 +100,7 @@ mod tests {
         let result = parse::<Expr, _>("user:role:type:s0 - s1", context);
 
         match result {
-            Expr::Context {
-                user_id,
-                role_id,
-                type_id,
-                level_range,
-            } => {
+            Expr::Context { level_range, .. } => {
                 if let &Expr::LevelRange(ref low, ref high) = level_range.unwrap().as_ref() {
                     assert_eq!(Expr::var("s0"), **low);
                     assert_eq!(Expr::var("s1"), **high);

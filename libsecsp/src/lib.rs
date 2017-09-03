@@ -31,9 +31,28 @@ mod name;
 mod security_attributes;
 mod parser;
 
-pub struct ParseResult {
-    pub statements: Vec<Statement>,
+use nom::{Err as NomErr, ErrorKind, IResult, Needed};
+use std::str::from_utf8_unchecked;
+
+/// A parse error. It contains an `ErrorKind` along with a `String` giving information on the reason
+/// why the parser failed.
+#[derive(Clone, Debug, PartialEq)]
+pub struct ParseError {
+    pub kind: ErrorKind,
+    pub info: String,
 }
+
+/// Parse result. It can either be parsed, incomplete or errored.
+#[derive(Clone, Debug, PartialEq)]
+pub enum ParseResult {
+    /// The source was successfully parsed.
+    Ok(Vec<Statement>),
+    /// The parser failed with a `ParseError`.
+    Err(ParseError),
+    /// More data is required to go on.
+    Incomplete(Needed),
+}
+
 
 pub fn parse<R: std::io::Read>(input: &mut R) -> ParseResult {
     let mut buffer = vec![];
@@ -43,9 +62,43 @@ pub fn parse<R: std::io::Read>(input: &mut R) -> ParseResult {
 }
 
 pub fn parse_from_slice(input: &[u8]) -> ParseResult {
-    let (_, result) = parser::statement_list(input).unwrap();
+    match parser::statement_list(input) {
+        IResult::Done(i, x) => {
+            if i.is_empty() {
+                ParseResult::Ok(x)
+            } else {
+                let kind = ErrorKind::Custom(0); // FIXME: use our own error kind
+                let msg = unsafe { from_utf8_unchecked(i).to_owned() };
+                let info = msg.lines().next().unwrap_or("").to_owned();
+                ParseResult::Err(ParseError { kind, info })
+            }
+        }
+        IResult::Error(err) => {
+            match err {
+                NomErr::Code(k) => ParseResult::Err(ParseError {
+                    kind: k,
+                    info: String::new(),
+                }),
+                NomErr::Node(kind, trace) => {
+                    let info = format!("{:#?}", trace);
+                    ParseResult::Err(ParseError { kind, info })
+                }
+                NomErr::Position(kind, p) => {
+                    let msg = unsafe { from_utf8_unchecked(p).to_owned() };
+                    let info = msg.lines().next().unwrap_or("").to_owned();
 
-    ParseResult { statements: result }
+                    ParseResult::Err(ParseError { kind, info })
+                }
+                NomErr::NodePosition(kind, p, trace) => {
+                    let p_msg = unsafe { from_utf8_unchecked(p) };
+                    let info = format!("{}: {:#?}", p_msg, trace);
+
+                    ParseResult::Err(ParseError { kind, info })
+                }
+            }
+        }
+        IResult::Incomplete(n) => ParseResult::Incomplete(n),
+    }
 }
 
 #[cfg(test)]

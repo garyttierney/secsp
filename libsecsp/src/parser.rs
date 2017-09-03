@@ -4,9 +4,9 @@ use expr::*;
 
 /// Parse a declaration as a statement.
 named!(pub statement<&[u8], Statement>,
-  alt!(
-    map!(declaration, Statement::Declaration) | macro_call | if_else
-  )
+    alt!(
+        map!(declaration, Statement::Declaration) | macro_call | if_else
+    )
 );
 
 // Parse a list of 0 or more statements.
@@ -14,43 +14,43 @@ named!(pub statement_list<&[u8], Vec<Statement>>, many0!(statement));
 
 /// Parse either a block or symbol declaration.
 named!(pub declaration<&[u8], Declaration>,
-  alt!(
-    block_declaration
-    | macro_declaration
-    | symbol_declaration 
-  )
+    alt!(
+        block_declaration
+        | macro_declaration
+        | symbol_declaration
+    )
 );
 
 /// Parse a single named `Symbol` declaration.
 named!(pub symbol_declaration<&[u8], Declaration>,
-  ws!(do_parse!(
-    qualifier: type_specifier >>
-    name: identifier >>
-    initializer: opt!(preceded!(tag!("="), expr)) >>
-    char!(';') >>
+    ws!(do_parse!(
+        qualifier: type_specifier >>
+        name: identifier >>
+        initializer: opt!(preceded!(tag!("="), expr)) >>
+        char!(';') >>
 
-    (Declaration::Symbol {qualifier, name, initializer})
-  ))
+        (Declaration::Symbol {qualifier, name, initializer})
+    ))
 );
 
 /// Parse a `block` or `optional` container, named by an `Identifer` and containing
 /// a list of 0 or more `Statement`s.
 named!(pub block_declaration<&[u8], Declaration>,
-  ws!(do_parse!(
-    is_abstract: opt!(tag!("abstract")) >>
-    qualifier: type_specifier >>
-    name: identifier >> 
-    char!('{') >>
-    statements: many0!(statement) >>
-    char!('}') >>
+    ws!(do_parse!(
+        is_abstract: opt!(tag!("abstract")) >>
+        qualifier: type_specifier >>
+        name: identifier >>
+        char!('{') >>
+        statements: many0!(statement) >>
+        char!('}') >>
 
-    (Declaration::Block {
-      is_abstract: is_abstract.is_some(),
-      qualifier,
-      name,
-      statements
-    })
-  ))
+        (Declaration::Block {
+            is_abstract: is_abstract.is_some(),
+            qualifier,
+            name,
+            statements
+        })
+    ))
 );
 
 named!(pub macro_declaration<&[u8], Declaration>,
@@ -120,7 +120,7 @@ named!(pub macro_argument_list<&[u8], Vec<Expr>>,
 );
 
 named!(pub if_else<Statement>,
-    dbg_dmp!(ws!(do_parse!(
+    ws!(do_parse!(
         tag!("if") >>
         condition: expr >>
         then_block: delimited!(char!('{'), statement_list, char!('}')) >>
@@ -133,9 +133,8 @@ named!(pub if_else<Statement>,
             else_ifs,
             else_block,
         })
-    )))
+    ))
 );
-
 
 named!(pub else_if<(Expr, Vec<Statement>)>, 
     ws!(do_parse!(
@@ -163,8 +162,8 @@ mod tests {
             Declaration::Block {
                 is_abstract,
                 qualifier,
-                statements,
                 name,
+                ..
             } => {
                 assert_eq!(true, is_abstract);
                 assert_eq!("abc", name);
@@ -179,12 +178,7 @@ mod tests {
         let result = parse::<Declaration, _>("abstract block abc {}", block_declaration);
 
         match result {
-            Declaration::Block {
-                is_abstract,
-                qualifier,
-                statements,
-                name,
-            } => assert_eq!(true, is_abstract),
+            Declaration::Block { is_abstract, .. } => assert_eq!(true, is_abstract),
             _ => panic!("Invalid value"),
         }
     }
@@ -215,11 +209,7 @@ mod tests {
         );
 
         match result {
-            Declaration::Symbol {
-                qualifier,
-                name,
-                initializer,
-            } => {
+            Declaration::Symbol { qualifier, name, .. } => {
                 assert_eq!(SymbolType::Context, qualifier);
                 assert_eq!("my_context", name);
 
@@ -247,11 +237,7 @@ mod tests {
         );
 
         match result {
-            Declaration::Macro {
-                name,
-                parameters,
-                statements,
-            } => {
+            Declaration::Macro { name, parameters, .. } => {
                 assert_eq!("my_macro", name);
                 assert_eq!("v", parameters[0].name);
                 assert_eq!("v1", parameters[1].name);
@@ -279,9 +265,8 @@ mod tests {
         match result {
             Statement::IfElse {
                 condition,
-                then_block,
-                else_ifs,
                 else_block,
+                ..
             } => {
                 assert_eq!(Expr::var("my_bool"), condition);
                 assert_eq!(Some(vec![]), else_block);
@@ -297,9 +282,8 @@ mod tests {
         match result {
             Statement::IfElse {
                 condition,
-                then_block,
-                else_ifs,
                 else_block,
+                ..
             } => {
                 assert_eq!(Expr::var("my_bool"), condition);
                 assert_eq!(None, else_block);
