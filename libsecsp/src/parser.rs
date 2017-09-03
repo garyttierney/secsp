@@ -209,7 +209,11 @@ mod tests {
         );
 
         match result {
-            Declaration::Symbol { qualifier, name, .. } => {
+            Declaration::Symbol {
+                qualifier,
+                name,
+                initializer,
+            } => {
                 assert_eq!(SymbolType::Context, qualifier);
                 assert_eq!("my_context", name);
 
