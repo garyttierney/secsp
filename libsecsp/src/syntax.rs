@@ -117,6 +117,12 @@ pub enum Statement {
     /// A declaration statement, declaring either a `Block`, `Symbol`, or `Macro`.
     Declaration(Declaration),
     MacroCall(Identifier, Vec<Expr>),
+    IfElse {
+        condition: Expr,
+        then_block: Vec<Statement>,
+        else_ifs: Vec<(Expr, Vec<Statement>)>,
+        else_block: Option<Vec<Statement>>,
+    },
 }
 
 /// A declaration statement.
@@ -143,7 +149,10 @@ pub enum Declaration {
 #[derive(Clone, Debug, PartialEq)]
 pub enum Expr {
     Variable(Identifier),
-    Level(LevelExpr),
+    Level {
+        sensitivity: Identifier,
+        categories: Box<Expr>,
+    },
     Context {
         user_id: Identifier,
         role_id: Identifier,

@@ -21,6 +21,7 @@ where
     match *stmt {
         Statement::Declaration(ref decl) => show_declaration(f, decl)?,
         Statement::MacroCall(ref id, ref parameters) => show_macro_call(f, id, parameters)?, 
+        _ => {}
     };
 
     try!(write!(f, "\n"));
@@ -158,8 +159,40 @@ where
             ref type_id,
             ref level_range,
         } => show_context_expr(f, user_id, role_id, type_id, level_range.as_ref())?,
+        Expr::LevelRange(ref low, ref high) => {
+            show_level_range_expr(f, low.as_ref(), high.as_ref())?
+        }
+        Expr::Level {
+            ref sensitivity,
+            ref categories,
+        } => show_level_expr(f, sensitivity, categories.as_ref())?,
         _ => {}
     };
+
+    Ok(())
+}
+
+pub fn show_level_range_expr<F>(f: &mut F, low: &Expr, high: &Expr) -> Result<(), IoError>
+where
+    F: Write,
+{
+
+    try!(write!(f, "("));
+    show_expr(f, low)?;
+    try!(write!(f, " "));
+    show_expr(f, high)?;
+    try!(write!(f, ")"));
+
+    Ok(())
+}
+
+pub fn show_level_expr<F>(f: &mut F, sensitivity: &String, categories: &Expr) -> Result<(), IoError>
+where
+    F: Write,
+{
+    try!(write!(f, "({} (", sensitivity));
+    show_expr(f, categories)?;
+    try!(write!(f, "))"));
 
     Ok(())
 }

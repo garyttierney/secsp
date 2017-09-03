@@ -29,7 +29,7 @@ named!(pub variable<&[u8], Expr>, map!(identifier, Expr::Variable));
 /// Parse a declaration as a statement.
 named!(pub statement<&[u8], Statement>,
   alt!(
-    map!(declaration, Statement::Declaration) | macro_call
+    map!(declaration, Statement::Declaration) | macro_call | if_else
   )
 );
 
@@ -143,8 +143,38 @@ named!(pub macro_argument_list<&[u8], Vec<Expr>>,
     ))
 );
 
+named!(pub if_else<Statement>,
+    dbg_dmp!(ws!(do_parse!(
+        tag!("if") >>
+        condition: expr >>
+        then_block: delimited!(char!('{'), statement_list, char!('}')) >>
+        else_ifs: many0!(else_if) >>
+        else_block: opt!(complete!(do_parse!(tag!("else") >> block: delimited!(char!('{'), statement_list, char!('}')) >> (block)))) >>
+
+        (Statement::IfElse {
+            condition,
+            then_block,
+            else_ifs,
+            else_block,
+        })
+    )))
+);
+
+
+named!(pub else_if<(Expr, Vec<Statement>)>,
+    ws!(do_parse!(
+        tag!("elseif") >>
+        condition: expr >>
+        tag!("{") >>
+        then_block: statement_list >>
+        tag!("}") >>
+
+        (condition, then_block)
+    ))
+);
+
 named!(pub expr<&[u8], Expr>,
-  alt!(
+  alt_complete!(
     context
     | level_range 
     | category_range
@@ -158,10 +188,10 @@ named!(pub level<&[u8], Expr>,
         tag!(":") >>
         categories: category_range_or_id >>
 
-        (Expr::Level(LevelExpr {
+        (Expr::Level {
             sensitivity,
             categories: Box::from(categories)
-        }))
+        })
     ) 
 );
 
@@ -405,6 +435,42 @@ mod tests {
             assert_eq!(Expr::var("type_name"), params[0])
         } else {
             panic!("Invalid value parsed");
+        }
+    }
+
+    #[test]
+    pub fn parse_if_then_else() {
+        let result = parse::<Statement, _>("if my_bool {} else{}", if_else);
+
+        match result {
+            Statement::IfElse {
+                condition,
+                then_block,
+                else_ifs,
+                else_block,
+            } => {
+                assert_eq!(Expr::var("my_bool"), condition);
+                assert_eq!(Some(vec![]), else_block);
+            }
+            _ => panic!("Invalid value parsed"),
+        }
+    }
+
+    #[test]
+    pub fn parse_if() {
+        let result = parse::<Statement, _>("if my_bool {}", if_else);
+
+        match result {
+            Statement::IfElse {
+                condition,
+                then_block,
+                else_ifs,
+                else_block,
+            } => {
+                assert_eq!(Expr::var("my_bool"), condition);
+                assert_eq!(None, else_block);
+            }
+            _ => panic!("Invalid value parsed"),
         }
     }
 }
