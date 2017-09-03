@@ -159,8 +159,25 @@ pub enum Expr {
         type_id: Identifier,
         level_range: Option<Box<Expr>>,
     },
+    Binary(Box<Expr>, BinaryOp, Box<Expr>),
+    Unary(UnaryOp, Box<Expr>),
     LevelRange(Box<Expr>, Box<Expr>),
     CategoryRange(Identifier, Identifier),
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum BinaryOp {
+    ConditionalAnd,
+    ConditionalOr,
+    BitwiseAnd,
+    BitwiseOr,
+    BitwiseXor,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum UnaryOp {
+    ConditionalNot,
+    BitwiseNot,
 }
 
 impl Expr {

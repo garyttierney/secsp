@@ -1,4 +1,4 @@
-use secsp::syntax::*;
+use secsp::ast::*;
 use std::io::{Error as IoError, Write};
 
 pub trait CilType: TypeSpecifier {

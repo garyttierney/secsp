@@ -7,10 +7,10 @@
 //!
 //! # Examples
 //! ```rust
-//! use secsp::syntax::*;
+//! use secsp::*;
 //!
 //! let input = b"block abc{}";
-//! let parse_result = secsp::parse_from_slice(&input[..]);
+//! let parse_result = parse_from_slice(&input[..]);
 //! match parse_result.statements[0] {
 //!     Statement::Declaration(Declaration::Block { is_abstract, ref name, ref qualifier, ref statements }) => println!("Parsed block"),
 //!     _ => panic!("Didn't find a block!")
@@ -23,11 +23,16 @@
 #[macro_use]
 extern crate nom;
 
-pub mod parser;
-pub mod syntax;
+pub mod ast;
+pub use ast::*;
+
+mod expr;
+mod name;
+mod security_attributes;
+mod parser;
 
 pub struct ParseResult {
-    pub statements: Vec<syntax::Statement>,
+    pub statements: Vec<Statement>,
 }
 
 pub fn parse<R: std::io::Read>(input: &mut R) -> ParseResult {
@@ -41,4 +46,25 @@ pub fn parse_from_slice(input: &[u8]) -> ParseResult {
     let (_, result) = parser::statement_list(input).unwrap();
 
     ParseResult { statements: result }
+}
+
+#[cfg(test)]
+mod testing {
+    use super::*;
+
+    pub fn parse<O, P>(input: &str, parser: P) -> O
+    where
+        P: Fn(&[u8]) -> nom::IResult<&[u8], O>,
+    {
+        let bytes = input.as_bytes();
+        let result = parser(bytes);
+
+        if result.is_err() {
+            panic!("Parse error: {}", result.unwrap_err());
+        }
+
+        let (remaining, output) = result.unwrap();
+
+        output
+    }
 }

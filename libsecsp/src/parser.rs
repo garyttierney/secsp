@@ -1,30 +1,6 @@
-use nom::{Err as NomErr, ErrorKind, IResult};
-use nom::IResult::*;
-use syntax::*;
-
-/// Check if the given byte is valid in an identifier.
-fn is_identifier(c: u8) -> bool {
-    let ch = char::from(c);
-    ch.is_alphanumeric() || ch == '_'
-}
-
-named!(identifier_raw <&[u8], &[u8]>, take_while1!(is_identifier));
-named!(identifier <&[u8], Identifier>, map!(identifier_raw, |bytes: &[u8]| String::from_utf8(bytes.to_vec()).unwrap()));
-
-/// Match an `identifier` against a built-in type specifier, returning
-/// an error if there is no match.
-pub fn type_specifier<T: TypeSpecifier>(i: &[u8]) -> IResult<&[u8], T> {
-    let (remaining, identifier) = try_parse!(i, identifier);
-    let type_specifier = T::from(identifier.as_ref());
-
-    if type_specifier.is_none() {
-        return Error(NomErr::Code(ErrorKind::AlphaNumeric));
-    }
-
-    Done(remaining, type_specifier.unwrap())
-}
-
-named!(pub variable<&[u8], Expr>, map!(identifier, Expr::Variable));
+use ast::*;
+use name::*;
+use expr::*;
 
 /// Parse a declaration as a statement.
 named!(pub statement<&[u8], Statement>,
@@ -161,7 +137,7 @@ named!(pub if_else<Statement>,
 );
 
 
-named!(pub else_if<(Expr, Vec<Statement>)>,
+named!(pub else_if<(Expr, Vec<Statement>)>, 
     ws!(do_parse!(
         tag!("elseif") >>
         condition: expr >>
@@ -173,153 +149,11 @@ named!(pub else_if<(Expr, Vec<Statement>)>,
     ))
 );
 
-named!(pub expr<&[u8], Expr>,
-  alt_complete!(
-    context
-    | level_range 
-    | category_range
-    | variable
-  )
-);
-
-named!(pub level<&[u8], Expr>,
-    do_parse!(
-        sensitivity: identifier >>
-        tag!(":") >>
-        categories: category_range_or_id >>
-
-        (Expr::Level {
-            sensitivity,
-            categories: Box::from(categories)
-        })
-    ) 
-);
-
-named!(level_or_id<&[u8], Expr>, alt_complete!(level | variable));
-
-named!(pub level_range<&[u8], Expr>,
-    ws!(do_parse!(
-        range: separated_pair!(level_or_id, eat_separator!(&b"-"[..]), level_or_id) >>
-
-        (Expr::LevelRange(
-            Box::from(range.0), Box::from(range.1)
-        ))
-    )) 
-);
-
-named!(category_range_or_id<&[u8], Expr>, alt_complete!(category_range | variable));
-
-named!(pub category_range<&[u8], Expr>,
-  ws!(do_parse!(
-        range: separated_pair!(identifier, eat_separator!(&b"."[..]), identifier) >>
-
-        (Expr::CategoryRange(
-            range.0, range.1
-        ))
-    )) 
-);
-
-named!(pub context<&[u8], Expr>,
-  ws!(do_parse!(
-      user_id: identifier >>
-      char!(':') >>
-      role_id: identifier >>
-      char!(':') >>
-      type_id: identifier >>
-      level_range: opt!(complete!(preceded!(char!(':'), level_range))) >>
-      
-      (Expr::Context {
-        user_id, 
-        role_id,
-        type_id,
-        level_range: level_range.map(|v| Box::from(v))
-      })
-  ))
-);
-
 #[cfg(test)]
 mod tests {
 
     use super::*;
-
-    fn parse<O, P>(input: &str, parser: P) -> O
-    where
-        P: Fn(&[u8]) -> IResult<&[u8], O>,
-    {
-        let bytes = input.as_bytes();
-        let result = parser(bytes);
-
-        if result.is_err() {
-            panic!("Parse error: {}", result.unwrap_err());
-        }
-
-        let (remaining, output) = result.unwrap();
-
-        output
-    }
-
-    #[test]
-    pub fn parse_type_specifier() {
-        assert_eq!(
-            parse::<SymbolType, _>("type", type_specifier),
-            SymbolType::Type
-        );
-    }
-
-    #[test]
-    pub fn parse_context_expr() {
-        let result = parse::<Expr, _>("user:role:type", context);
-
-        match result {
-            Expr::Context {
-                user_id,
-                role_id,
-                type_id,
-                level_range,
-            } => {
-                assert_eq!("user", user_id);
-                assert_eq!("role", role_id);
-                assert_eq!("type", type_id);
-                assert_eq!(true, level_range.is_none());
-            }
-            _ => panic!("Invalid value parsed"),
-        }
-    }
-
-    #[test]
-    pub fn parse_levelrange_expr() {
-        let result = parse::<Expr, _>("s0-s1", level_range);
-
-        if let Expr::LevelRange(low, high) = result {
-            assert_eq!(Expr::var("s0"), *low);
-            assert_eq!(Expr::var("s1"), *high);
-        } else {
-            panic!("Invalid value parsed");
-        }
-    }
-
-    #[test]
-    pub fn parse_context_expr_with_levelrange() {
-        let result = parse::<Expr, _>("user:role:type:s0 - s1", context);
-
-        match result {
-            Expr::Context {
-                user_id,
-                role_id,
-                type_id,
-                level_range,
-            } => {
-                if let &Expr::LevelRange(ref low, ref high) = level_range.unwrap().as_ref() {
-                    assert_eq!(Expr::var("s0"), **low);
-                    assert_eq!(Expr::var("s1"), **high);
-                } else {
-                    panic!("No level range found");
-                }
-            }
-            _ => panic!("Invalid value parsed"),
-        }
-    }
-
+    use testing::parse;
 
     #[test]
     pub fn parse_block_decl() {
