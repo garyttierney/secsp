@@ -17,7 +17,8 @@ macro_rules! cil_list {
                 temp_vec.push($x.into());
             )*
 
-            temp_vec.into()
+            let sexp : Sexp = temp_vec.into();
+            sexp
         }
     };
 }
@@ -169,7 +170,7 @@ impl ToCil for Expr {
                 ref sensitivity,
                 ref categories,
             } => {
-                let categories_sexpr: Vec<Sexp> = cil_list![categories.into_sexp()];
+                let categories_sexpr: Sexp = cil_list![categories.into_sexp()];
 
                 cil_list![sensitivity, categories_sexpr]
             }
@@ -248,5 +249,41 @@ mod testing {
         let actual = decl.into_sexp();
 
         assert_eq!(expected, actual);
+    }
+
+    #[test]
+    pub fn compile_conditional_exprs() {
+        let inputs = vec![
+            Expr::Binary(
+                Box::from(Expr::var("a")),
+                BinaryOp::ConditionalAnd,
+                Box::from(Expr::Unary(
+                    UnaryOp::ConditionalNot,
+                    Box::from(Expr::var("b")),
+                ))
+            ),
+            Expr::Binary(
+                Box::from(Expr::var("a")),
+                BinaryOp::ConditionalOr,
+                Box::from(Expr::Binary(
+                    Box::from(Expr::var("b")),
+                    BinaryOp::ConditionalXor,
+                    Box::from(Expr::var("c")),
+                ))
+            ),
+        ];
+
+        let expectations = vec![
+            cil_list!["and", "a", cil_list!["not", "b"]],
+            cil_list!["or", "a", cil_list!["xor", "b", "c"]],
+        ];
+
+        for id in 0..inputs.len() {
+            let input = &inputs[0];
+            let expected = &expectations[0];
+            let actual = input.into_sexp();
+
+            assert_eq!(expected, &actual);
+        }
     }
 }
