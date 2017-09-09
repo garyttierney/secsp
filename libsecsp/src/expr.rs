@@ -17,7 +17,7 @@ macro_rules! binexp {
     named!(pub $name<&[u8], Expr>,
       ws!(do_parse!(
         a: $next >>
-        n: alt!(
+        n: alt_complete!(
           ws!(do_parse!(
             tag!($tag) >>
             b: $name >>
@@ -57,7 +57,7 @@ named!(logical_not_expr<&[u8], Expr>,
         alt!(
             do_parse!(
                 tag!("!") >>
-                expr: expr >>
+                expr: primary_expr >>
 
                 (Expr::Unary(UnaryOp::ConditionalNot, Box::new(expr)))
             ) |
@@ -67,3 +67,69 @@ named!(logical_not_expr<&[u8], Expr>,
 );
 
 named!(primary_expr<&[u8], Expr>, alt!(variable));
+
+#[cfg(test)]
+mod tests {
+
+    use super::*;
+    use testing::parse;
+
+    #[test]
+    pub fn parse_unary_with_binary_expr() {
+        let expected = Expr::Binary(
+            Box::from(Expr::Unary(
+                UnaryOp::ConditionalNot,
+                Box::from(Expr::var("a")),
+            )),
+            BinaryOp::ConditionalOr,
+            Box::from(Expr::var("b")),
+        );
+
+        let result = parse::<Expr, _>("!a || b", expr);
+        assert_eq!(expected, result);
+    }
+
+    #[test]
+    pub fn parse_logical_not_expr() {
+        let expected = Expr::Unary(UnaryOp::ConditionalNot, Box::from(Expr::var("a")));
+        let result = parse::<Expr, _>("!a", expr);
+
+        assert_eq!(expected, result);
+    }
+
+    #[test]
+    pub fn parse_logical_xor_expr() {
+        let expected = Expr::Binary(
+            Box::from(Expr::var("a")),
+            BinaryOp::ConditionalXor,
+            Box::from(Expr::var("b")),
+        );
+
+        let result = parse::<Expr, _>("a ^^ b", expr);
+        assert_eq!(expected, result);
+    }
+
+    #[test]
+    pub fn parse_logical_or_expr() {
+        let expected = Expr::Binary(
+            Box::from(Expr::var("a")),
+            BinaryOp::ConditionalOr,
+            Box::from(Expr::var("b")),
+        );
+
+        let result = parse::<Expr, _>("a || b", expr);
+        assert_eq!(expected, result);
+    }
+
+    #[test]
+    pub fn parse_logical_and_expr() {
+        let expected = Expr::Binary(
+            Box::from(Expr::var("a")),
+            BinaryOp::ConditionalAnd,
+            Box::from(Expr::var("b")),
+        );
+
+        let result = parse::<Expr, _>("a && b", expr);
+        assert_eq!(expected, result);
+    }
+}
