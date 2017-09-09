@@ -10,7 +10,7 @@ macro_rules! cil {
 }
 
 macro_rules! cil_list {
-    [ $( $x:expr ),* ] => {
+    [ $( $x:expr ),* $(,)* ] => {
         {
             let mut temp_vec : Vec<Sexp> = Vec::new();
             $(
@@ -180,7 +180,7 @@ impl ToCil for Expr {
                 ref type_id,
                 ref level_range,
             } => {
-                let mut context_sexp: Sexp = cil_list![user_id, type_id, role_id];
+                let mut context_sexp: Sexp = cil_list![user_id, role_id, type_id];
 
                 if let Some(ref expr) = *level_range {
                     context_sexp.push(expr.as_ref().into_sexp());
@@ -285,5 +285,55 @@ mod testing {
 
             assert_eq!(expected, &actual);
         }
+    }
+
+    #[test]
+    pub fn compile_if_else() {
+        let input = Statement::IfElse {
+            condition: Expr::var("my_bool"),
+            then_block: vec![],
+            else_ifs: vec![],
+            else_block: Some(vec![]),
+        };
+
+        let expected =
+            cil_list![
+            "booleanif",
+            "my_bool",
+            cil_list!["true"],
+            cil_list!["false"],
+        ];
+
+        let actual = input.into_sexp();
+        assert_eq!(expected, actual);
+    }
+
+    #[test]
+    pub fn compile_macro_call() {
+        let input = Statement::MacroCall("my_macro".to_string(), vec![Expr::var("a")]);
+
+        let expected = cil_list!["call", "my_macro", cil_list!["a"]];
+        let actual = input.into_sexp();
+
+        assert_eq!(expected, actual);
+    }
+
+    #[test]
+    pub fn compile_context_decl() {
+        let input = Declaration::Symbol {
+            qualifier: SymbolType::Context,
+            name: "my_context".to_string(),
+            initializer: Some(Expr::Context {
+                user_id: "user".to_string(),
+                type_id: "type".to_string(),
+                role_id: "role".to_string(),
+                level_range: None,
+            }),
+        };
+
+        let expected = cil_list!["context", "my_context", cil_list!["user", "role", "type"]];
+        let actual = input.into_sexp();
+
+        assert_eq!(expected, actual);
     }
 }
