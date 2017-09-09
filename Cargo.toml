@@ -8,5 +8,5 @@ description = "A C-style policy language for SELinux"
 
 [dependencies]
 secsp = { path = "libsecsp" }
-atoms = "~2.2.3"
+symbolic_expressions = "~4.1.9"
 clap = "~2.26.0"

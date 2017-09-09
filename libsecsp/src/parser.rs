@@ -126,12 +126,12 @@ named!(pub if_else<Statement>,
         then_block: delimited!(char!('{'), statement_list, char!('}')) >>
         else_ifs: many0!(else_if) >>
         else_block: opt!(complete!(
-            do_parse!(
+            ws!(do_parse!(
                 tag!("else") >>
                 block: delimited!(char!('{'), statement_list, char!('}')) >>
 
                 (block)
-            )
+            ))
         )) >>
 
         (Statement::IfElse {

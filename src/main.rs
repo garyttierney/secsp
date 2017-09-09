@@ -8,18 +8,17 @@ use std::io::Read;
 use std::io::Write;
 use std::fs::File;
 
+
 mod compiler;
 mod decompiler;
 
 fn compile(input: &mut Box<Read>, output: &mut Box<Write>, print_ast: bool) {
     match secsp::parse(input) {
-        ParseResult::Ok(statements) => {
+        ParseResult::Ok(ref statements) => {
             if print_ast {
                 write!(output, "{:#?}", statements);
             } else {
-                for statement in &statements {
-                    compiler::show_statement(output, statement);
-                }
+                compiler::print(output, statements);
             }
         }
         ParseResult::Err(e) => panic!("{:?}", e),
