@@ -56,19 +56,23 @@ impl ToCil for Statement {
                 ref else_ifs,
                 ref else_block,
             } => {
-                let body_sexpr: Vec<Sexp> = then_block.iter().map(|s| s.into_sexp()).collect();
                 let mut statement_sexpr: Sexp = cil_list!["booleanif", condition.into_sexp()];
-                let mut branches: Sexp = cil_list!["true", body_sexpr];
-
-                if let Some(ref else_body) = *else_block {
-                    let else_block_sexpr: Vec<Sexp> =
-                        else_body.iter().map(|s| s.into_sexp()).collect();
-                    let else_branch: Sexp = cil_list!["false", else_block_sexpr];
-
-                    branches.push(else_branch);
+                let mut true_branch: Sexp = cil_list!["true"];
+                for stmt in then_block {
+                    true_branch.push(stmt.into_sexp());
                 }
 
-                statement_sexpr.push(branches);
+                statement_sexpr.push(true_branch);
+
+                if let Some(ref else_body) = *else_block {
+                    let mut else_branch: Sexp = cil_list!["false"];
+                    for stmt in else_body {
+                        else_branch.push(stmt.into_sexp());
+                    }
+
+                    statement_sexpr.push(else_branch);
+                }
+
                 statement_sexpr
             }
             _ => Sexp::Empty,
@@ -103,13 +107,17 @@ impl ToCil for Declaration {
                 ref name,
                 ref statements,
             } => {
-                let mut body: Vec<Sexp> = statements.iter().map(|it| it.into_sexp()).collect();
-
+                let mut statement: Sexp = cil_list![qualifier.into_sexp(), name];
                 if *is_abstract {
-                    body.insert(0, cil_list!["blockabstract", name]);
+                    let blockabstract_sexpr: Sexp = cil_list!["blockabstract", name];
+                    statement.push(blockabstract_sexpr);
                 }
 
-                cil_list![qualifier.into_sexp(), name, body]
+                for stmt in statements {
+                    statement.push(stmt.into_sexp());
+                }
+
+                statement
             }
             Declaration::Symbol {
                 ref qualifier,
@@ -133,10 +141,14 @@ impl ToCil for Declaration {
                 ref parameters,
                 ref statements,
             } => {
-                let body: Vec<Sexp> = statements.iter().map(|it| it.into_sexp()).collect();
                 let params: Vec<Sexp> = parameters.iter().map(|it| it.into_sexp()).collect();
+                let mut decl: Sexp = cil_list!["macro", name, params];
 
-                cil_list!["macro", name, params, body]
+                for stmt in statements {
+                    decl.push(stmt.into_sexp());
+                }
+
+                decl
             }
 
             _ => Sexp::Empty,
@@ -148,7 +160,7 @@ impl ToCil for Expr {
     fn into_sexp(&self) -> Sexp {
         match *self {
             Expr::Binary(ref lhs, ref op, ref rhs) => {
-                cil_list![cil!(lhs.as_ref()), cil!(op), cil!(rhs.as_ref())]
+                cil_list![cil!(op), cil!(lhs.as_ref()), cil!(rhs.as_ref())]
             }
             Expr::Unary(ref op, ref expr) => cil_list![cil!(op), cil!(expr.as_ref())],
             Expr::Variable(ref id) => id.into(),
