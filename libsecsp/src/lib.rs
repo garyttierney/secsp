@@ -10,10 +10,9 @@
 //! use secsp::*;
 //!
 //! let input = b"block abc{}";
-//! let parse_result = parse_from_slice(&input[..]);
-//! match parse_result.statements[0] {
-//!     Statement::Declaration(Declaration::Block { is_abstract, ref name, ref qualifier, ref statements }) => println!("Parsed block"),
-//!     _ => panic!("Didn't find a block!")
+//! match parse_from_slice(&input[..]) {
+//!     ParseResult::Ok(statements) => {},
+//!     _ => {}
 //! }
 //! ```
 
