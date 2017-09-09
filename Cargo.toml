@@ -1,5 +1,5 @@
 [package]
-name = "csp"
+name = "cspc"
 version = "0.1.0"
 authors = ["Gary Tierney <gary.tierney@gmx.com>"]
 description = "A C-style policy language for SELinux"
@@ -8,3 +8,5 @@ description = "A C-style policy language for SELinux"
 
 [dependencies]
 secsp = { path = "libsecsp" }
+atoms = "~2.2.3"
+clap = "~2.26.0"
