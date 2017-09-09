@@ -213,3 +213,40 @@ impl ToCil for UnaryOp {
         result.into()
     }
 }
+
+#[cfg(test)]
+mod testing {
+
+    use super::*;
+
+    #[test]
+    pub fn compile_block_decl() {
+        let decl = Declaration::Block {
+            is_abstract: false,
+            qualifier: BlockType::Block,
+            name: "my_block".to_string(),
+            statements: vec![],
+        };
+
+        let expected: Sexp = cil_list!["block", "my_block"];
+        let actual = decl.into_sexp();
+
+        assert_eq!(expected, actual);
+    }
+
+    #[test]
+    pub fn compile_abstract_block_decl() {
+        let decl = Declaration::Block {
+            is_abstract: true,
+            qualifier: BlockType::Block,
+            name: "my_block".to_string(),
+            statements: vec![],
+        };
+
+        let blockabstract: Sexp = cil_list!["blockabstract", "my_block"];
+        let expected: Sexp = cil_list!["block", "my_block", blockabstract];
+        let actual = decl.into_sexp();
+
+        assert_eq!(expected, actual);
+    }
+}
