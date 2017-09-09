@@ -125,7 +125,14 @@ named!(pub if_else<Statement>,
         condition: expr >>
         then_block: delimited!(char!('{'), statement_list, char!('}')) >>
         else_ifs: many0!(else_if) >>
-        else_block: opt!(complete!(do_parse!(tag!("else") >> block: delimited!(char!('{'), statement_list, char!('}')) >> (block)))) >>
+        else_block: opt!(complete!(
+            do_parse!(
+                tag!("else") >>
+                block: delimited!(char!('{'), statement_list, char!('}')) >>
+
+                (block)
+            )
+        )) >>
 
         (Statement::IfElse {
             condition,
@@ -140,9 +147,7 @@ named!(pub else_if<(Expr, Vec<Statement>)>,
     ws!(do_parse!(
         tag!("elseif") >>
         condition: expr >>
-        tag!("{") >>
-        then_block: statement_list >>
-        tag!("}") >>
+        then_block: delimited!(char!('{'), statement_list, char!('}')) >>
 
         (condition, then_block)
     ))

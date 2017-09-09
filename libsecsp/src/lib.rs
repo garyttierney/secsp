@@ -53,10 +53,11 @@ pub enum ParseResult {
 }
 
 
-pub fn parse<R: std::io::Read>(input: &mut R) -> ParseResult {
+pub fn parse<R: AsMut<std::io::Read>>(input: &mut R) -> ParseResult {
+    let source = input.as_mut();
     let mut buffer = vec![];
 
-    input.read_to_end(&mut buffer).unwrap();
+    source.read_to_end(&mut buffer).unwrap();
     parse_from_slice(&buffer)
 }
 
@@ -111,12 +112,13 @@ mod testing {
         let bytes = input.as_bytes();
         let result = parser(bytes);
 
-        if result.is_err() {
-            panic!("Parse error: {}", result.unwrap_err());
+        match result {
+           IResult::Done(remaining, output) => {
+               output
+           },
+           IResult::Incomplete(e) => panic!("{:?}", e),
+           IResult::Error(e) => panic!("{}", e),
+            _ => panic!("Invalid")
         }
-
-        let (remaining, output) = result.unwrap();
-
-        output
     }
 }

@@ -2,6 +2,8 @@
 extern crate clap;
 extern crate secsp;
 
+use secsp::ParseResult;
+
 use std::io::Read;
 use std::io::Write;
 use std::fs::File;
@@ -9,14 +11,23 @@ use std::fs::File;
 mod compiler;
 mod decompiler;
 
-fn compile(input: &mut Box<Read>, output: &mut Box<Write>) {
+fn compile(input: &mut Box<Read>, output: &mut Box<Write>, print_ast: bool) {
     match secsp::parse(input) {
-        secsp::ParseResult::Ok(statements) => {}
-        secsp::ParseResult::Err(e) => panic!("{:?}", e),
-        _ => {}
-    };
+        ParseResult::Ok(statements) => {
+            if print_ast {
+                write!(output, "{:#?}", statements);
+            } else {
+                for statement in &statements {
+                    compiler::show_statement(output, statement);
+                }
+            }
+        }
+        ParseResult::Err(e) => panic!("{:?}", e),
+        ParseResult::Incomplete(n) => panic!("{:?}", n),
+    }
 }
 
+fn decompile(input: &mut Box<Read>, output: &mut Box<Write>, print_ast: bool) {}
 
 fn main() {
     let opts = clap_app!(cspc =>
@@ -34,20 +45,12 @@ fn main() {
         None => Box::new(std::io::stdin()),
     };
 
-    match secsp::parse(&mut input) {
-        secsp::ParseResult::Ok(statements) => {
-            if opts.is_present("PRINT_AST") {
-                print!("{:#?}", statements);
-            } else {
-                let stdout = std::io::stdout();
-                let mut output_handle = stdout.lock();
+    let mut output: Box<Write> = Box::new(std::io::stdout());
+    let print_ast = opts.is_present("PRINT_AST");
 
-                for statement in &statements {
-                    compiler::show_statement(&mut output_handle, statement);
-                }
-            }
-        }
-        secsp::ParseResult::Err(err) => println!("{}", err.info),
-        _ => {}
+    if opts.is_present("DECOMPILE") {
+        decompile(&mut input, &mut output, print_ast);
+    } else {
+        compile(&mut input, &mut output, print_ast);
     }
 }

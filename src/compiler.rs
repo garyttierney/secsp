@@ -21,10 +21,51 @@ where
     match *stmt {
         Statement::Declaration(ref decl) => show_declaration(f, decl)?,
         Statement::MacroCall(ref id, ref parameters) => show_macro_call(f, id, parameters)?, 
+        Statement::IfElse {
+            ref condition,
+            ref then_block,
+            ref else_ifs,
+            ref else_block,
+        } => show_if_statement(f, condition, then_block, else_ifs, else_block)?,
         _ => {}
     };
 
     try!(write!(f, "\n"));
+
+    Ok(())
+}
+
+pub fn show_if_statement<F>(
+    f: &mut F,
+    condition: &Expr,
+    block: &Vec<Statement>,
+    else_ifs: &Vec<(Expr, Vec<Statement>)>,
+    else_block: &Option<Vec<Statement>>,
+) -> Result<(), IoError>
+where
+    F: Write,
+{
+    try!(write!(f, "(booleanif "));
+    show_expr(f, condition)?;
+    try!(write!(f, "\n(true \n"));
+
+    for statement in block {
+        show_statement(f, statement)?;
+    }
+
+    try!(write!(f, ")\n"));
+
+    if let Some(ref statements) = *else_block {
+        try!(write!(f, "(false \n"));
+
+        for statement in statements {
+            show_statement(f, statement)?;
+        }
+
+        try!(write!(f, ")\n"));
+    }
+
+    try!(write!(f, ")\n)"));
 
     Ok(())
 }
@@ -166,8 +207,50 @@ where
             ref sensitivity,
             ref categories,
         } => show_level_expr(f, sensitivity, categories.as_ref())?,
+        Expr::Binary(ref lhs, ref op, ref rhs) => {
+            show_binary_expr(f, lhs.as_ref(), op, rhs.as_ref())?
+        }
+        Expr::Unary(ref op, ref expr) => show_unary_expr(f, op, expr.as_ref())?,
         _ => {}
     };
+
+    Ok(())
+}
+
+pub fn show_unary_expr<F>(f: &mut F, op: &UnaryOp, expr: &Expr) -> Result<(), IoError>
+where
+    F: Write,
+{
+    try!(write!(f, "("));
+    let op_value = match *op {
+        UnaryOp::ConditionalNot => "not",
+        _ => "Unknown",
+    };
+
+    try!(write!(f, "{} ", op_value));
+    show_expr(f, expr)?;
+    try!(write!(f, ")"));
+
+    Ok(())
+}
+
+pub fn show_binary_expr<F>(f: &mut F, lhs: &Expr, op: &BinaryOp, rhs: &Expr) -> Result<(), IoError>
+where
+    F: Write,
+{
+    try!(write!(f, "("));
+    let op_value = match *op {
+        BinaryOp::ConditionalAnd => "and",
+        BinaryOp::ConditionalOr => "or",
+        BinaryOp::ConditionalXor => "xor",
+        _ => "Unknown",
+    };
+
+    try!(write!(f, "{} ", op_value));
+    show_expr(f, lhs)?;
+    try!(write!(f, " "));
+    show_expr(f, rhs)?;
+    try!(write!(f, ")"));
 
     Ok(())
 }
