@@ -2,49 +2,68 @@ use ast::*;
 use name::*;
 use security_attributes::*;
 
+
 named!(pub expr<&[u8], Expr>,
   alt_complete!(
     context
     | level_range 
     | category_range
-    // | binary_expr
-    | unary_expr
-    | variable
+    | logical_or_expr
   )
 );
 
-named!(pub binary_operator<&[u8], BinaryOp>,
-    alt!(
-        value!(BinaryOp::ConditionalAnd, tag!("&&")) |
-        value!(BinaryOp::ConditionalOr, tag!("||")) |
-        value!(BinaryOp::BitwiseAnd, char!('&')) |
-        value!(BinaryOp::BitwiseXor, char!('^')) |
-        value!(BinaryOp::BitwiseOr, char!('|'))
+macro_rules! binexp {
+  ($name:ident, $next: ident, $op:path, $tag:expr) => {
+    named!(pub $name<&[u8], Expr>,
+      ws!(do_parse!(
+        a: $next >>
+        n: alt!(
+          ws!(do_parse!(
+            tag!($tag) >>
+            b: $name >>
+            (Expr::Binary(Box::new(a.clone()), $op, Box::new(b)))
+          )) |
+          value!(a)
+        ) >>
+        (n)
+      ))
+    );
+  }
+}
+
+binexp!(
+    logical_or_expr,
+    logical_xor_expr,
+    BinaryOp::ConditionalOr,
+    "||"
+);
+
+binexp!(
+    logical_xor_expr,
+    logical_and_expr,
+    BinaryOp::ConditionalXor,
+    "^^"
+);
+
+binexp!(
+    logical_and_expr,
+    logical_not_expr,
+    BinaryOp::ConditionalAnd,
+    "&&"
+);
+
+named!(logical_not_expr<&[u8], Expr>,
+    ws!(
+        alt!(
+            do_parse!(
+                tag!("!") >>
+                expr: expr >>
+
+                (Expr::Unary(UnaryOp::ConditionalNot, Box::new(expr)))
+            ) |
+            primary_expr
+        )
     )
 );
 
-named!(pub binary_expr<&[u8], Expr>,
-    ws!(do_parse!(
-        lhs: expr >>
-        op: binary_operator >>
-        rhs: expr >>
-
-        (Expr::Binary(Box::new(lhs), op, Box::new(rhs)))
-    ))
-);
-
-named!(pub unary_operator<&[u8], UnaryOp>,
-    alt!(
-        value!(UnaryOp::ConditionalNot, char!('!')) |
-        value!(UnaryOp::BitwiseNot, char!('~'))
-    )
-);
-
-named!(pub unary_expr<&[u8], Expr>,
-    ws!(do_parse!(
-        op: unary_operator >>
-        expr: expr >>
-
-        (Expr::Unary(op, Box::new(expr)))
-    ))
-);
+named!(primary_expr<&[u8], Expr>, alt!(variable));

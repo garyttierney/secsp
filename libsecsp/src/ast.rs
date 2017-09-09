@@ -171,6 +171,7 @@ pub enum Expr {
 pub enum BinaryOp {
     ConditionalAnd,
     ConditionalOr,
+    ConditionalXor,
     BitwiseAnd,
     BitwiseOr,
     BitwiseXor,
