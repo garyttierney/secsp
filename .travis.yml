@@ -30,7 +30,8 @@ script:
       cargo test --all &&
       cargo bench --all &&
       cargo doc &&
-      ./tests/run.sh
+      export CSPC=target/release/cspc SEXP_CMP=target/release/sexp_cmp &&
+      ./smoke-tests.sh
 
 after_success:
 # measure code coverage and upload to coveralls.io

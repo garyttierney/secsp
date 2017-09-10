@@ -1,4 +1,5 @@
 /target/
+/test_out/
 /.vscode/
 **/*.rs.bk
 Cargo.lock
