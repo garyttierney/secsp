@@ -40,6 +40,71 @@ impl CilType for SymbolType {
     }
 }
 
+fn compile_if(condition: &Expr, block: &Vec<Statement>) -> Sexp {
+    let mut statement_sexpr: Sexp = cil_list!["booleanif", condition.into_sexp()];
+    let mut true_branch: Sexp = cil_list!["true"];
+
+    for stmt in block {
+        true_branch.push(stmt.into_sexp());
+    }
+
+    statement_sexpr.push(true_branch);
+    statement_sexpr
+}
+
+fn compile_if_else_if(
+    condition: &Expr,
+    block: &Vec<Statement>,
+    else_ifs: &Vec<(Expr, Vec<Statement>)>,
+    else_block: Option<&Vec<Statement>>,
+) -> Sexp {
+    let mut if_stmt = compile_if(condition, block);
+    let mut false_branch = cil_list!["false"];
+
+    let mut else_if_iter = else_ifs.into_iter().rev();
+    let mut last = match else_if_iter.next() {
+        Some(else_if) => {
+            let (ref expr, ref statements) = *else_if;
+            compile_if_else(expr, statements, else_block)
+        }
+        _ => panic!("compile_if_else_if called with no else_ifs"),
+    };
+
+    for else_if in else_if_iter {
+        let (ref condition, ref statements) = *else_if;
+
+        let mut stmt = compile_if(condition, statements);
+        let else_branch = cil_list!["false", last];
+        stmt.push(else_branch);
+
+        last = stmt;
+    }
+
+    false_branch.push(last);
+    if_stmt.push(false_branch);
+
+    if_stmt
+}
+
+fn compile_if_else(
+    condition: &Expr,
+    block: &Vec<Statement>,
+    else_block: Option<&Vec<Statement>>,
+) -> Sexp {
+    let mut if_stmt = compile_if(condition, block);
+
+    if let Some(statements) = else_block {
+        let mut false_branch = cil_list!["false"];
+
+        for stmt in statements {
+            false_branch.push(stmt.into_sexp());
+        }
+
+        if_stmt.push(false_branch);
+    }
+
+    if_stmt
+}
 
 impl ToCil for Statement {
     fn into_sexp(&self) -> Sexp {
@@ -57,26 +122,12 @@ impl ToCil for Statement {
                 ref else_ifs,
                 ref else_block,
             } => {
-                let mut statement_sexpr: Sexp = cil_list!["booleanif", condition.into_sexp()];
-                let mut true_branch: Sexp = cil_list!["true"];
-                for stmt in then_block {
-                    true_branch.push(stmt.into_sexp());
+                if else_ifs.is_empty() {
+                    compile_if_else(condition, then_block, else_block.as_ref())
+                } else {
+                    compile_if_else_if(condition, then_block, else_ifs, else_block.as_ref())
                 }
-
-                statement_sexpr.push(true_branch);
-
-                if let Some(ref else_body) = *else_block {
-                    let mut else_branch: Sexp = cil_list!["false"];
-                    for stmt in else_body {
-                        else_branch.push(stmt.into_sexp());
-                    }
-
-                    statement_sexpr.push(else_branch);
-                }
-
-                statement_sexpr
             }
-            _ => Sexp::Empty,
         }
     }
 }
@@ -156,6 +207,8 @@ impl ToCil for Declaration {
         }
     }
 }
+
+
 
 impl ToCil for Expr {
     fn into_sexp(&self) -> Sexp {
