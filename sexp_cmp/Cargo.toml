@@ -1,0 +1,7 @@
+[package]
+name = "sexp_cmp"
+version = "0.1.0"
+authors = ["Gary Tierney <gary.tierney@gmx.com>"]
+
+[dependencies]
+symbolic_expressions = "~4.1.9"

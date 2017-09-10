@@ -29,7 +29,8 @@ script:
       cargo build --all &&
       cargo test --all &&
       cargo bench --all &&
-      cargo doc 
+      cargo doc &&
+      ./tests/run.sh
 
 after_success:
 # measure code coverage and upload to coveralls.io

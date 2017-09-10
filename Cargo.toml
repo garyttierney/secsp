@@ -5,6 +5,10 @@ authors = ["Gary Tierney <gary.tierney@gmx.com>"]
 description = "A C-style policy language for SELinux"
 
 [workspace]
+members = [
+    "sexp_cmp",
+    "libsecsp"
+]
 
 [profile.release]
 debug = true
