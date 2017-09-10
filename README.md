@@ -4,6 +4,8 @@
 
 [![Build Status](https://travis-ci.org/garyttierney/rust-csp.svg?branch=master)](https://travis-ci.org/garyttierney/rust-csp)
 
+[![COPR Status](https://copr.fedorainfracloud.org/coprs/gtierney/cspc/package/cspc/status_image/last_build.png)](https://copr.fedorainfracloud.org/coprs/gtierney/cspc/)
+
 ## Introduction
 
 secsp is a C-style SELinux policy language for the High-Level Language Infrastructure.  It targets CIL, and takes inspiration from
