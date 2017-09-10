@@ -30,6 +30,9 @@ fn decompile(input: &mut Box<Read>, output: &mut Box<Write>, print_ast: bool) {}
 
 fn main() {
     let opts = clap_app!(cspc =>
+        (version: crate_version!())
+        (author: crate_authors!())
+        (about: "Compiles C-style policy to CIL")
         (@arg DECOMPILE: -d --decompile "Decompile CIL sources into equivalent CSP")
         (@arg PRINT_AST: -s --show_ast "Print the parsed AST to stdout")
         (@arg INPUT: -f --file +takes_value "Sets the input file to use")
