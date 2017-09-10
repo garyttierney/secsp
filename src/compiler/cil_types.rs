@@ -128,6 +128,27 @@ impl ToCil for Statement {
                     compile_if_else_if(condition, then_block, else_ifs, else_block.as_ref())
                 }
             }
+            Statement::AccessVectorRule {
+                ref rule_type,
+                ref source,
+                ref target,
+                ref access_vector,
+            } => {
+                let mut rule_sexp =
+                    cil_list![rule_type.to_cil(), source.into_sexp(), target.into_sexp()];
+
+                match *access_vector {
+                    AccessVector::Permission(ref expr) => {
+                        rule_sexp.push(expr.into_sexp());
+                    }
+                    AccessVector::ClassAndPermissions(ref class, ref expr) => {
+                        rule_sexp.push(cil_list![class.into_sexp(), expr.into_sexp()]);
+                    }
+                }
+
+                rule_sexp
+            }
+            _ => Sexp::Empty,
         }
     }
 }
@@ -218,6 +239,15 @@ impl ToCil for Expr {
             }
             Expr::Unary(ref op, ref expr) => cil_list![cil!(op), cil!(expr.as_ref())],
             Expr::Variable(ref id) => id.into(),
+            Expr::VariableList(ref list) => {
+                let mut list_sexpr = cil_list![];
+
+                for identifier in list {
+                    list_sexpr.push(identifier);
+                }
+
+                list_sexpr
+            }
             Expr::LevelRange(ref low, ref high) => cil_list![cil!(low), cil!(high)],
             Expr::Level {
                 ref sensitivity,
@@ -387,6 +417,53 @@ mod testing {
         let expected = cil_list!["context", "my_context", cil_list!["user", "role", "type"]];
         let actual = input.into_sexp();
 
+        assert_eq!(expected, actual);
+    }
+
+    #[test]
+    pub fn compile_access_vector_rule() {
+        let input = Statement::AccessVectorRule {
+            rule_type: AllowRuleType::Allow,
+            source: Expr::var("src"),
+            target: Expr::var("target"),
+            access_vector: AccessVector::Permission(Expr::var("permission_set")),
+        };
+
+        let expected = cil_list!["allow", "src", "target", "permission_set"];
+        let actual = input.into_sexp();
+
+        assert_eq!(expected, actual);
+    }
+
+    #[test]
+    pub fn compile_access_vector_rule_anonymous_perms() {
+        let input = Statement::AccessVectorRule {
+            rule_type: AllowRuleType::DontAudit,
+            source: Expr::var("src"),
+            target: Expr::var("target"),
+            access_vector: AccessVector::ClassAndPermissions(
+                Expr::var("security_class"),
+                Expr::Binary(
+                    Box::from(Expr::VariableList(
+                        vec!["perm1".to_string(), "perm2".to_string()],
+                    )),
+                    BinaryOp::BitwiseOr,
+                    Box::from(Expr::VariableList(
+                        vec!["perm3".to_string(), "perm4".to_string()],
+                    )),
+                ),
+            ),
+        };
+
+        let expected =
+            cil_list![
+            "dontaudit",
+            "src",
+            "target",
+            cil_list!["security_class", cil_list!["or", cil_list!["perm1", "perm2"], cil_list!["perm3", "perm4"]]],
+        ];
+
+        let actual = input.into_sexp();
         assert_eq!(expected, actual);
     }
 }

@@ -28,6 +28,7 @@ pub use ast::*;
 mod expr;
 mod name;
 mod security_attributes;
+mod type_enforcement;
 mod parser;
 
 use nom::{Err as NomErr, ErrorKind, IResult, Needed};

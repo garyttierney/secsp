@@ -18,7 +18,7 @@ fn compile(input: &mut Box<Read>, output: &mut Box<Write>, print_ast: bool) {
             if print_ast {
                 write!(output, "{:#?}", statements);
             } else {
-                compiler::print(output, statements);
+                compiler::emit(output, statements);
             }
         }
         ParseResult::Err(e) => panic!("{:?}", e),

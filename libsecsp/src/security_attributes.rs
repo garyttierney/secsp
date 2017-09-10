@@ -20,7 +20,7 @@ named!(level_or_id<&[u8], Expr>, alt_complete!(level | variable));
 
 named!(pub level_range<&[u8], Expr>,
     ws!(do_parse!(
-        range: separated_pair!(level_or_id, eat_separator!(&b"-"[..]), level_or_id) >>
+        range: separated_pair!(level_or_id, tag!("-"), level_or_id) >>
 
         (Expr::LevelRange(
             Box::new(range.0), Box::new(range.1)
@@ -32,7 +32,7 @@ named!(category_range_or_id<&[u8], Expr>, alt_complete!(category_range | variabl
 
 named!(pub category_range<&[u8], Expr>,
     ws!(do_parse!(
-        range: separated_pair!(identifier, eat_separator!(&b"."[..]), identifier) >>
+        range: separated_pair!(identifier, tag!("."), identifier) >>
 
         (Expr::CategoryRange(
             range.0, range.1

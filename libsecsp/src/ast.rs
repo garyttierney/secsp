@@ -113,6 +113,47 @@ impl TypeSpecifier for SymbolType {
     }
 }
 
+#[derive(Clone, Debug, PartialEq)]
+pub enum AllowRuleType {
+    Allow,
+    NeverAllow,
+    AuditAllow,
+    DontAudit,
+}
+
+impl TypeSpecifier for AllowRuleType {
+    fn from(value: &str) -> Option<Self> {
+        use self::AllowRuleType::*;
+
+        let spec = match value {
+            "allow" => Allow,
+            "auditallow" => AuditAllow,
+            "dontaudit" => DontAudit,
+            "neverallow" => NeverAllow,
+            _ => return None,
+        };
+
+        Some(spec)
+    }
+
+    fn to_cil(&self) -> &'static str {
+        use self::AllowRuleType::*;
+
+        match *self {
+            Allow => "allow",
+            AuditAllow => "auditallow",
+            DontAudit => "dontaudit",
+            NeverAllow => "neverallow",
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum AccessVector {
+    Permission(Expr),
+    ClassAndPermissions(Expr, Expr),
+}
+
 /// Simple statement.
 #[derive(Clone, Debug, PartialEq)]
 pub enum Statement {
@@ -124,6 +165,12 @@ pub enum Statement {
         then_block: Vec<Statement>,
         else_ifs: Vec<(Expr, Vec<Statement>)>,
         else_block: Option<Vec<Statement>>,
+    },
+    AccessVectorRule {
+        rule_type: AllowRuleType,
+        source: Expr,
+        target: Expr,
+        access_vector: AccessVector,
     },
 }
 
@@ -151,6 +198,7 @@ pub enum Declaration {
 #[derive(Clone, Debug, PartialEq)]
 pub enum Expr {
     Variable(Identifier),
+    VariableList(Vec<Identifier>),
     Level {
         sensitivity: Identifier,
         categories: Box<Expr>,

@@ -1,11 +1,12 @@
 use ast::*;
 use name::*;
 use expr::*;
+use type_enforcement::*;
 
 /// Parse a declaration as a statement.
 named!(pub statement<&[u8], Statement>,
     alt!(
-        map!(declaration, Statement::Declaration) | macro_call | if_else
+        map!(declaration, Statement::Declaration) | macro_call | if_else | allow_rule
     )
 );
 
