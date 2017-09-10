@@ -1,4 +1,4 @@
-//! Parser for SELinux security attributes, and abstractions new to the CIL framework.
+//! Parser for `SELinux` security attributes, and abstractions new to the CIL framework.
 
 use ast::*;
 use name::*;
@@ -53,7 +53,7 @@ named!(pub context<&[u8], Expr>,
         user_id, 
         role_id,
         type_id,
-        level_range: level_range.map(|v| Box::new(v))
+        level_range: level_range.map(Box::new)
       })
   ))
 );

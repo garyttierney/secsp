@@ -12,7 +12,7 @@ use std::fs::File;
 mod compiler;
 mod decompiler;
 
-fn compile(input: &mut Box<Read>, output: &mut Box<Write>, print_ast: bool) {
+fn compile<I: Read, O: Write>(input: &mut I, output: &mut O, print_ast: bool) {
     match secsp::parse(input) {
         ParseResult::Ok(ref statements) => {
             if print_ast {
@@ -26,7 +26,7 @@ fn compile(input: &mut Box<Read>, output: &mut Box<Write>, print_ast: bool) {
     }
 }
 
-fn decompile(input: &mut Box<Read>, output: &mut Box<Write>, print_ast: bool) {}
+fn decompile<I: Read, O: Write>(input: &mut I, output: &mut O, print_ast: bool) {}
 
 fn main() {
     let opts = clap_app!(cspc =>

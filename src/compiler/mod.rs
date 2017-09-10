@@ -10,7 +10,7 @@ use std::io::Write;
 mod cil_formatter;
 mod cil_types;
 
-pub fn emit<F>(out: &mut F, statements: &Vec<Statement>) -> Result<(), Error>
+pub fn emit<F>(out: &mut F, statements: &[Statement]) -> Result<(), Error>
 where
     F: Write,
 {

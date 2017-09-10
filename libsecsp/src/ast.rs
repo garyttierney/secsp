@@ -168,9 +168,9 @@ pub enum Statement {
     },
     AccessVectorRule {
         rule_type: AllowRuleType,
-        source: Expr,
-        target: Expr,
-        access_vector: AccessVector,
+        source: Box<Expr>,
+        target: Box<Expr>,
+        access_vector: Box<AccessVector>,
     },
 }
 

@@ -1,4 +1,4 @@
-//! Parser for SELinux type-enforcement statements.
+//! Parser for `SELinux` type-enforcement statements.
 
 use ast::*;
 use expr::*;
@@ -12,7 +12,7 @@ named!(pub access_vector<&[u8], AccessVector>,
 
             (AccessVector::ClassAndPermissions(security_class, permissions))
         ))  |
-        map!(expr, |v| AccessVector::Permission(v))
+        map!(expr, AccessVector::Permission)
     )
 );
 
@@ -27,9 +27,9 @@ named!(pub allow_rule<&[u8], Statement>,
 
         (Statement::AccessVectorRule {
             rule_type,
-            source,
-            target,
-            access_vector
+            source: Box::from(source),
+            target: Box::from(target),
+            access_vector: Box::from(access_vector),
         })
     ))
 );
@@ -43,9 +43,9 @@ mod testing {
     pub fn parse_allow_rule() {
         let expected = Statement::AccessVectorRule {
             rule_type: AllowRuleType::Allow,
-            source: Expr::var("a"),
-            target: Expr::var("b"),
-            access_vector: AccessVector::Permission(Expr::var("c")),
+            source: Box::from(Expr::var("a")),
+            target: Box::from(Expr::var("b")),
+            access_vector: Box::from(AccessVector::Permission(Expr::var("c"))),
         };
 
         let actual = parse::<Statement, _>("allow a b : c;", allow_rule);
@@ -56,13 +56,13 @@ mod testing {
     pub fn parse_dontaudit_rule_with_permission_sets() {
         let expected = Statement::AccessVectorRule {
             rule_type: AllowRuleType::DontAudit,
-            source: Expr::var("a"),
-            target: Expr::var("b"),
-            access_vector: AccessVector::Permission(Expr::Binary(
+            source: Box::from(Expr::var("a")),
+            target: Box::from(Expr::var("b")),
+            access_vector: Box::from(AccessVector::Permission(Expr::Binary(
                 Box::from(Expr::var("permission_set_1")),
                 BinaryOp::BitwiseAnd,
                 Box::from(Expr::var("permission_set_2")),
-            )),
+            ))),
         };
 
         let actual = parse::<Statement, _>(
@@ -76,16 +76,16 @@ mod testing {
     pub fn parse_allow_rule_with_class_and_permisisons() {
         let expected = Statement::AccessVectorRule {
             rule_type: AllowRuleType::AuditAllow,
-            source: Expr::var("a"),
-            target: Expr::var("b"),
-            access_vector: AccessVector::ClassAndPermissions(
+            source: Box::from(Expr::var("a")),
+            target: Box::from(Expr::var("b")),
+            access_vector: Box::from(AccessVector::ClassAndPermissions(
                 Expr::var("class"),
                 Expr::Binary(
                     Box::from(Expr::var("permission1")),
                     BinaryOp::BitwiseOr,
                     Box::from(Expr::var("permission2")),
                 ),
-            ),
+            )),
         };
 
         let actual = parse::<Statement, _>(

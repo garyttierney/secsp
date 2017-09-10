@@ -40,7 +40,7 @@ impl CilType for SymbolType {
     }
 }
 
-fn compile_if(condition: &Expr, block: &Vec<Statement>) -> Sexp {
+fn compile_if(condition: &Expr, block: &[Statement]) -> Sexp {
     let mut statement_sexpr: Sexp = cil_list!["booleanif", condition.into_sexp()];
     let mut true_branch: Sexp = cil_list!["true"];
 
@@ -54,8 +54,8 @@ fn compile_if(condition: &Expr, block: &Vec<Statement>) -> Sexp {
 
 fn compile_if_else_if(
     condition: &Expr,
-    block: &Vec<Statement>,
-    else_ifs: &Vec<(Expr, Vec<Statement>)>,
+    block: &[Statement],
+    else_ifs: &[(Expr, Vec<Statement>)],
     else_block: Option<&Vec<Statement>>,
 ) -> Sexp {
     let mut if_stmt = compile_if(condition, block);
@@ -88,7 +88,7 @@ fn compile_if_else_if(
 
 fn compile_if_else(
     condition: &Expr,
-    block: &Vec<Statement>,
+    block: &[Statement],
     else_block: Option<&Vec<Statement>>,
 ) -> Sexp {
     let mut if_stmt = compile_if(condition, block);
@@ -111,8 +111,7 @@ impl ToCil for Statement {
         match *self {
             Statement::Declaration(ref decl) => decl.into_sexp(),
             Statement::MacroCall(ref id, ref params) => {
-                let params_sexpr: Vec<Sexp> =
-                    params.iter().map(|ref p: &Expr| p.into_sexp()).collect();
+                let params_sexpr: Vec<Sexp> = params.iter().map(|p: &Expr| p.into_sexp()).collect();
 
                 cil_list!["call", id, params_sexpr]
             }
@@ -137,7 +136,7 @@ impl ToCil for Statement {
                 let mut rule_sexp =
                     cil_list![rule_type.to_cil(), source.into_sexp(), target.into_sexp()];
 
-                match *access_vector {
+                match *access_vector.as_ref() {
                     AccessVector::Permission(ref expr) => {
                         rule_sexp.push(expr.into_sexp());
                     }

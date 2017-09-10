@@ -54,11 +54,10 @@ pub enum ParseResult {
 }
 
 
-pub fn parse<R: AsMut<std::io::Read>>(input: &mut R) -> ParseResult {
-    let source = input.as_mut();
+pub fn parse<R: std::io::Read>(input: &mut R) -> ParseResult {
     let mut buffer = vec![];
 
-    source.read_to_end(&mut buffer).unwrap();
+    input.read_to_end(&mut buffer).unwrap();
     parse_from_slice(&buffer)
 }
 
