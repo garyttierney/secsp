@@ -172,6 +172,11 @@ pub enum Statement {
         target: Box<Expr>,
         access_vector: Box<AccessVector>,
     },
+    SetModifier {
+        name: Identifier,
+        cast: SymbolType,
+        expr: Box<Expr>,
+    },
 }
 
 /// A declaration statement.

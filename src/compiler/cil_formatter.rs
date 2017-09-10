@@ -53,19 +53,19 @@ impl Formatter for CilFormatter {
     where
         W: Write,
     {
-        writer.write_all(b"\n(").map_err(From::from)
+        write!(writer, "(\n").map_err(From::from)
     }
     fn element<W>(&mut self, writer: &mut W, _value: &Sexp) -> Result<(), Error>
     where
         W: Write,
     {
-        writer.write_all(b" ").map_err(From::from)
+        write!(writer, " ").map_err(From::from)
     }
 
     fn close<W>(&mut self, writer: &mut W) -> Result<(), Error>
     where
         W: Write,
     {
-        writer.write_all(b")\n").map_err(From::from)
+        write!(writer, ")\n").map_err(From::from)
     }
 }

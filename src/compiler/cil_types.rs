@@ -147,6 +147,20 @@ impl ToCil for Statement {
 
                 rule_sexp
             }
+            Statement::SetModifier {
+                ref name,
+                ref cast,
+                ref expr,
+            } => {
+                let modifier_type = match *cast {
+                    SymbolType::Type => "typeattributeset",
+                    SymbolType::User => "userattributeset",
+                    SymbolType::Role => "roleattributeset",
+                    _ => panic!("Modifier found with invalid cast"),
+                };
+
+                cil_list![modifier_type, name, expr.into_sexp()]
+            }
             _ => Sexp::Empty,
         }
     }
@@ -459,6 +473,14 @@ mod testing {
         let actual = parse_and_compile_stmt(
             "dontaudit src target : security_class ((perm1 perm2) | (perm3 perm4));",
         );
+
+        assert_eq!(expected, actual);
+    }
+
+    #[test]
+    pub fn compile_type_set_modifier() {
+        let expected = cil_list!["typeattributeset", "my_attribute", "my_type"];
+        let actual = parse_and_compile_stmt("my_attribute |= (type) my_type;");
 
         assert_eq!(expected, actual);
     }

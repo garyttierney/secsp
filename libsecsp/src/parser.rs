@@ -6,12 +6,28 @@ use type_enforcement::*;
 /// Parse a declaration as a statement.
 named!(pub statement<&[u8], Statement>,
     alt!(
-        map!(declaration, Statement::Declaration) | macro_call | if_else | allow_rule
+        map!(declaration, Statement::Declaration) | macro_call | if_else | allow_rule | set_modifier
     )
 );
 
 // Parse a list of 0 or more statements.
 named!(pub statement_list<&[u8], Vec<Statement>>, many0!(statement));
+
+named!(pub set_modifier<&[u8], Statement>,
+    ws!(do_parse!(
+        name: identifier >>
+        tag!("|=") >>
+        cast: delimited!(char!('('), type_specifier, char!(')')) >>
+        expr: expr >>
+        tag!(";") >>
+
+        (Statement::SetModifier{
+            name,
+            cast,
+            expr: Box::from(expr)
+        })
+    ))
+);
 
 /// Parse either a block or symbol declaration.
 named!(pub declaration<&[u8], Declaration>,
@@ -329,5 +345,17 @@ mod tests {
             }
             _ => panic!("Invalid value parsed"),
         }
+    }
+
+    #[test]
+    pub fn parse_set_modifier_stmt() {
+        let result = parse::<Statement, _>("my_attrib |= (type) my_type;", set_modifier);
+        let expected = Statement::SetModifier {
+            name: "my_attrib".to_string(),
+            cast: SymbolType::Type,
+            expr: Box::from(Expr::var("my_type")),
+        };
+
+        assert_eq!(expected, result);
     }
 }
