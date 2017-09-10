@@ -179,11 +179,18 @@ impl ToCil for Declaration {
                 ref qualifier,
                 ref name,
                 ref statements,
+                ref extends,
             } => {
                 let mut statement: Sexp = cil_list![qualifier.into_sexp(), name];
                 if *is_abstract {
                     let blockabstract_sexpr: Sexp = cil_list!["blockabstract", name];
                     statement.push(blockabstract_sexpr);
+                }
+
+                if let Some(ref extends_list) = *extends {
+                    for id in extends_list {
+                        statement.push(cil_list!["blockinherit", id]);
+                    }
                 }
 
                 for stmt in statements {
@@ -330,6 +337,22 @@ mod testing {
     }
 
     #[test]
+    pub fn compile_block_decl_with_extends() {
+        let expected =
+            cil_list![
+            "block",
+            "my_block",
+            cil_list!["blockinherit", "my_other_block"],
+            cil_list!["blockinherit", "my_other_other_block"],
+        ];
+        let actual = parse_and_compile_stmt(
+            "block my_block extends my_other_block, my_other_other_block {}",
+        );
+
+        assert_eq!(expected, actual);
+    }
+
+    #[test]
     pub fn compile_if_else() {
         let expected =
             cil_list![
@@ -377,7 +400,7 @@ mod testing {
 
     #[test]
     pub fn compile_access_vector_rule_anonymous_perms() {
-       let expected =
+        let expected =
             cil_list![
             "dontaudit",
             "src",

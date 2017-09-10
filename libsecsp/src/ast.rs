@@ -182,6 +182,7 @@ pub enum Declaration {
         qualifier: BlockType,
         name: Identifier,
         statements: Vec<Statement>,
+        extends: Option<Vec<Identifier>>,
     },
     Macro {
         name: Identifier,

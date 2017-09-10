@@ -41,6 +41,20 @@ named!(pub block_declaration<&[u8], Declaration>,
         is_abstract: opt!(tag!("abstract")) >>
         qualifier: type_specifier >>
         name: identifier >>
+        extends: opt!(complete!(
+            ws!(do_parse!(
+                 tag!("extends") >>
+                 first: identifier >>
+                 rest: many0!(ws!(do_parse!(char!(',') >> id: identifier >> (id)))) >>
+
+                 ({
+                     let mut extends_list = rest.clone();
+                     extends_list.insert(0, first);
+
+                     extends_list
+                 })
+            ))
+        )) >>
         char!('{') >>
         statements: many0!(statement) >>
         char!('}') >>
@@ -49,7 +63,8 @@ named!(pub block_declaration<&[u8], Declaration>,
             is_abstract: is_abstract.is_some(),
             qualifier,
             name,
-            statements
+            statements,
+            extends
         })
     ))
 );
@@ -187,6 +202,20 @@ mod tests {
             Declaration::Block { is_abstract, .. } => assert_eq!(true, is_abstract),
             _ => panic!("Invalid value"),
         }
+    }
+
+    #[test]
+    pub fn parse_block_decl_with_extends() {
+        let result = parse::<Declaration, _>("block abc extends a, b {}", block_declaration);
+        let expected = Declaration::Block {
+            name: "abc".to_string(),
+            qualifier: BlockType::Block,
+            is_abstract: false,
+            statements: vec![],
+            extends: Some(vec!["a".to_string(), "b".to_string()]),
+        };
+
+        assert_eq!(expected, result);
     }
 
     #[test]
