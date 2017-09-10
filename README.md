@@ -43,8 +43,8 @@ However, there is a lot still to be implemented.  A partially complete list of t
    * [ ] Attributes
    * [ ] Class permissions
    * [ ] Classes
-* [ ] Structural
-   * [ ] Block inheritance
+* [x] Structural
+   * [x] Block inheritance
    * [x] Abstract blocks
    * [x] If-else-if-else statements
 
@@ -65,10 +65,28 @@ secsp can be built by using the Cargo packaging utility.
 > $ cargo build --release
 ```
 
-## Running
+## Usage
 
-The compiler can be ran by invoking the built executable and passing a CSP source file in through `stdin`.
+### Running `cspc` directly
 
-```shell
-> $ target/release/csp < examples/block_with_macros.csp
 ```
+USAGE:
+    cspc [FLAGS] [OPTIONS]
+
+FLAGS:
+    -d, --decompile    Decompile CIL sources into equivalent CSP
+    -s, --show_ast     Print the parsed AST to stdout
+    -h, --help         Prints help information
+    -V, --version      Prints version information
+
+OPTIONS:
+    -f, --file <INPUT>    Sets the input file to use
+```
+
+If no options are given, `cspc` will attempt to compile input from `stdin`.
+
+### Using semodule
+
+`semodule` allows policy compilers to be placed under `/usr/libexec/selinux/hll/` so the compiler can find them.  If using the built package from the copr repository above a symlink from `/usr/bin/cspc` to `/usr/libexec/selinux/hll/csp` will exist, allowing semodule to import policy files suffixed with `.csp`.
+
+To import one of these files into the policy store run `semodule -i myfile.csp`.  *NOTE*: this isn't recommended at the moment given `cspc` is in an experimental state.
