@@ -375,9 +375,58 @@ mod testing {
     }
 
     #[test]
+    pub fn compile_if_else_if() {
+        let expected =
+            cil_list![
+                "booleanif",
+                cil_list!["and", "a", "b"],
+                cil_list!["true"],
+                cil_list![
+                    "false",
+                    cil_list!["booleanif", "c", cil_list!["true"], cil_list!["false"]],
+                ],
+            ];
+
+        let actual = parse_and_compile_stmt(
+            "
+            if a && b {
+
+            } elseif c {
+
+            } else {
+
+            }
+        ",
+        );
+
+        assert_eq!(expected, actual);
+    }
+
+    #[test]
     pub fn compile_macro_call() {
         let expected = cil_list!["call", "my_macro", cil_list!["a"]];
         let actual = parse_and_compile_stmt("my_macro(a);");
+
+        assert_eq!(expected, actual);
+    }
+
+    #[test]
+    pub fn compile_macro_decl() {
+        let expected =
+            cil_list![
+            "macro",
+            "my_macro",
+            cil_list![cil_list!["type", "my_type"]],
+            cil_list!["type", "my_other_type"],
+        ];
+
+        let actual = parse_and_compile_stmt(
+            "
+            macro my_macro (type my_type) {
+                type my_other_type;
+            }
+        ",
+        );
 
         assert_eq!(expected, actual);
     }
