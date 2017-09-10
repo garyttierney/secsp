@@ -6,6 +6,9 @@ description = "A C-style policy language for SELinux"
 
 [workspace]
 
+[profile.release]
+debug = true
+
 [dependencies]
 secsp = { path = "libsecsp" }
 symbolic_expressions = "~4.1.9"
