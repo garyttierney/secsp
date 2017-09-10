@@ -302,83 +302,35 @@ impl ToCil for UnaryOp {
 mod testing {
 
     use super::*;
+    use secsp;
+
+    pub fn parse_and_compile_stmt(input: &str) -> Sexp {
+        let stmt = match secsp::parse_from_slice(input.as_bytes()) {
+            secsp::ParseResult::Ok(stmts) => stmts[0].clone(),
+            _ => panic!("Unable to parse"),
+        };
+
+        stmt.into_sexp()
+    }
 
     #[test]
     pub fn compile_block_decl() {
-        let decl = Declaration::Block {
-            is_abstract: false,
-            qualifier: BlockType::Block,
-            name: "my_block".to_string(),
-            statements: vec![],
-        };
-
         let expected: Sexp = cil_list!["block", "my_block"];
-        let actual = decl.into_sexp();
+        let actual = parse_and_compile_stmt("block my_block {}");
 
         assert_eq!(expected, actual);
     }
 
     #[test]
     pub fn compile_abstract_block_decl() {
-        let decl = Declaration::Block {
-            is_abstract: true,
-            qualifier: BlockType::Block,
-            name: "my_block".to_string(),
-            statements: vec![],
-        };
-
-        let blockabstract: Sexp = cil_list!["blockabstract", "my_block"];
-        let expected: Sexp = cil_list!["block", "my_block", blockabstract];
-        let actual = decl.into_sexp();
+        let expected: Sexp = cil_list!["block", "my_block", cil_list!["blockabstract", "my_block"]];
+        let actual = parse_and_compile_stmt("abstract block my_block {}");
 
         assert_eq!(expected, actual);
     }
 
     #[test]
-    pub fn compile_conditional_exprs() {
-        let inputs = vec![
-            Expr::Binary(
-                Box::from(Expr::var("a")),
-                BinaryOp::ConditionalAnd,
-                Box::from(Expr::Unary(
-                    UnaryOp::ConditionalNot,
-                    Box::from(Expr::var("b")),
-                ))
-            ),
-            Expr::Binary(
-                Box::from(Expr::var("a")),
-                BinaryOp::ConditionalOr,
-                Box::from(Expr::Binary(
-                    Box::from(Expr::var("b")),
-                    BinaryOp::ConditionalXor,
-                    Box::from(Expr::var("c")),
-                ))
-            ),
-        ];
-
-        let expectations = vec![
-            cil_list!["and", "a", cil_list!["not", "b"]],
-            cil_list!["or", "a", cil_list!["xor", "b", "c"]],
-        ];
-
-        for id in 0..inputs.len() {
-            let input = &inputs[0];
-            let expected = &expectations[0];
-            let actual = input.into_sexp();
-
-            assert_eq!(expected, &actual);
-        }
-    }
-
-    #[test]
     pub fn compile_if_else() {
-        let input = Statement::IfElse {
-            condition: Expr::var("my_bool"),
-            then_block: vec![],
-            else_ifs: vec![],
-            else_block: Some(vec![]),
-        };
-
         let expected =
             cil_list![
             "booleanif",
@@ -387,75 +339,45 @@ mod testing {
             cil_list!["false"],
         ];
 
-        let actual = input.into_sexp();
+        let actual = parse_and_compile_stmt(
+            "
+           if (my_bool) {
+
+           } else {
+
+           }",
+        );
+
         assert_eq!(expected, actual);
     }
 
     #[test]
     pub fn compile_macro_call() {
-        let input = Statement::MacroCall("my_macro".to_string(), vec![Expr::var("a")]);
-
         let expected = cil_list!["call", "my_macro", cil_list!["a"]];
-        let actual = input.into_sexp();
+        let actual = parse_and_compile_stmt("my_macro(a);");
 
         assert_eq!(expected, actual);
     }
 
     #[test]
     pub fn compile_context_decl() {
-        let input = Declaration::Symbol {
-            qualifier: SymbolType::Context,
-            name: "my_context".to_string(),
-            initializer: Some(Expr::Context {
-                user_id: "user".to_string(),
-                type_id: "type".to_string(),
-                role_id: "role".to_string(),
-                level_range: None,
-            }),
-        };
-
         let expected = cil_list!["context", "my_context", cil_list!["user", "role", "type"]];
-        let actual = input.into_sexp();
+        let actual = parse_and_compile_stmt("context my_context = user:role:type;");
 
         assert_eq!(expected, actual);
     }
 
     #[test]
     pub fn compile_access_vector_rule() {
-        let input = Statement::AccessVectorRule {
-            rule_type: AllowRuleType::Allow,
-            source: Expr::var("src"),
-            target: Expr::var("target"),
-            access_vector: AccessVector::Permission(Expr::var("permission_set")),
-        };
-
         let expected = cil_list!["allow", "src", "target", "permission_set"];
-        let actual = input.into_sexp();
+        let actual = parse_and_compile_stmt("allow src target : permission_set;");
 
         assert_eq!(expected, actual);
     }
 
     #[test]
     pub fn compile_access_vector_rule_anonymous_perms() {
-        let input = Statement::AccessVectorRule {
-            rule_type: AllowRuleType::DontAudit,
-            source: Expr::var("src"),
-            target: Expr::var("target"),
-            access_vector: AccessVector::ClassAndPermissions(
-                Expr::var("security_class"),
-                Expr::Binary(
-                    Box::from(Expr::VariableList(
-                        vec!["perm1".to_string(), "perm2".to_string()],
-                    )),
-                    BinaryOp::BitwiseOr,
-                    Box::from(Expr::VariableList(
-                        vec!["perm3".to_string(), "perm4".to_string()],
-                    )),
-                ),
-            ),
-        };
-
-        let expected =
+       let expected =
             cil_list![
             "dontaudit",
             "src",
@@ -463,7 +385,10 @@ mod testing {
             cil_list!["security_class", cil_list!["or", cil_list!["perm1", "perm2"], cil_list!["perm3", "perm4"]]],
         ];
 
-        let actual = input.into_sexp();
+        let actual = parse_and_compile_stmt(
+            "dontaudit src target : security_class ((perm1 perm2) | (perm3 perm4));",
+        );
+
         assert_eq!(expected, actual);
     }
 }
