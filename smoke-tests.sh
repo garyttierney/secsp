@@ -3,6 +3,13 @@
 set -e
 
 SCRIPTPATH=`pwd`
+echo "$SCRIPTPATH"
+ls "$SCRIPTPATH" "$SCRIPTPATH/target" $SCRIPTPATH/target/*
+
+if [ -f "$SCRIPTPATH/smoke-tests.sh" ]; then
+    echo "Smoke-tests.sh exists"
+fi
+
 if [ -z "$CSPC" ]; then 
     CSPC="$SCRIPTPATH/target/debug/cspc"
 fi
