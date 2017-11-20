@@ -10,7 +10,20 @@ fn is_identifier(c: u8) -> bool {
 
 named!(identifier_raw <&[u8], &[u8]>, take_while1!(is_identifier));
 named!(pub identifier <&[u8], Identifier>, map!(identifier_raw, |bytes: &[u8]| String::from_utf8(bytes.to_vec()).unwrap()));
-named!(pub string_literal <&[u8], String>, map!(delimited!(tag!("\""), is_not!("\""), tag!("\"")), |bytes: &[u8]| String::from_utf8(bytes.to_vec()).unwrap()));
+
+
+named!(pub string_literal<&[u8], String>,
+       map!(
+           delimited!(
+               tag!("\""),
+               escaped!(is_not!("\n\"\\"), '\\', escape_code),
+               tag!("\"")
+            ),
+            |bytes: &[u8]| String::from_utf8(bytes.to_vec()).unwrap()
+       )
+);
+
+named!(escape_code<char>, one_of!("\'\"\\\n0123456789abfnrtuvxz"));
 
 /// Match an `identifier` against a built-in type specifier, returning
 /// an error if there is no match.

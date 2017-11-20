@@ -32,7 +32,7 @@ named!(category_range_or_id<&[u8], Expr>, alt_complete!(category_range | variabl
 
 named!(pub category_range<&[u8], Expr>,
     ws!(do_parse!(
-        range: separated_pair!(identifier, tag!("."), identifier) >>
+        range: separated_pair!(identifier, char!('.'), identifier) >>
 
         (Expr::CategoryRange(
             range.0, range.1

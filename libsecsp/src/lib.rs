@@ -26,6 +26,7 @@ pub mod ast;
 pub use ast::*;
 
 mod expr;
+mod labeling;
 mod name;
 mod security_attributes;
 mod type_enforcement;
@@ -73,30 +74,28 @@ pub fn parse_from_slice(input: &[u8]) -> ParseResult {
                 ParseResult::Err(ParseError { kind, info })
             }
         }
-        IResult::Error(err) => {
-            match err {
-                NomErr::Code(k) => ParseResult::Err(ParseError {
-                    kind: k,
-                    info: String::new(),
-                }),
-                NomErr::Node(kind, trace) => {
-                    let info = format!("{:#?}", trace);
-                    ParseResult::Err(ParseError { kind, info })
-                }
-                NomErr::Position(kind, p) => {
-                    let msg = unsafe { from_utf8_unchecked(p).to_owned() };
-                    let info = msg.lines().next().unwrap_or("").to_owned();
-
-                    ParseResult::Err(ParseError { kind, info })
-                }
-                NomErr::NodePosition(kind, p, trace) => {
-                    let p_msg = unsafe { from_utf8_unchecked(p) };
-                    let info = format!("{}: {:#?}", p_msg, trace);
-
-                    ParseResult::Err(ParseError { kind, info })
-                }
+        IResult::Error(err) => match err {
+            NomErr::Code(k) => ParseResult::Err(ParseError {
+                kind: k,
+                info: String::new(),
+            }),
+            NomErr::Node(kind, trace) => {
+                let info = format!("{:#?}", trace);
+                ParseResult::Err(ParseError { kind, info })
             }
-        }
+            NomErr::Position(kind, p) => {
+                let msg = unsafe { from_utf8_unchecked(p).to_owned() };
+                let info = msg.lines().next().unwrap_or("").to_owned();
+
+                ParseResult::Err(ParseError { kind, info })
+            }
+            NomErr::NodePosition(kind, p, trace) => {
+                let p_msg = unsafe { from_utf8_unchecked(p) };
+                let info = format!("{}: {:#?}", p_msg, trace);
+
+                ParseResult::Err(ParseError { kind, info })
+            }
+        },
         IResult::Incomplete(n) => ParseResult::Incomplete(n),
     }
 }
@@ -113,12 +112,10 @@ mod testing {
         let result = parser(bytes);
 
         match result {
-           IResult::Done(remaining, output) => {
-               output
-           },
-           IResult::Incomplete(e) => panic!("{:?}", e),
-           IResult::Error(e) => panic!("{}", e),
-            _ => panic!("Invalid")
+            IResult::Done(remaining, output) => output,
+            IResult::Incomplete(e) => panic!("{:?}", e),
+            IResult::Error(e) => panic!("{}", e),
+            _ => panic!("Invalid"),
         }
     }
 }

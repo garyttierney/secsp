@@ -1,12 +1,18 @@
 use ast::*;
 use name::*;
 use expr::*;
+use labeling::*;
 use type_enforcement::*;
 
 /// Parse a policy statement.
 named!(pub statement<&[u8], Statement>,
     alt!(
-        map!(declaration, Statement::Declaration) | macro_call | if_else | allow_rule | set_modifier
+        map!(declaration, Statement::Declaration) |
+        map!(label, Statement::Label) |
+        macro_call |
+        if_else |
+        allow_rule |
+        set_modifier
     )
 );
 

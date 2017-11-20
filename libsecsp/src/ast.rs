@@ -218,6 +218,11 @@ pub enum Statement {
 pub enum FileType {
     File,
     Dir,
+    Symlink,
+    BlockDevice,
+    CharDevice,
+    NamedPipe,
+    Socket,
 }
 
 impl TypeSpecifier for FileType {
@@ -227,6 +232,11 @@ impl TypeSpecifier for FileType {
         let spec = match value {
             "file" => File,
             "dir" => Dir,
+            "symlink" => Symlink,
+            "char_device" => CharDevice,
+            "named_pipe" => NamedPipe,
+            "block_device" => BlockDevice,
+            "socket" => Socket,
             _ => return None,
         };
 
@@ -237,6 +247,11 @@ impl TypeSpecifier for FileType {
         use self::FileType::*;
 
         match *self {
+            Symlink => "symlink",
+            BlockDevice => "block_device",
+            CharDevice => "char_device",
+            NamedPipe => "named_pipe",
+            Socket => "socket",
             File => "file",
             Dir => "dir",
         }
@@ -253,10 +268,11 @@ pub enum FilesystemType {
 /// An object labeling statement.
 #[derive(Clone, Debug, PartialEq)]
 pub enum Label {
+    FileContextBlock(Vec<Label>),
     /// An association of a label as a file context specification.
     FileContext {
         path: String,
-        file_type: FileType,
+        file_type: Option<FileType>,
         context: Box<Expr>,
     },
     FsUse {
