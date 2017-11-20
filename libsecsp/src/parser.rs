@@ -212,31 +212,30 @@ mod tests {
 
     #[test]
     pub fn parse_block_decl() {
-        let result = parse::<Declaration, _>("abstract block abc {}", block_declaration);
+        let result = parse::<Declaration, _>("block abc {}", block_declaration);
+        let actual = Declaration::Block {
+            is_abstract: false,
+            qualifier: BlockType::Block,
+            name: "abc".to_string(),
+            statements: vec![],
+            extends: None
+        };
 
-        match result {
-            Declaration::Block {
-                is_abstract,
-                qualifier,
-                name,
-                ..
-            } => {
-                assert_eq!(true, is_abstract);
-                assert_eq!("abc", name);
-                assert_eq!(BlockType::Block, qualifier);
-            }
-            _ => panic!("Invalid value"),
-        }
+        assert_eq!(result, actual);
     }
 
     #[test]
     pub fn parse_abstract_block_decl() {
         let result = parse::<Declaration, _>("abstract block abc {}", block_declaration);
+        let actual = Declaration::Block {
+            is_abstract: true,
+            qualifier: BlockType::Block,
+            name: "abc".to_string(),
+            statements: vec![],
+            extends: None
+        };
 
-        match result {
-            Declaration::Block { is_abstract, .. } => assert_eq!(true, is_abstract),
-            _ => panic!("Invalid value"),
-        }
+        assert_eq!(result, actual);
     }
 
     #[test]
@@ -256,19 +255,13 @@ mod tests {
     #[test]
     pub fn parse_symbol_decl() {
         let result = parse::<Declaration, _>("type_attribute my_type;", symbol_declaration);
+        let actual = Declaration::Symbol {
+            qualifier: SymbolType::TypeAttribute,
+            name: "my_type".to_string(),
+            initializer: None
+        };
 
-        match result {
-            Declaration::Symbol {
-                qualifier,
-                name,
-                initializer,
-            } => {
-                assert_eq!(SymbolType::TypeAttribute, qualifier);
-                assert_eq!("my_type", name);
-                assert_eq!(None, initializer)
-            }
-            _ => panic!("Invalid value parsed"),
-        }
+        assert_eq!(result, actual);
     }
 
     #[test]
@@ -278,27 +271,18 @@ mod tests {
             symbol_declaration,
         );
 
-        match result {
-            Declaration::Symbol {
-                qualifier,
-                name,
-                initializer,
-            } => {
-                assert_eq!(SymbolType::Context, qualifier);
-                assert_eq!("my_context", name);
+        let actual = Declaration::Symbol {
+            qualifier: SymbolType::Context,
+            name: "my_context".to_string(),
+            initializer: Some(Expr::Context {
+                user_id: "user".to_string(),
+                role_id: "role".to_string(),
+                type_id: "type".to_string(),
+                level_range: Some(Box::from(Expr::LevelRange(Box::from(Expr::var("s0")), Box::from(Expr::var("s1")))))
+            })
+        };
 
-                match initializer {
-                    Some(Expr::Context {
-                             user_id,
-                             role_id,
-                             type_id,
-                             level_range,
-                         }) => {}
-                    _ => panic!("No initializer found"),
-                }
-            }
-            _ => panic!("Invalid value parsed"),
-        }
+        assert_eq!(result, actual);
     }
 
     #[test]
