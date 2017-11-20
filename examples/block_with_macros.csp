@@ -1,8 +1,12 @@
-block my_block {
-    macro my_macro_name(type t) {
-        context c = user:role:t;
-    }
-
+abstract block my_block {
     type my_type;
-    my_macro_name(my_type);
+    type my_other_type;
+
+    if allow_write_other_type {
+        allow my_type my_other_type : file (read write);
+    } elseif allow_append_other_type {
+        allow my_type my_other_type : file (read append);
+    } else {
+        allow my_type my_other_type : file (read);
+    }
 }

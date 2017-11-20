@@ -1,0 +1,24 @@
+(block test
+    (blockabstract test)
+    (typeattribute t)
+    (typeattribute v)
+    (role r)
+
+    (macro test_macro ((type n))
+        (booleanif my_bool
+            (true
+                (typeattributeset v n)            
+            )
+
+            (false
+                (typeattributeset t n)            
+            )
+        )
+    )
+)
+
+(block test2
+    (blockinherit test)
+    (type subj)
+    (call test_macro (subj))
+)

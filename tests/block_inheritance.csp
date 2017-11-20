@@ -1,0 +1,18 @@
+abstract block test {
+    type_attribute t;
+    type_attribute v;
+    role r;
+
+    macro test_macro(type n) {
+        if (my_bool) {
+            v |= (type) n;
+        } else {
+            t |= (type) n;
+        }
+    }
+}
+
+block test2 extends test {
+    type subj;
+    test_macro(subj);
+}

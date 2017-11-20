@@ -3,7 +3,7 @@ use name::*;
 use expr::*;
 use type_enforcement::*;
 
-/// Parse a declaration as a statement.
+/// Parse a policy statement.
 named!(pub statement<&[u8], Statement>,
     alt!(
         map!(declaration, Statement::Declaration) | macro_call | if_else | allow_rule | set_modifier
@@ -13,13 +13,14 @@ named!(pub statement<&[u8], Statement>,
 // Parse a list of 0 or more statements.
 named!(pub statement_list<&[u8], Vec<Statement>>, many0!(statement));
 
+// A statement that modifies a set or attribute with an expression.
 named!(pub set_modifier<&[u8], Statement>,
     ws!(do_parse!(
         name: identifier >>
         tag!("|=") >>
         cast: delimited!(char!('('), type_specifier, char!(')')) >>
         expr: expr >>
-        tag!(";") >>
+        tag!(";") >> 
 
         (Statement::SetModifier{
             name,
@@ -34,7 +35,8 @@ named!(pub declaration<&[u8], Declaration>,
     alt!(
         block_declaration
         | macro_declaration
-        | symbol_declaration
+        | symbol_declaration 
+        | class_declaration
     )
 );
 
@@ -50,27 +52,39 @@ named!(pub symbol_declaration<&[u8], Declaration>,
     ))
 );
 
+// Parse a declaration of a `Class`, or `Common`, and it's collection of access vectors.
+named!(pub class_declaration<&[u8], Declaration>,
+    ws!(do_parse!(
+        qualifier: type_specifier >>
+        name: identifier >>
+        extends: opt!(ws!(preceded!(tag!("extends"), identifier))) >> 
+        access_vectors: delimited!(tag!("{"), many0!(identifier), tag!("}")) >>
+
+        (Declaration::Class {qualifier, name, extends, access_vectors})
+    ))
+);
+
 /// Parse a `block` or `optional` container, named by an `Identifer` and containing
 /// a list of 0 or more `Statement`s.
 named!(pub block_declaration<&[u8], Declaration>,
     ws!(do_parse!(
         is_abstract: opt!(tag!("abstract")) >>
         qualifier: type_specifier >>
-        name: identifier >>
+        name: identifier >> 
         extends: opt!(complete!(
             ws!(do_parse!(
                  tag!("extends") >>
                  first: identifier >>
                  rest: many0!(ws!(do_parse!(char!(',') >> id: identifier >> (id)))) >>
-
+        
                  ({
                      let mut extends_list = rest.clone();
                      extends_list.insert(0, first);
-
+                     
                      extends_list
                  })
             ))
-        )) >>
+        )) >> 
         char!('{') >>
         statements: many0!(statement) >>
         char!('}') >>
@@ -85,14 +99,13 @@ named!(pub block_declaration<&[u8], Declaration>,
     ))
 );
 
+/// A declaration of a policy macro with a list of parameters.
 named!(pub macro_declaration<&[u8], Declaration>,
     ws!(do_parse!(
         tag!("macro") >>
         name: identifier >>
         parameters: delimited!(tag!("("), macro_param_list, tag!(")")) >>
-        tag!("{") >>
-        statements: statement_list >>
-        tag!("}") >>
+        statements: delimited!(tag!("{"), statement_list, tag!("}")) >>
 
         (Declaration::Macro {
             name,
@@ -160,7 +173,7 @@ named!(pub if_else<Statement>,
         else_block: opt!(complete!(
             ws!(do_parse!(
                 tag!("else") >>
-                block: delimited!(char!('{'), statement_list, char!('}')) >>
+                block: delimited!(char!('{'), statement_list, char!('}')) >> 
 
                 (block)
             ))
@@ -354,6 +367,35 @@ mod tests {
             name: "my_attrib".to_string(),
             cast: SymbolType::Type,
             expr: Box::from(Expr::var("my_type")),
+        };
+
+        assert_eq!(expected, result);
+    }
+
+    #[test]
+    pub fn parse_class_decl() {
+        let result = parse::<Declaration, _>("class file { read write }", class_declaration);
+        let expected = Declaration::Class {
+            qualifier: ClassType::Class,
+            name: "file".to_string(),
+            extends: None,
+            access_vectors: vec![
+                "read".to_string(),
+                "write".to_string()
+            ]
+        };
+
+        assert_eq!(expected, result);
+    }
+
+    #[test]
+    pub fn parse_class_decl_with_extends() {
+        let result = parse::<Declaration, _>("class file extends file_like {}", class_declaration);
+        let expected = Declaration::Class {
+            qualifier: ClassType::Class,
+            name: "file".to_string(),
+            extends: Some("file_like".to_string()),
+            access_vectors: vec![]
         };
 
         assert_eq!(expected, result);

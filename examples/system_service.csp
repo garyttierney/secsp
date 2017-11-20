@@ -1,0 +1,24 @@
+block system_service {
+    abstract block data_template {
+        context ctx = system_u:object_r:obj:s0-s0;
+    }
+
+    abstract block data_tree_template extends fstree_template {
+        macro object_type(type obj) {
+            parent_dir(obj);
+            dir(obj);
+        }
+    }
+
+    abstract block basic_template extends domain_template {
+        init_create_process_transition(cmd_file.object, subject);
+
+        block runtime_data extends runtime_data_template, data_template {
+            block tree extends data_tree_template {
+                object_type(object);
+                ancestor_dir(var_t);
+                parent_dir(var_runtime_t);
+            }
+        }
+    }
+}

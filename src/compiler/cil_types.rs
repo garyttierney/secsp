@@ -120,13 +120,11 @@ impl ToCil for Statement {
                 ref then_block,
                 ref else_ifs,
                 ref else_block,
-            } => {
-                if else_ifs.is_empty() {
-                    compile_if_else(condition, then_block, else_block.as_ref())
-                } else {
-                    compile_if_else_if(condition, then_block, else_ifs, else_block.as_ref())
-                }
-            }
+            } => if else_ifs.is_empty() {
+                compile_if_else(condition, then_block, else_block.as_ref())
+            } else {
+                compile_if_else_if(condition, then_block, else_ifs, else_block.as_ref())
+            },
             Statement::AccessVectorRule {
                 ref rule_type,
                 ref source,
@@ -243,6 +241,20 @@ impl ToCil for Declaration {
 
                 decl
             }
+            Declaration::Class {
+                ref qualifier,
+                ref name,
+                ref extends,
+                ref access_vectors,
+            } => {
+                let mut avs = cil_list![];
+
+                for access_vector in access_vectors {
+                    avs.push(access_vector);
+                }
+
+                cil_list![qualifier.to_cil(), name, avs]
+            }
 
             _ => Sexp::Empty,
         }
@@ -351,8 +363,7 @@ mod testing {
 
     #[test]
     pub fn compile_block_decl_with_extends() {
-        let expected =
-            cil_list![
+        let expected = cil_list![
             "block",
             "my_block",
             cil_list!["blockinherit", "my_other_block"],
@@ -367,8 +378,7 @@ mod testing {
 
     #[test]
     pub fn compile_if_else() {
-        let expected =
-            cil_list![
+        let expected = cil_list![
             "booleanif",
             "my_bool",
             cil_list!["true"],
@@ -389,16 +399,15 @@ mod testing {
 
     #[test]
     pub fn compile_if_else_if() {
-        let expected =
+        let expected = cil_list![
+            "booleanif",
+            cil_list!["and", "a", "b"],
+            cil_list!["true"],
             cil_list![
-                "booleanif",
-                cil_list!["and", "a", "b"],
-                cil_list!["true"],
-                cil_list![
-                    "false",
-                    cil_list!["booleanif", "c", cil_list!["true"], cil_list!["false"]],
-                ],
-            ];
+                "false",
+                cil_list!["booleanif", "c", cil_list!["true"], cil_list!["false"]],
+            ],
+        ];
 
         let actual = parse_and_compile_stmt(
             "
@@ -425,8 +434,7 @@ mod testing {
 
     #[test]
     pub fn compile_macro_decl() {
-        let expected =
-            cil_list![
+        let expected = cil_list![
             "macro",
             "my_macro",
             cil_list![cil_list!["type", "my_type"]],
@@ -462,12 +470,18 @@ mod testing {
 
     #[test]
     pub fn compile_access_vector_rule_anonymous_perms() {
-        let expected =
-            cil_list![
+        let expected = cil_list![
             "dontaudit",
             "src",
             "target",
-            cil_list!["security_class", cil_list!["or", cil_list!["perm1", "perm2"], cil_list!["perm3", "perm4"]]],
+            cil_list![
+                "security_class",
+                cil_list![
+                    "or",
+                    cil_list!["perm1", "perm2"],
+                    cil_list!["perm3", "perm4"]
+                ]
+            ],
         ];
 
         let actual = parse_and_compile_stmt(
@@ -481,6 +495,26 @@ mod testing {
     pub fn compile_type_set_modifier() {
         let expected = cil_list!["typeattributeset", "my_attribute", "my_type"];
         let actual = parse_and_compile_stmt("my_attribute |= (type) my_type;");
+
+        assert_eq!(expected, actual);
+    }
+
+    #[test]
+    pub fn compile_type_set_modifier_with_list() {
+        let expected = cil_list![
+            "typeattributeset",
+            "my_attribute",
+            cil_list!["type_a", "type_b", "type_c"]
+        ];
+        let actual = parse_and_compile_stmt("my_attribute |= (type) (type_a type_b type_c);");
+
+        assert_eq!(expected, actual);
+    }
+
+    #[test]
+    pub fn compile_class_declaration() {
+        let expected = cil_list!["class", "file", cil_list!["read", "write"]];
+        let actual = parse_and_compile_stmt("class file { read write }");
 
         assert_eq!(expected, actual);
     }

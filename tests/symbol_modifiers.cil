@@ -1,1 +1,2 @@
 (typeattributeset my_type (typea typeb typec))
+(typeattributeset my_type test)

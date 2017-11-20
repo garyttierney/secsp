@@ -18,9 +18,8 @@ fn main() {
 
     let mut second: Sexp;
     if let Some(second_file) = std::env::args().nth(2) {
-        second = parse_file(&second_file).unwrap_or_else(|e| {
-            panic!("Unable to parse second file: {}", e)
-        });
+        second = parse_file(&second_file)
+            .unwrap_or_else(|e| panic!("Unable to parse second file: {}", e));
     } else {
         panic!("Expected 2 files");
     }

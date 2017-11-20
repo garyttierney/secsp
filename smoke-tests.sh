@@ -23,7 +23,7 @@ for CSP_FILE in $(find "$SCRIPTPATH/tests" -name '*.csp'); do
     CIL_FILE="$DIRNAME/$FILE_PREFIX.cil"
 
     if [ ! -f "$CIL_FILE" ]; then
-        echo "skipping '$FILE_PREFIX'. $CIL_FILE missing"
+        echo "skipping '$CSP_FILE'. $CIL_FILE missing"
         continue
     fi
 

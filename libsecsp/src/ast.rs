@@ -113,6 +113,40 @@ impl TypeSpecifier for SymbolType {
     }
 }
 
+/// Built-in types for types in the symbol table.
+#[derive(Clone, Debug, PartialEq)]
+pub enum ClassType {
+    /// A security class.
+    Class,
+
+    /// A common (abstract) security class.
+    Common,
+}
+
+impl TypeSpecifier for ClassType {
+    fn from(value: &str) -> Option<Self> {
+        use self::ClassType::*;
+
+        let spec = match value {
+            "class" => Class,
+            "common" => Common,
+            _ => return None,
+        };
+
+        Some(spec)
+    }
+
+
+    fn to_cil(&self) -> &'static str {
+        use self::ClassType::*;
+
+        match *self {
+            Class => "class",
+            Common => "common",
+        }
+    }
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub enum AllowRuleType {
     Allow,
@@ -159,6 +193,7 @@ pub enum AccessVector {
 pub enum Statement {
     /// A declaration statement, declaring either a `Block`, `Symbol`, or `Macro`.
     Declaration(Declaration),
+    Label(Label),
     MacroCall(Identifier, Vec<Expr>),
     IfElse {
         condition: Expr,
@@ -176,6 +211,63 @@ pub enum Statement {
         name: Identifier,
         cast: SymbolType,
         expr: Box<Expr>,
+    },
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum FileType {
+    File,
+    Dir,
+}
+
+impl TypeSpecifier for FileType {
+    fn from(value: &str) -> Option<Self> {
+        use self::FileType::*;
+
+        let spec = match value {
+            "file" => File,
+            "dir" => Dir,
+            _ => return None,
+        };
+
+        Some(spec)
+    }
+
+    fn to_cil(&self) -> &'static str {
+        use self::FileType::*;
+
+        match *self {
+            File => "file",
+            Dir => "dir",
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum FilesystemType {
+    Task,
+    Trans,
+    Xattr,
+}
+
+/// An object labeling statement.
+#[derive(Clone, Debug, PartialEq)]
+pub enum Label {
+    /// An association of a label as a file context specification.
+    FileContext {
+        path: String,
+        file_type: FileType,
+        context: Box<Expr>,
+    },
+    FsUse {
+        fstype: FilesystemType,
+        fsname: Identifier,
+        context: Box<Expr>,
+    },
+    GenFsCon {
+        fsname: Identifier,
+        path: String,
+        context: Box<Expr>,
     },
 }
 
@@ -198,6 +290,12 @@ pub enum Declaration {
         qualifier: SymbolType,
         name: Identifier,
         initializer: Option<Expr>,
+    },
+    Class {
+        qualifier: ClassType,
+        name: Identifier,
+        extends: Option<Identifier>,
+        access_vectors: Vec<Identifier>,
     },
 }
 

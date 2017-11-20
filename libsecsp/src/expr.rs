@@ -18,7 +18,7 @@ macro_rules! binexp {
       ws!(do_parse!(
         a: $next >>
         n: alt_complete!(
-          ws!(do_parse!(
+          ws!(do_parse!(        
             tag!($tag) >>
             b: $name >>
             (Expr::Binary(Box::new(a.clone()), $op, Box::new(b)))
@@ -72,7 +72,7 @@ named!(unary_expr<&[u8], Expr>,
                     map!(tag!("~"), |_| UnaryOp::BitwiseNot)
                 ) >>
                 expr: primary_expr >>
-
+                
                 (Expr::Unary(op, Box::new(expr)))
             ) |
             primary_expr
@@ -82,7 +82,7 @@ named!(unary_expr<&[u8], Expr>,
 
 named!(pub primary_expr<&[u8], Expr>,
     alt_complete!(
-        variable |
+        variable | 
         delimited!(char!('('), expr, char!(')')) |
         delimited!(char!('('), variable_list, char!(')'))
     )

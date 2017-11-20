@@ -30,8 +30,8 @@ However, there is a lot still to be implemented.  A partially complete list of t
    * [ ] Network object labeling
    * [ ] Filesystem object labeling
    * [ ] ISID labeling
-* [ ] Attributes
-   * [ ] Attribute modifiers
+* [x] Attributes
+   * [x] Attribute modifiers
 * [x] Macros
     * [x] Macro calls
     * [x] Macro declarations
@@ -42,7 +42,7 @@ However, there is a lot still to be implemented.  A partially complete list of t
    * [ ] Category set
    * [ ] Attributes
    * [ ] Class permissions
-   * [ ] Classes
+   * [x] Classes
 * [x] Structural
    * [x] Block inheritance
    * [x] Abstract blocks
