@@ -112,4 +112,26 @@ mod tests {
         }
     }
 
+    #[test]
+    pub fn parse_level_with_categoryrange() {
+        let result = parse::<Expr, _>("s0:c1.c2", level);
+        let actual = Expr::Level {
+            sensitivity: "s0".to_string(),
+            categories: Box::from(Expr::CategoryRange("c1".to_string(), "c2".to_string()))
+        };
+
+        assert_eq!(result, actual);
+    }
+
+    #[test]
+    pub fn parse_level_with_categoryset_id() {
+        let result = parse::<Expr, _>("s0:categories", level);
+        let actual = Expr::Level {
+            sensitivity: "s0".to_string(),
+            categories: Box::from(Expr::var("categories"))
+        };
+
+        assert_eq!(result, actual);
+    }
+
 }
