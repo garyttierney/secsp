@@ -7,13 +7,15 @@ description = "A C-style policy language for SELinux"
 [workspace]
 members = [
     "sexp_cmp",
-    "libsecsp"
+    "libsecsp_syntax",
 ]
 
 [profile.release]
 debug = true
+lto = true
+panic = 'abort'
 
 [dependencies]
-secsp = { path = "libsecsp" }
+secsp_syntax = { path = "libsecsp_syntax" }
 symbolic_expressions = "~4.1.9"
 clap = "~2.26.0"

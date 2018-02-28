@@ -1,30 +1,13 @@
 #[macro_use]
 extern crate clap;
-extern crate secsp;
-
-use secsp::ParseResult;
+extern crate secsp_syntax;
 
 use std::io::Read;
 use std::io::Write;
 use std::fs::File;
 
-
 mod compiler;
 mod decompiler;
-
-fn compile<I: Read, O: Write>(input: &mut I, output: &mut O, print_ast: bool) {
-    match secsp::parse(input) {
-        ParseResult::Ok(ref statements) => {
-            if print_ast {
-                write!(output, "{:#?}", statements);
-            } else {
-                compiler::emit(output, statements);
-            }
-        }
-        ParseResult::Err(e) => panic!("{:?}", e),
-        ParseResult::Incomplete(n) => panic!("{:?}", n),
-    }
-}
 
 fn decompile<I: Read, O: Write>(input: &mut I, output: &mut O, print_ast: bool) {}
 
@@ -39,20 +22,13 @@ fn main() {
     ).get_matches();
 
     let mut input: Box<Read> = match opts.value_of("INPUT") {
-        Some(filename) => {
-            Box::new(File::open(filename).unwrap_or_else(|e| {
-                panic!("Unable to open file \"{}\": {}", filename, e)
-            }))
-        }
+        Some(filename) => Box::new(
+            File::open(filename)
+                .unwrap_or_else(|e| panic!("Unable to open file \"{}\": {}", filename, e)),
+        ),
         None => Box::new(std::io::stdin()),
     };
 
     let mut output: Box<Write> = Box::new(std::io::stdout());
     let print_ast = opts.is_present("PRINT_AST");
-
-    if opts.is_present("DECOMPILE") {
-        decompile(&mut input, &mut output, print_ast);
-    } else {
-        compile(&mut input, &mut output, print_ast);
-    }
 }
