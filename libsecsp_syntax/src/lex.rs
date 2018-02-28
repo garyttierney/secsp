@@ -97,7 +97,6 @@ impl<'a> TokenAndSpan<'a> {
 /// Example:
 ///
 /// ```rust
-/// extern crate secsp_syntax;
 /// use secsp_syntax::Span;
 /// use secsp_syntax::lex::{Token, TokenAndSpan, Tokenizer};
 ///
