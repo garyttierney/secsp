@@ -1,48 +1,14 @@
-sudo: false
 language: rust
-# Dependencies of kcov, used by coverage
+sudo: required
+dist: trusty
 addons:
-  apt:
-    packages:
-      - libcurl4-openssl-dev
-      - libelf-dev
-      - libdw-dev
-      - binutils-dev
-      - cmake
-    sources:
-      - kalakris-cmake
-
-# run builds for all the trains (and more)
+    apt:
+        packages:
+            - libssl-dev
+cache: cargo
 rust:
-  - beta
-  - stable
-
-
-before_script:
-  - |
-      cargo install cargo-travis ;
-      export PATH=$HOME/.cargo/bin:$PATH
-
-# the main build
+  - nightly
 script:
-  - |
-      cargo build --all &&
-      cargo test --all &&
-      cargo bench --all &&
-      cargo doc &&
-      ./smoke-tests.sh
-
-after_success:
-# measure code coverage and upload to coveralls.io
-  - cargo coveralls --all
-
-cache: 
-  directories:
-    - $HOME/.cargo
-    - kcov
-    - target
-
-env:
-  global:
-    # override the default `--features unstable` used for the nightly branch (optional)
-    - TRAVIS_CARGO_NIGHTLY_FEATURE=nightly
+- cargo clean
+- cargo build --all
+- cargo test --all
