@@ -1,6 +1,7 @@
 # secsp
 
 [![Coverage Status](https://coveralls.io/repos/github/garyttierney/rust-csp/badge.svg?branch=master)](https://coveralls.io/github/garyttierney/rust-csp?branch=master)
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fgaryttierney%2Frust-csp.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fgaryttierney%2Frust-csp?ref=badge_shield)
 
 [![Build Status](https://travis-ci.org/garyttierney/rust-csp.svg?branch=master)](https://travis-ci.org/garyttierney/rust-csp)
 
@@ -90,3 +91,6 @@ If no options are given, `cspc` will attempt to compile input from `stdin`.
 `semodule` allows policy compilers to be placed under `/usr/libexec/selinux/hll/` so the compiler can find them.  If using the built package from the copr repository above a symlink from `/usr/bin/cspc` to `/usr/libexec/selinux/hll/csp` will exist, allowing semodule to import policy files suffixed with `.csp`.
 
 To import one of these files into the policy store run `semodule -i myfile.csp`.  *NOTE*: this isn't recommended at the moment given `cspc` is in an experimental state.
+
+## License
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fgaryttierney%2Frust-csp.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fgaryttierney%2Frust-csp?ref=badge_large)
