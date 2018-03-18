@@ -24,6 +24,8 @@ pub mod ast;
 pub mod codemap;
 pub mod lex;
 
+mod keywords;
+
 // #[cfg(test)]
 // mod testing {
 //     use super::*;
