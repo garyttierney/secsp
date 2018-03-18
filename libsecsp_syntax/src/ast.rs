@@ -1,7 +1,17 @@
 //! AST types for the `secsp` parser.  The root component of all ASTs is a `Statement`.
 //!
 
-use super::Span;
+use super::codemap::Span;
+
+macro_rules! impl_spanned {
+    ($name: ident) => {
+        impl Spanned for $name {
+            fn span(&self) -> Span {
+                self.span
+            }
+        }
+    };
+}
 
 /// A unique 64 bit identifier for `Node`s in the syntax tree.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -13,30 +23,33 @@ pub trait NodeVisitor {
     fn visit_binary_op_expr(
         &mut self,
         lhs: &ExpressionNode,
-        operator: &BinaryOp,
+        operator: &BinOp,
         rhs: &ExpressionNode,
     ) -> Self::Result;
 
-    fn visit_category_range_expr(&mut self, lo: &Span, hi: &Span) -> Self::Result;
+    fn visit_category_range_expr(&mut self, lo: &Ident, hi: &Ident) -> Self::Result;
     fn visit_context_expr(
         &mut self,
-        user: &Span,
-        role: &Span,
-        ty: &Span,
+        user: &Ident,
+        role: &Ident,
+        ty: &Ident,
         level_range: Option<&ExpressionNode>,
     ) -> Self::Result;
-    fn visit_level_expr(&mut self, sensitivity: &Span, categories: &ExpressionNode)
-        -> Self::Result;
+    fn visit_level_expr(
+        &mut self,
+        sensitivity: &Ident,
+        categories: &ExpressionNode,
+    ) -> Self::Result;
     fn visit_level_range_expr(&mut self, lo: &ExpressionNode, hi: &ExpressionNode) -> Self::Result;
     fn visit_unary_op_expr(&mut self, op: &UnaryOp, operand: &ExpressionNode) -> Self::Result;
-    fn visit_var_expr(&mut self, span: &Span) -> Self::Result;
-    fn visit_varlist_expr(&mut self, vars: &[Span]) -> Self::Result;
+    fn visit_var_expr(&mut self, span: &Ident) -> Self::Result;
+    fn visit_varlist_expr(&mut self, vars: &[Ident]) -> Self::Result;
 
     fn visit_class_decl(
         &mut self,
         ty: &ClassType,
-        id: &Span,
-        access_vectors: &[Span],
+        id: &Ident,
+        access_vectors: &[Ident],
     ) -> Self::Result;
 
     fn visit_conditional(
@@ -44,26 +57,26 @@ pub trait NodeVisitor {
         ty: &ConditionalType,
         expr: &ExpressionNode,
         body: &StatementNodeList,
-        else_ifs: &Vec<(ExpressionNode, StatementNodeList)>,
+        else_ifs: &[(ExpressionNode, Vec<StatementNode>)],
         else_blk: Option<&StatementNodeList>,
     ) -> Self::Result;
 
     fn visit_container_decl(
         &mut self,
         ty: &ContainerType,
-        id: &Span,
+        id: &Ident,
         body: &StatementNodeList,
     ) -> Self::Result;
     fn visit_macro_decl(
         &mut self,
-        id: &Span,
+        id: &Ident,
         params: &[MacroParameter],
         body: &StatementNodeList,
     ) -> Self::Result;
     fn visit_symbol_decl(
         &mut self,
         ty: &SymbolType,
-        id: &Span,
+        id: &Ident,
         value: Option<&ExpressionNode>,
     ) -> Self::Result;
     fn visit_te_rule(
@@ -75,16 +88,30 @@ pub trait NodeVisitor {
     ) -> Self::Result;
 }
 
+pub trait Spanned {
+    /// Get the codemap information representing this `Node`.
+    fn span(&self) -> Span;
+}
+
 /// A trait representing a single unique node in the syntax tree.
-pub trait Node: Sized {
+pub trait Node: Sized + Spanned {
     /// Make the given `NodeVisitor` visit this node and return a `V::Result`.
     fn accept<V: NodeVisitor>(&self, visitor: &mut V) -> V::Result;
 
     /// Get this `Node`s unique identifier.
     fn node_id(&self) -> NodeId;
+}
 
-    /// Get the codemap information representing this `Node`.
-    fn span(&self) -> &Span;
+pub struct Module {
+    name: Option<String>,
+    body: Vec<StatementNode>,
+    span: Span,
+}
+
+impl Module {
+    pub fn new(name: Option<String>, body: Vec<StatementNode>, span: Span) -> Self {
+        Module { name, body, span }
+    }
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -254,12 +281,14 @@ pub enum ConditionalType {
 /// An AST node representing a `StatementKind` with a unique ID and codemap information.
 #[derive(Clone, Debug, PartialEq)]
 pub struct StatementNode {
-    node_id: NodeId,
-    kind: Box<StatementKind>,
-    span: Span,
+    pub node_id: NodeId,
+    pub kind: Box<StatementKind>,
+    pub span: Span,
 }
 
-pub type StatementNodeList = Vec<StatementNode>;
+impl_spanned!(StatementNode);
+
+pub type StatementNodeList = [StatementNode];
 
 /// Representations of different types of `StatementNode`s that can occur in policy sources.
 #[derive(Clone, Debug, PartialEq)]
@@ -274,10 +303,10 @@ pub enum StatementKind {
     ///    write,
     /// }
     /// ```
-    ClassDeclaration(ClassType, Span, Vec<Span>),
+    ClassDeclaration(ClassType, Ident, Vec<Ident>),
 
     /// A declaration of a container with a body of `StatementNode`s.
-    ContainerDeclaration(ContainerType, Span, Vec<StatementNode>),
+    ContainerDeclaration(ContainerType, Ident, Vec<StatementNode>),
 
     /// A conditional statement, representing a block of runtime or build time conditional policy with 0 or more else-ifs and an optional
     /// else block.
@@ -314,7 +343,7 @@ pub enum StatementKind {
     ///    // ....
     /// }
     /// ```
-    MacroDeclaration(Span, Vec<MacroParameter>, Vec<StatementNode>),
+    MacroDeclaration(Ident, Vec<MacroParameter>, Vec<StatementNode>),
 
     /// A declaration of a named symbol with an optional initializer.
     ///
@@ -327,15 +356,10 @@ pub enum StatementKind {
     /// ```csp,ignore
     /// context c = user:role:type;
     /// ```
-    SymbolDeclaration(SymbolType, Span, Option<ExpressionNode>),
+    SymbolDeclaration(SymbolType, Ident, Option<ExpressionNode>),
 
     /// A type-enforcement rule statement with a rule type, source expression, target expression, and access vector expression.
-    TeRule(
-        TeRuleType,
-        ExpressionNode,
-        ExpressionNode,
-        ExpressionNode,
-    ),
+    TeRule(TeRuleType, ExpressionNode, ExpressionNode, ExpressionNode),
 }
 
 impl Node for StatementNode {
@@ -343,21 +367,26 @@ impl Node for StatementNode {
     fn accept<V: NodeVisitor>(&self, visitor: &mut V) -> V::Result {
         use self::StatementKind::*;
 
-        match self.kind.as_ref() {
-            &ClassDeclaration(ref ty, ref id, ref perms) => visitor.visit_class_decl(ty, id, perms),
-            &ContainerDeclaration(ref ty, ref id, ref body) => {
-                visitor.visit_container_decl(ty, id, body)
+        match *self.kind {
+            ClassDeclaration(ref ty, ref id, ref perms) => visitor.visit_class_decl(ty, id, perms),
+            ContainerDeclaration(ref ty, ref id, ref body) => {
+                visitor.visit_container_decl(ty, id, &body[..])
             }
-            &Conditional(ref ty, ref expr, ref body, ref else_ifs, ref else_blk) => {
-                visitor.visit_conditional(ty, expr, body, else_ifs, else_blk.as_ref())
+            Conditional(ref ty, ref expr, ref body, ref else_ifs, ref else_blk) => visitor
+                .visit_conditional(
+                    ty,
+                    expr,
+                    &body[..],
+                    &else_ifs[..],
+                    else_blk.as_ref().map(|x| &x[..]),
+                ),
+            MacroDeclaration(ref id, ref params, ref body) => {
+                visitor.visit_macro_decl(id, params, &body[..])
             }
-            &MacroDeclaration(ref id, ref params, ref body) => {
-                visitor.visit_macro_decl(id, params, body)
-            }
-            &SymbolDeclaration(ref ty, ref id, ref val) => {
+            SymbolDeclaration(ref ty, ref id, ref val) => {
                 visitor.visit_symbol_decl(ty, id, val.as_ref())
             }
-            &TeRule(ref ty, ref source, ref target, ref perms) => {
+            TeRule(ref ty, ref source, ref target, ref perms) => {
                 visitor.visit_te_rule(ty, source, target, perms)
             }
         }
@@ -366,11 +395,6 @@ impl Node for StatementNode {
     /// Get this `Node`s unique identifier.
     fn node_id(&self) -> NodeId {
         self.node_id
-    }
-
-    /// Get the codemap information representing this `Node`.
-    fn span(&self) -> &Span {
-        &self.span
     }
 }
 
@@ -387,16 +411,18 @@ pub struct ExpressionNode {
     pub span: Span,
 }
 
+impl_spanned!(ExpressionNode);
+
 #[derive(Clone, Debug, PartialEq)]
 pub enum ExpressionKind {
-    BinaryOp(ExpressionNode, BinaryOp, ExpressionNode),
-    CategoryRange(Span, Span),
-    Context(Span, Span, Span, Option<ExpressionNode>),
-    Level(Span, ExpressionNode),
+    BinaryOp(ExpressionNode, BinOp, ExpressionNode),
+    CategoryRange(Ident, Ident),
+    Context(Ident, Ident, Ident, Option<ExpressionNode>),
+    Level(Ident, ExpressionNode),
     LevelRange(ExpressionNode, ExpressionNode),
     UnaryOp(UnaryOp, ExpressionNode),
-    Variable(Span),
-    VariableList(Vec<Span>),
+    Variable(Ident),
+    VariableList(Vec<Ident>),
 }
 
 impl Node for ExpressionNode {
@@ -404,19 +430,19 @@ impl Node for ExpressionNode {
     fn accept<V: NodeVisitor>(&self, visitor: &mut V) -> V::Result {
         use self::ExpressionKind::*;
 
-        match self.kind.as_ref() {
-            &BinaryOp(ref lhs, ref op, ref rhs) => visitor.visit_binary_op_expr(lhs, op, rhs),
-            &CategoryRange(ref lo, ref hi) => visitor.visit_category_range_expr(lo, hi),
-            &Context(ref user, ref role, ref ty, ref range) => {
+        match *self.kind {
+            BinaryOp(ref lhs, ref op, ref rhs) => visitor.visit_binary_op_expr(lhs, op, rhs),
+            CategoryRange(ref lo, ref hi) => visitor.visit_category_range_expr(lo, hi),
+            Context(ref user, ref role, ref ty, ref range) => {
                 visitor.visit_context_expr(user, role, ty, range.as_ref())
             }
-            &Level(ref sensitivity, ref categories) => {
+            Level(ref sensitivity, ref categories) => {
                 visitor.visit_level_expr(sensitivity, categories)
             }
-            &LevelRange(ref lo, ref hi) => visitor.visit_level_range_expr(lo, hi),
-            &UnaryOp(ref op, ref operand) => visitor.visit_unary_op_expr(op, operand),
-            &Variable(ref var) => visitor.visit_var_expr(var),
-            &VariableList(ref varlist) => visitor.visit_varlist_expr(&varlist[..]),
+            LevelRange(ref lo, ref hi) => visitor.visit_level_range_expr(lo, hi),
+            UnaryOp(ref op, ref operand) => visitor.visit_unary_op_expr(op, operand),
+            Variable(ref var) => visitor.visit_var_expr(var),
+            VariableList(ref varlist) => visitor.visit_varlist_expr(&varlist[..]),
         }
     }
 
@@ -424,31 +450,44 @@ impl Node for ExpressionNode {
     fn node_id(&self) -> NodeId {
         self.node_id
     }
-
-    /// Get the codemap information representing this `Node`.
-    fn span(&self) -> &Span {
-        &self.span
-    }
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub enum BinaryOp {
+pub struct Symbol<T: Sized> {
+    value: T,
+    span: Span,
+}
+
+impl<T> Spanned for Symbol<T> {
+    fn span(&self) -> Span {
+        self.span
+    }
+}
+
+pub type Ident = Symbol<String>;
+pub type BinOp = Symbol<BinOpKind>;
+pub type UnaryOp = Symbol<UnaryOpKind>;
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum BinOpKind {
     LogicalAnd,
     LogicalOr,
-    ConditionalXor,
     BitwiseAnd,
     BitwiseOr,
     BitwiseXor,
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub enum UnaryOp {
-    ConditionalNot,
-    BitwiseNot,
+pub enum UnaryOpKind {
+    UnaryNot,
+    LogicalNot,
 }
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct MacroParameter {
     pub qualifier: SymbolType,
-    pub name: Span,
+    pub name: Ident,
+    pub span: Span,
 }
+
+impl_spanned!(MacroParameter);

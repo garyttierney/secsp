@@ -1,4 +1,4 @@
-use super::Span;
+use super::codemap::Span;
 
 use std::str;
 use std::iter;
@@ -11,21 +11,6 @@ pub enum DelimiterType {
 
     /// A parenthesis delimiter.  i.e., '(' or ')'.
     Parenthesis,
-}
-
-impl Span {
-    /// Create a code span that ranges from `start` to `end`, inclusively.
-    pub fn from(start: usize, end: usize) -> Self {
-        Span { start, end }
-    }
-
-    /// Create a code span at `pos` that occupies a single character.
-    pub fn at(pos: usize) -> Self {
-        Span {
-            start: pos,
-            end: pos,
-        }
-    }
 }
 
 /// A single lexical unit in the CSP grammar.
@@ -135,7 +120,7 @@ impl<'a> Tokenizer<'a> {
 
     /// Peek the next character from the input iterator and dereference it from a `&char` to `char`.
     fn peek(&mut self) -> Option<char> {
-        return self.iter.peek().map(|ch| *ch);
+        return self.iter.peek().cloned();
     }
 
     /// Consume a character from the input iterator and advance the `Tokenizer`s position
@@ -146,7 +131,7 @@ impl<'a> Tokenizer<'a> {
             None => return None,
         };
 
-        self.pos = self.pos + 1;
+        self.pos += 1;
 
         Some(current)
     }
@@ -157,7 +142,7 @@ impl<'a> Tokenizer<'a> {
         let start_pos = self.pos - 1;
 
         loop {
-            let next = self.iter.peek().map(|n| *n);
+            let next = self.iter.peek().cloned();
 
             match next {
                 Some(ch) if ch.is_alphanumeric() || ch == '_' => self.take(),
@@ -190,7 +175,6 @@ impl<'a> Tokenizer<'a> {
         }
     }
 }
-
 impl<'a> Iterator for Tokenizer<'a> {
     type Item = TokenAndSpan<'a>;
 
@@ -232,7 +216,7 @@ impl<'a> Iterator for Tokenizer<'a> {
                 },
                 'a'...'z' | 'A'...'Z' => return Some(self.name()),
                 c if c.is_whitespace() => continue,
-                c @ _ => return Some(self.term(Token::Illegal(c))),
+                c => return Some(self.term(Token::Illegal(c))),
             }
         }
     }

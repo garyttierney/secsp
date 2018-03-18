@@ -21,9 +21,8 @@ pub struct Span {
 }
 
 pub mod ast;
+pub mod codemap;
 pub mod lex;
-
-use std::str::from_utf8_unchecked;
 
 // #[cfg(test)]
 // mod testing {
