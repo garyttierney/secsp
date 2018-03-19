@@ -1,11 +1,10 @@
-use super::ast;
+use std::iter;
+use std::str::FromStr;
+use super::ast::*;
 use super::codemap::Span;
 use super::keywords;
 use super::lex::{DelimiterType, Token, TokenAndSpan, Tokenizer};
 use super::lex::Token::*;
-
-use std::iter;
-use std::str::FromStr;
 
 #[derive(Debug)]
 pub enum ParseError {
@@ -24,7 +23,7 @@ pub struct Parser<'a> {
 }
 
 impl<'a> Parser<'a> {
-    fn new(module_name: Option<String>, tokenizer: Tokenizer<'a>) -> Self {
+    pub fn new(module_name: Option<String>, tokenizer: Tokenizer<'a>) -> Self {
         let mut tokenizer = tokenizer;
         let first_token = tokenizer.next().expect("no input available");
 
@@ -37,9 +36,9 @@ impl<'a> Parser<'a> {
     }
 
     /// Generate a new unique identifier for a node in the AST.
-    fn new_node_id(&mut self) -> ast::NodeId {
+    fn new_node_id(&mut self) -> NodeId {
         self.node_id_counter += 1;
-        ast::NodeId(self.node_id_counter)
+        NodeId(self.node_id_counter)
     }
 
     fn advance(&mut self) -> ParseResult<&TokenAndSpan<'a>> {
@@ -71,7 +70,7 @@ impl<'a> Parser<'a> {
     ///
     /// Example:
     /// /// @todo
-    fn parse(&mut self) -> ParseResult<ast::Module> {
+    pub fn parse(&mut self) -> ParseResult<Module> {
         let mut statements = vec![];
         let start_span = Span::at(0);
 
@@ -88,37 +87,34 @@ impl<'a> Parser<'a> {
 
         let end_span = &self.current.span;
 
-        Ok(ast::Module::new(
+        Ok(Module::new(
             self.module_name.clone(),
             statements,
             start_span.join(end_span),
         ))
     }
 
-    fn parse_container_decl(&mut self) -> ParseResult<ast::StatementKind> {
+    fn parse_container_decl(&mut self) -> ParseResult<StatementKind> {
         unimplemented!()
     }
 
-    fn parse_macro_call(&mut self, name: ast::Ident) -> ParseResult<ast::StatementKind> {
+    fn parse_macro_call(&mut self, name: Ident) -> ParseResult<StatementKind> {
         unimplemented!()
     }
 
-    fn parse_set_modifier(&mut self, name: ast::Ident) -> ParseResult<ast::StatementKind> {
+    fn parse_set_modifier(&mut self, name: Ident) -> ParseResult<StatementKind> {
         unimplemented!()
     }
 
-    fn parse_statement(&mut self) -> ParseResult<ast::StatementNode> {
-        self.advance()
-            .expect("peek() returned a valid token, next() returned None");
-
+    fn parse_statement(&mut self) -> ParseResult<StatementNode> {
         let start_span = self.current.span;
 
         let kind = Box::new(match self.current.token {
             Name(keywords::OPTIONAL) | Name(keywords::ABSTRACT) | Name(keywords::BLOCK) => {
                 self.parse_container_decl()?
             }
-            Name(kw) if ast::SymbolType::from_str(kw).is_ok() => self.parse_symbol_decl()?,
-            Name(ident) => {
+            Name(kw) if SymbolType::from_str(kw).is_ok() => self.parse_symbol_decl()?,
+            Name(_) => {
                 let name = self.parse_ident()?;
 
                 match self.peek() {
@@ -134,16 +130,16 @@ impl<'a> Parser<'a> {
 
         let stmt_span = start_span.join(&self.current.span);
 
-        Ok(ast::StatementNode {
+        Ok(StatementNode {
             kind,
             node_id: self.new_node_id(),
             span: stmt_span,
         })
     }
 
-    fn parse_symbol_decl(&mut self) -> ParseResult<ast::StatementKind> {
+    fn parse_symbol_decl(&mut self) -> ParseResult<StatementKind> {
         let ty = if let Name(ty) = self.current.token {
-            ast::SymbolType::from_str(ty).map_err(|_| ParseError::InvalidKeyword)?
+            SymbolType::from_str(ty).map_err(|_| ParseError::InvalidKeyword)?
         } else {
             return Err(ParseError::InvalidKeyword);
         };
@@ -151,30 +147,44 @@ impl<'a> Parser<'a> {
         let name = self.parse_ident()?;
         let terminated = self.lookahead(Token::Semicolon);
 
-        let initializer_kind = ty.initializer_kind();
-        let initializer = match initializer_kind {
-            ast::SymbolInitializerKind::Required => if terminated {
+        let initializer = match ty.initializer_kind() {
+            SymbolInitializerKind::Optional | SymbolInitializerKind::Invalid if terminated => {
+                self.advance()?;
                 None
-            } else {
-                Some(self.parse_expr()?)
-            },
-            ast::SymbolInitializerKind::Optional if !terminated => Some(self.parse_expr()?),
-            ast::SymbolInitializerKind::Invalid if !terminated => None, // @todo - skip until end and log error
+            }
+
+            SymbolInitializerKind::Required if terminated => {
+                // @todo - report error.
+                self.advance()?;
+                None
+            }
+
+            SymbolInitializerKind::Invalid if !terminated => {
+                //@todo - skip until semicolon and report an error on the spanning input
+                None
+            }
+
+            SymbolInitializerKind::Optional | SymbolInitializerKind::Required if !terminated => {
+                let expr = self.parse_expr()?;
+                self.advance()?; //@todo -expect semi
+
+                Some(expr)
+            }
             _ => None,
         };
 
-        Ok(ast::StatementKind::SymbolDeclaration(ty, name, initializer))
+        Ok(StatementKind::SymbolDeclaration(ty, name, initializer))
     }
 
-    fn parse_expr(&mut self) -> ParseResult<ast::ExpressionNode> {
+    fn parse_expr(&mut self) -> ParseResult<ExpressionNode> {
         unimplemented!()
     }
 
-    fn parse_ident(&mut self) -> ParseResult<ast::Ident> {
+    fn parse_ident(&mut self) -> ParseResult<Ident> {
         self.advance().expect("eof");
 
         match self.current.token {
-            Token::Name(val) => Ok(ast::Ident {
+            Token::Name(val) => Ok(Ident {
                 value: val.to_owned(),
                 span: self.current.span,
             }),
@@ -194,18 +204,19 @@ mod tests {
     #[test]
     pub fn parse_simple_decl() {
         let mut parser = parser_with_input("type t;");
-        let result = parser.parse_symbol_decl().expect("unable to parse decl");
+        let result = parser.parse_statement().expect("unable to parse decl");
 
+        assert_eq!(Span::from(0, 6), result.span);
         assert_eq!(
-            ast::StatementKind::SymbolDeclaration(
-                ast::SymbolType::Type,
-                ast::Ident {
+            StatementKind::SymbolDeclaration(
+                SymbolType::Type,
+                Ident {
                     value: "t".to_owned(),
                     span: Span::at(5),
                 },
                 None,
             ),
-            result
+            *result.kind
         );
     }
 }
