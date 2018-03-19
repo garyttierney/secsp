@@ -82,7 +82,7 @@ impl<'a> TokenAndSpan<'a> {
 /// Example:
 ///
 /// ```rust
-/// use secsp_syntax::Span;
+/// use secsp_syntax::codemap::Span;
 /// use secsp_syntax::lex::{Token, TokenAndSpan, Tokenizer};
 ///
 /// let tokenizer = Tokenizer::new("a ; ab");
