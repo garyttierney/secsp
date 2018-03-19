@@ -120,7 +120,7 @@ impl<'a> Tokenizer<'a> {
 
     /// Peek the next character from the input iterator and dereference it from a `&char` to `char`.
     fn peek(&mut self) -> Option<char> {
-        return self.iter.peek().cloned();
+        self.iter.peek().cloned()
     }
 
     /// Consume a character from the input iterator and advance the `Tokenizer`s position

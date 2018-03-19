@@ -9,20 +9,10 @@
 #![crate_name = "secsp_syntax"]
 #![crate_type = "lib"]
 
-/// A structure representing the start and end byte positions of a token
-/// or span of code.
-#[derive(Clone, Debug, PartialEq)]
-pub struct Span {
-    /// The byte position of the starting character in this `Span`.
-    pub start: usize,
-
-    /// The byte position of the ending character in this `Span`.
-    pub end: usize,
-}
-
 pub mod ast;
 pub mod codemap;
 pub mod lex;
+pub mod parse;
 
 mod keywords;
 

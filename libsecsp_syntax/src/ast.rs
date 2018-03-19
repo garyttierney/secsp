@@ -2,6 +2,8 @@
 //!
 
 use super::codemap::Span;
+use super::keywords;
+use std::str::FromStr;
 
 macro_rules! impl_spanned {
     ($name: ident) => {
@@ -173,6 +175,20 @@ pub enum ClassType {
     Common,
 }
 
+impl FromStr for ClassType {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, ()> {
+        let value = match s {
+            "class" => ClassType::Class,
+            "common" => ClassType::Common,
+            _ => return Err(()),
+        };
+
+        Ok(value)
+    }
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub enum SymbolType {
     /// A security type symbol.
@@ -251,6 +267,57 @@ pub enum SymbolType {
     Category,
 }
 
+impl FromStr for SymbolType {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        use self::SymbolType::*;
+
+        let value = match s {
+            keywords::TYPE => Type,
+            keywords::TYPE_ATTRIBUTE => TypeAttribute,
+            keywords::ROLE => Role,
+            keywords::ROLE_ATTRIBUTE => RoleAttribute,
+            keywords::USER => User,
+            keywords::USER_ATTRIBUTE => UserAttribute,
+            keywords::CONTEXT => Context,
+            keywords::SENSITIVITY => Sensitivity,
+            keywords::CATEGORY => Category,
+            keywords::LEVEL_RANGE => LevelRange,
+            _ => return Err(()),
+        };
+
+        Ok(value)
+    }
+}
+
+pub enum SymbolInitializerKind {
+    Required,
+    Optional,
+    Invalid,
+}
+
+impl SymbolType {
+    pub fn initializer_kind(&self) -> SymbolInitializerKind {
+        use self::SymbolType::*;
+
+        match *self {
+            TypeAttribute | RoleAttribute | UserAttribute => SymbolInitializerKind::Optional,
+            Context | LevelRange => SymbolInitializerKind::Required,
+            _ => SymbolInitializerKind::Invalid,
+        }
+    }
+
+    pub fn requires_initializer(&self) -> bool {
+        use self::SymbolType::*;
+
+        match *self {
+            Context => true,
+            _ => false,
+        }
+    }
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub enum TeRuleType {
     /// Denotes that the set of access-vectors for the given source and target on a type-enforcement rule should be allowed.
@@ -267,6 +334,24 @@ pub enum TeRuleType {
     /// Denotes that the set of access-vectors for the given source and target on a type-enforcement rule should not be sent
     /// to the audit subsystem when they are denied.
     DontAudit,
+}
+
+impl FromStr for TeRuleType {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        use self::TeRuleType::*;
+
+        let value = match s {
+            keywords::ALLOW => Allow,
+            keywords::NEVER_ALLOW => NeverAllow,
+            keywords::AUDIT_ALLOW => AuditAllow,
+            keywords::DONT_AUDIT => DontAudit,
+            _ => return Err(()),
+        };
+
+        Ok(value)
+    }
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -454,8 +539,8 @@ impl Node for ExpressionNode {
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Symbol<T: Sized> {
-    value: T,
-    span: Span,
+    pub value: T,
+    pub span: Span,
 }
 
 impl<T> Spanned for Symbol<T> {
