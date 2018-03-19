@@ -30,14 +30,13 @@ script:
       cargo build --all &&
       cargo test --all &&
       cargo bench --all &&
-      cargo doc &&
-      ./smoke-tests.sh
+      cargo doc
 
 after_success:
 # measure code coverage and upload to coveralls.io
   - cargo coveralls --all
 
-cache: 
+cache:
   directories:
     - $HOME/.cargo
     - kcov
