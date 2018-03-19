@@ -32,7 +32,7 @@ impl Span {
     pub fn join(&self, other: &Self) -> Self {
         Span {
             start: cmp::min(self.start, other.start),
-            end: cmp::min(self.end, other.end),
+            end: cmp::max(self.end, other.end),
         }
     }
 
