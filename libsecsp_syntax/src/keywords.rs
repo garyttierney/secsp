@@ -1,8 +1,12 @@
 macro_rules! keyword {
-    ($name:ident: $value:expr; $documentation:expr) => (
-        #[doc=$documentation]
-        pub const $name: &'static str = $value;
-    );
+    (
+        $($name:ident: $value:expr; $documentation:expr),*
+    ) => {
+            $(
+                #[doc=$documentation]
+                pub const $name: &'static str = $value;
+            )*
+        }
 }
 
 keyword!(
@@ -99,10 +103,3 @@ keyword!(
     DONT_AUDIT: "dont_audit";
     "The `dont_audit` statement keyword, which represents a type-enforcement rule that prevents logging when denied"
 );
-
-pub fn is_symbol_ty(val: &str) -> bool {
-    match val {
-        TYPE | TYPE_ATTRIBUTE | ROLE | ROLE_ATTRIBUTE | USER | USER_ATTRIBUTE => true,
-        _ => false,
-    }
-}

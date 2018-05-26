@@ -11,6 +11,7 @@
 
 pub mod ast;
 pub mod codemap;
+pub mod diagnostic;
 pub mod lex;
 pub mod parse;
 

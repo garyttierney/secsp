@@ -1,7 +1,7 @@
 use super::codemap::Span;
 
-use std::str;
 use std::iter;
+use std::str;
 
 #[derive(Clone, Debug, PartialEq)]
 /// A structural code delimiter that can occur in source code.

@@ -1,13 +1,20 @@
-use std::iter;
-use std::str::FromStr;
 use super::ast::*;
 use super::codemap::Span;
 use super::keywords;
-use super::lex::{DelimiterType, Token, TokenAndSpan, Tokenizer};
 use super::lex::Token::*;
+use super::lex::{DelimiterType, Token, TokenAndSpan, Tokenizer};
+/// The parser for CSP is implemented as a recursive descent parser over the simple LL(1) grammar.
+use std::iter;
+use std::str::FromStr;
 
 #[derive(Debug)]
-pub enum ParseError {
+pub struct ParseError {
+    kind: ParseErrorKind,
+    location: Span,
+}
+
+#[derive(Debug)]
+pub enum ParseErrorKind {
     Msg(&'static str),
     Eof,
     InvalidKeyword,
@@ -15,23 +22,34 @@ pub enum ParseError {
 
 type ParseResult<T> = Result<T, ParseError>;
 
+macro_rules! parser_error {
+    ($span:expr, $ty:expr) => {
+        Err(ParseError {
+            kind: $ty,
+            location: $span,
+        })
+    };
+}
+
 pub struct Parser<'a> {
     module_name: Option<String>,
     tokenizer: iter::Peekable<Tokenizer<'a>>,
     node_id_counter: u64,
     current: TokenAndSpan<'a>,
+    at_eof: bool,
 }
 
 impl<'a> Parser<'a> {
     pub fn new(module_name: Option<String>, tokenizer: Tokenizer<'a>) -> Self {
         let mut tokenizer = tokenizer;
-        let first_token = tokenizer.next().expect("no input available");
+        let first_token = tokenizer.next();
 
         Parser {
             module_name,
             tokenizer: tokenizer.peekable(),
             node_id_counter: 0,
-            current: first_token,
+            current: first_token.expect("No input available"),
+            at_eof: false,
         }
     }
 
@@ -41,20 +59,48 @@ impl<'a> Parser<'a> {
         NodeId(self.node_id_counter)
     }
 
-    fn advance(&mut self) -> ParseResult<&TokenAndSpan<'a>> {
-        match self.tokenizer.next() {
-            Some(token) => {
-                self.current = token;
-                Ok(&self.current)
-            }
-            None => Err(ParseError::Eof),
+    fn advance(&mut self) -> ParseResult<()> {
+        if self.at_eof {
+            return parser_error!(self.current.span, ParseErrorKind::Eof);
         }
+
+        if let Some(tok) = self.tokenizer.next() {
+            self.current = tok;
+        } else {
+            self.at_eof = true;
+        }
+
+        Ok(())
     }
 
-    fn peek(&mut self) -> Option<&Token<'a>> {
-        match self.tokenizer.peek() {
-            Some(tok) => Some(&tok.token),
-            None => None,
+    fn consume(&mut self, tok: Token) -> ParseResult<bool> {
+        if self.current.token == tok {
+            self.advance()?;
+
+            return Ok(true);
+        }
+
+        return Ok(false);
+    }
+
+    fn consume_if<F, T>(&mut self, predicate: F) -> ParseResult<T>
+    where
+        F: Fn(&TokenAndSpan) -> ParseResult<T>,
+    {
+        let result = predicate(&self.current);
+
+        if result.is_ok() {
+            self.advance()?;
+        }
+
+        return result;
+    }
+
+    fn expect(&mut self, tok: Token) -> ParseResult<()> {
+        if self.consume(tok)? {
+            Ok(())
+        } else {
+            parser_error!(self.current.span, ParseErrorKind::InvalidKeyword) // @todo - specific error
         }
     }
 
@@ -62,6 +108,13 @@ impl<'a> Parser<'a> {
         match self.peek() {
             Some(t) => t == &tok,
             _ => false,
+        }
+    }
+
+    fn peek(&mut self) -> Option<&Token<'a>> {
+        match self.tokenizer.peek() {
+            Some(tok) => Some(&tok.token),
+            None => None,
         }
     }
 
@@ -95,7 +148,24 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_container_decl(&mut self) -> ParseResult<StatementKind> {
-        unimplemented!()
+        let is_abstract = self.consume(Token::Name(keywords::ABSTRACT))?;
+        let ty = self.consume_if(|tok| match tok.token {
+            Token::Name(keywords::BLOCK) => Ok(ContainerType::Block(is_abstract)),
+            Token::Name(keywords::OPTIONAL) => Ok(ContainerType::Optional),
+            Token::Name(keywords::IN) => Ok(ContainerType::Extends),
+            _ => parser_error!(tok.span, ParseErrorKind::InvalidKeyword),
+        })?;
+
+        let name = self.parse_ident()?;
+        self.expect(Token::OpenDelimiter(DelimiterType::Brace))?;
+
+        let mut body: Vec<StatementNode> = vec![];
+
+        while !self.consume(Token::CloseDelimiter(DelimiterType::Brace))? {
+            body.push(self.parse_statement()?);
+        }
+
+        Ok(StatementKind::ContainerDeclaration(ty, name, body))
     }
 
     fn parse_macro_call(&mut self, name: Ident) -> ParseResult<StatementKind> {
@@ -122,10 +192,10 @@ impl<'a> Parser<'a> {
                         self.parse_macro_call(name)?
                     }
                     Some(&SetModifier) => self.parse_set_modifier(name)?,
-                    _ => return Err(ParseError::InvalidKeyword),
+                    _ => return parser_error!(self.current.span, ParseErrorKind::InvalidKeyword),
                 }
             }
-            _ => return Err(ParseError::InvalidKeyword),
+            _ => return parser_error!(self.current.span, ParseErrorKind::InvalidKeyword),
         });
 
         let stmt_span = start_span.join(&self.current.span);
@@ -138,11 +208,10 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_symbol_decl(&mut self) -> ParseResult<StatementKind> {
-        let ty = if let Name(ty) = self.current.token {
-            SymbolType::from_str(ty).map_err(|_| ParseError::InvalidKeyword)?
-        } else {
-            return Err(ParseError::InvalidKeyword);
-        };
+        let ty = self.consume_if(|tok| match tok.token {
+            Token::Name(val) => Ok(SymbolType::from_str(val).expect("invalid symbol type")),
+            _ => parser_error!(tok.span, ParseErrorKind::InvalidKeyword),
+        })?;
 
         let name = self.parse_ident()?;
         let terminated = self.lookahead(Token::Semicolon);
@@ -181,14 +250,16 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_ident(&mut self) -> ParseResult<Ident> {
-        self.advance().expect("eof");
-
         match self.current.token {
-            Token::Name(val) => Ok(Ident {
-                value: val.to_owned(),
-                span: self.current.span,
-            }),
-            _ => Err(ParseError::InvalidKeyword),
+            Token::Name(val) => {
+                let value = String::from(val);
+                let span = self.current.span;
+
+                self.advance()?;
+
+                Ok(Ident { value, span })
+            }
+            _ => parser_error!(self.current.span, ParseErrorKind::InvalidKeyword),
         }
     }
 }
@@ -202,6 +273,27 @@ mod tests {
     }
 
     #[test]
+    pub fn parse_container_decl() {
+        let mut parser = parser_with_input("block b {}");
+        let result = parser
+            .parse_statement()
+            .expect("unable to parse container decl");
+
+        assert_eq!(Span::from(0, 9), result.span);
+        assert_eq!(
+            StatementKind::ContainerDeclaration(
+                ContainerType::Block(false),
+                Ident {
+                    value: String::from("b"),
+                    span: Span::at(6),
+                },
+                vec![],
+            ),
+            *result.kind
+        );
+    }
+
+    #[test]
     pub fn parse_simple_decl() {
         let mut parser = parser_with_input("type t;");
         let result = parser.parse_statement().expect("unable to parse decl");
@@ -211,7 +303,7 @@ mod tests {
             StatementKind::SymbolDeclaration(
                 SymbolType::Type,
                 Ident {
-                    value: "t".to_owned(),
+                    value: String::from("t"),
                     span: Span::at(5),
                 },
                 None,

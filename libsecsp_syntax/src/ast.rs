@@ -6,7 +6,7 @@ use super::keywords;
 use std::str::FromStr;
 
 macro_rules! impl_spanned {
-    ($name: ident) => {
+    ($name:ident) => {
         impl Spanned for $name {
             fn span(&self) -> Span {
                 self.span
