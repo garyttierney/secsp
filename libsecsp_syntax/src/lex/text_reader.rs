@@ -47,18 +47,6 @@ impl<'input> TextReader<'input> {
 
     /// Read the next character if any is available without advancing the reader
     /// position.
-    ///
-    /// ```
-    /// use secsp_syntax::lex::{ByteIndex, IndexedChar, TextReader, TextRange};
-    ///
-    /// let mut reader = TextReader::new("test");
-    /// let next = reader.peek();
-    /// let expected = Some(IndexedChar(TextRange::new(ByteIndex(0), ByteIndex(0)), 't'));
-    ///
-    /// assert_eq!(next, expected);
-    /// assert_eq!(reader.next(), expected);
-    /// ```
-    ///
     pub fn peek(&mut self) -> Option<IndexedChar> {
         self.lookahead.map(|(start, ch)| {
             let offset = ByteOffset(start as RawOffset);
@@ -72,15 +60,6 @@ impl<'input> TextReader<'input> {
 
     /// Extract a byte range of characters using this reader, returning
     /// a reference to a slice of the input data.
-    ///
-    /// ```
-    /// use secsp_syntax::lex::{ByteIndex, TextReader, TextRange};
-    ///
-    /// let reader = TextReader::new("test");
-    /// let text = reader.range(TextRange::new(ByteIndex(0), ByteIndex(3)));
-    ///
-    /// assert_eq!("test", text);
-    /// ```
     pub fn range(&self, range: TextRange) -> &str {
         self.file_map.src_slice(range).expect("invalid range")
     }
