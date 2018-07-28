@@ -1,9 +1,14 @@
 //! AST types for the `secsp` parser.  The root component of all ASTs is a `Statement`.
 //!
 
-use super::codemap::Span;
-use super::keywords;
+use crate::keywords;
+use crate::lex::text_reader::TextRange;
+use crate::parse::expr::ExprContext;
+
+use std::ops::Deref;
 use std::str::FromStr;
+
+pub type Span = TextRange;
 
 macro_rules! impl_spanned {
     ($name:ident) => {
@@ -69,6 +74,9 @@ pub trait NodeVisitor {
         id: &Ident,
         body: &StatementNodeList,
     ) -> Self::Result;
+
+    fn visit_macro_call(&mut self, path: &Path, args: &[ExpressionNode]) -> Self::Result;
+
     fn visit_macro_decl(
         &mut self,
         id: &Ident,
@@ -105,14 +113,13 @@ pub trait Node: Sized + Spanned {
 }
 
 pub struct Module {
-    name: Option<String>,
     body: Vec<StatementNode>,
     span: Span,
 }
 
 impl Module {
-    pub fn new(name: Option<String>, body: Vec<StatementNode>, span: Span) -> Self {
-        Module { name, body, span }
+    pub fn new(body: Vec<StatementNode>, span: Span) -> Self {
+        Module { body, span }
     }
 }
 
@@ -291,6 +298,7 @@ impl FromStr for SymbolType {
     }
 }
 
+/// The kind of initializer associated with a symbol declaration.  Some symbols lllll
 pub enum SymbolInitializerKind {
     Required,
     Optional,
@@ -390,8 +398,19 @@ pub enum StatementKind {
     /// ```
     ClassDeclaration(ClassType, Ident, Vec<Ident>),
 
-    /// A declaration of a container with a body of `StatementNode`s.
-    ContainerDeclaration(ContainerType, Ident, Vec<StatementNode>),
+    /// A declaration of a named container with a body of `StatementNode`s.  May additionally be prefixed by the `abstract` keyword and
+    /// inherit from other containers.
+    ///
+    /// Example:
+    ///
+    /// ```csp,ignore
+    /// block abc {
+    /// }
+    ///
+    /// abstract block def inherits_from abc {
+    /// }
+    ///
+    ContainerDeclaration(ContainerType, Ident, Vec<Path>, Vec<StatementNode>),
 
     /// A conditional statement, representing a block of runtime or build time conditional policy with 0 or more else-ifs and an optional
     /// else block.
@@ -419,6 +438,16 @@ pub enum StatementKind {
         Option<Vec<StatementNode>>,
     ),
 
+    /// A named macro call with it's argument list.
+    ///
+    /// Example:
+    ///
+    /// ```csp,ignore
+    /// type ty;
+    /// my_macro(ty);
+    /// ```
+    MacroCall(Path, Vec<ExpressionNode>),
+
     /// A declaration of a named macro with an identifier, list of parameters, and body.
     ///
     /// Example:
@@ -429,6 +458,15 @@ pub enum StatementKind {
     /// }
     /// ```
     MacroDeclaration(Ident, Vec<MacroParameter>, Vec<StatementNode>),
+
+    /// Modification of a named set with an expression as the modifier.  May have an optional cast.
+    ///
+    /// Example:
+    ///
+    /// ```csp,ignore
+    /// my_type_set |= (type)  abc & abc1;
+    /// ```
+    SetModifier(Path, Option<ExprContext>, ExpressionNode),
 
     /// A declaration of a named symbol with an optional initializer.
     ///
@@ -452,28 +490,23 @@ impl Node for StatementNode {
     fn accept<V: NodeVisitor>(&self, visitor: &mut V) -> V::Result {
         use self::StatementKind::*;
 
-        match *self.kind {
-            ClassDeclaration(ref ty, ref id, ref perms) => visitor.visit_class_decl(ty, id, perms),
-            ContainerDeclaration(ref ty, ref id, ref body) => {
+        match self.kind.as_ref() {
+            ClassDeclaration(ty, id, perms) => visitor.visit_class_decl(ty, id, perms),
+            ContainerDeclaration(ty, id, parents, body) => {
                 visitor.visit_container_decl(ty, id, &body[..])
             }
-            Conditional(ref ty, ref expr, ref body, ref else_ifs, ref else_blk) => visitor
-                .visit_conditional(
-                    ty,
-                    expr,
-                    &body[..],
-                    &else_ifs[..],
-                    else_blk.as_ref().map(|x| &x[..]),
-                ),
-            MacroDeclaration(ref id, ref params, ref body) => {
-                visitor.visit_macro_decl(id, params, &body[..])
-            }
-            SymbolDeclaration(ref ty, ref id, ref val) => {
-                visitor.visit_symbol_decl(ty, id, val.as_ref())
-            }
-            TeRule(ref ty, ref source, ref target, ref perms) => {
-                visitor.visit_te_rule(ty, source, target, perms)
-            }
+            Conditional(ty, expr, body, else_ifs, else_blk) => visitor.visit_conditional(
+                ty,
+                expr,
+                &body[..],
+                &else_ifs[..],
+                else_blk.as_ref().map(|x| &x[..]),
+            ),
+            MacroCall(path, args) => visitor.visit_macro_call(path, args),
+            MacroDeclaration(id, params, body) => visitor.visit_macro_decl(id, params, &body[..]),
+            SetModifier(_path, _ctx, _expr) => unimplemented!(),
+            SymbolDeclaration(ty, id, val) => visitor.visit_symbol_decl(ty, id, val.as_ref()),
+            TeRule(ty, source, target, perms) => visitor.visit_te_rule(ty, source, target, perms),
         }
     }
 
@@ -500,6 +533,7 @@ impl_spanned!(ExpressionNode);
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum ExpressionKind {
+    /// An expression consisting of two expressions joined by a binary operator.
     BinaryOp(ExpressionNode, BinOp, ExpressionNode),
     CategoryRange(Ident, Ident),
     Context(Ident, Ident, Ident, Option<ExpressionNode>),
@@ -515,19 +549,17 @@ impl Node for ExpressionNode {
     fn accept<V: NodeVisitor>(&self, visitor: &mut V) -> V::Result {
         use self::ExpressionKind::*;
 
-        match *self.kind {
-            BinaryOp(ref lhs, ref op, ref rhs) => visitor.visit_binary_op_expr(lhs, op, rhs),
-            CategoryRange(ref lo, ref hi) => visitor.visit_category_range_expr(lo, hi),
-            Context(ref user, ref role, ref ty, ref range) => {
+        match self.kind.as_ref() {
+            BinaryOp(lhs, op, rhs) => visitor.visit_binary_op_expr(lhs, op, rhs),
+            CategoryRange(lo, hi) => visitor.visit_category_range_expr(lo, hi),
+            Context(user, role, ty, range) => {
                 visitor.visit_context_expr(user, role, ty, range.as_ref())
             }
-            Level(ref sensitivity, ref categories) => {
-                visitor.visit_level_expr(sensitivity, categories)
-            }
-            LevelRange(ref lo, ref hi) => visitor.visit_level_range_expr(lo, hi),
-            UnaryOp(ref op, ref operand) => visitor.visit_unary_op_expr(op, operand),
-            Variable(ref var) => visitor.visit_var_expr(var),
-            VariableList(ref varlist) => visitor.visit_varlist_expr(&varlist[..]),
+            Level(sensitivity, categories) => visitor.visit_level_expr(sensitivity, categories),
+            LevelRange(lo, hi) => visitor.visit_level_range_expr(lo, hi),
+            UnaryOp(op, operand) => visitor.visit_unary_op_expr(op, operand),
+            Variable(var) => visitor.visit_var_expr(var),
+            VariableList(varlist) => visitor.visit_varlist_expr(&varlist[..]),
         }
     }
 
@@ -536,6 +568,23 @@ impl Node for ExpressionNode {
         self.node_id
     }
 }
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct Path {
+    pub span: Span,
+    pub segments: Vec<Ident>,
+}
+
+impl Path {
+    pub fn from_ident(ident: Ident) -> Self {
+        Path {
+            span: ident.span,
+            segments: vec![ident],
+        }
+    }
+}
+
+impl_spanned!(Path);
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Symbol<T: Sized> {
@@ -549,22 +598,44 @@ impl<T> Spanned for Symbol<T> {
     }
 }
 
+impl<T> Deref for Symbol<T> {
+    type Target = T;
+
+    fn deref(&self) -> &T {
+        &self.value
+    }
+}
+
 pub type Ident = Symbol<String>;
 pub type BinOp = Symbol<BinOpKind>;
 pub type UnaryOp = Symbol<UnaryOpKind>;
 
 #[derive(Clone, Debug, PartialEq)]
+/// Variants of binary operators that can be used in set/conditional expressions.
 pub enum BinOpKind {
+    /// The conditional and (`&&`) operator.
     LogicalAnd,
+
+    /// The conditional or (`||`) operator.
     LogicalOr,
+
+    /// The bitwise and (`&`) operator.
     BitwiseAnd,
+
+    /// The bitwise or (`|`) operator.
     BitwiseOr,
+
+    /// The bitwise xor (`^`) operator.
     BitwiseXor,
 }
 
 #[derive(Clone, Debug, PartialEq)]
+/// Variants of unary operators that can be used in set/conditional expressions.
 pub enum UnaryOpKind {
-    UnaryNot,
+    /// The bitwise not (`~`) operator.
+    BitwiseNot,
+
+    /// The ocnditional not (`!`) operator.
     LogicalNot,
 }
 

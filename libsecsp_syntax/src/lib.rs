@@ -7,32 +7,19 @@
 //!
 
 #![crate_name = "secsp_syntax"]
-#![crate_type = "lib"]
+#![crate_type = "dylib"]
+#![feature(rust_2018_preview)]
+#![feature(nll)]
+#![warn(rust_2018_idioms)]
+//#![warn(missing_docs)]
+#![warn(trivial_casts)]
+#![warn(trivial_numeric_casts)]
 
 pub mod ast;
 pub mod codemap;
 pub mod diagnostic;
 pub mod lex;
 pub mod parse;
+pub mod session;
 
 mod keywords;
-
-// #[cfg(test)]
-// mod testing {
-//     use super::*;
-
-//     pub fn parse<O, P>(input: &str, parser: P) -> O
-//     where
-//         P: Fn(&[u8]) -> nom::IResult<&[u8], O>,
-//     {
-//         let bytes = input.as_bytes();
-//         let result = parser(bytes);
-
-//         match result {
-//             IResult::Done(remaining, output) => output,
-//             IResult::Incomplete(e) => panic!("{:?}", e),
-//             IResult::Error(e) => panic!("{}", e),
-//             _ => panic!("Invalid"),
-//         }
-//     }
-// }

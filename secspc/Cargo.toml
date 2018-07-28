@@ -1,0 +1,9 @@
+[package]
+name = "secspc"
+version = "0.1.0"
+authors = ["Gary Tierney <gary.tierney@gmx.com>"]
+
+[dependencies]
+clap = "2"
+symbolic_expressions = "~4.1.9"
+secsp_syntax = { path = "../libsecsp_syntax" }

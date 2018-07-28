@@ -1,7 +1,7 @@
 extern crate symbolic_expressions;
 
-use self::symbolic_expressions::Sexp;
 use self::symbolic_expressions::parser::parse_file;
+use self::symbolic_expressions::Sexp;
 
 use std::fs::File;
 use std::io::Read;

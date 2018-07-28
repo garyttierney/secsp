@@ -1,4 +1,4 @@
 indent_style = "Block"
-reorder_imported_names = true
+reorder_imports = true
 error_on_unformatted = false
 error_on_line_overflow = false

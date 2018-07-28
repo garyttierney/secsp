@@ -4,7 +4,7 @@ macro_rules! keyword {
     ) => {
             $(
                 #[doc=$documentation]
-                pub const $name: &'static str = $value;
+                crate const $name: &'static str = $value;
             )*
         }
 }
@@ -102,4 +102,9 @@ keyword!(
 keyword!(
     DONT_AUDIT: "dont_audit";
     "The `dont_audit` statement keyword, which represents a type-enforcement rule that prevents logging when denied"
+);
+
+keyword!(
+    MACRO: "macro";
+    "The `macro` statement keyword, which declares a new named macro in the current namespace"
 );
