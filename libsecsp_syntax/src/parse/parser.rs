@@ -476,7 +476,6 @@ impl<'sess> Parser<'sess> {
 mod tests {
     use super::*;
     use crate::parse::parser_test::{decl, expr, symbol, variable};
-    use matches::assert_matches;
 
     fn parse_expr<S: Into<String>>(src: S) -> ExpressionNode {
         let sess = ParseSession::default();
