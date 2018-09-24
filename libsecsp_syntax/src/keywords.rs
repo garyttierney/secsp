@@ -80,8 +80,8 @@ keyword!(
 );
 
 keyword!(
-    INHERITS_FROM: "inherits_from";
-    "The `abstract` modifier, used to mark a `block` as abstract"
+    EXTENDS: "extends";
+    "The `extends` keyword, used to begin an inheritance list"
 );
 
 keyword!(

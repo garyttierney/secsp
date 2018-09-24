@@ -1,8 +1,8 @@
+use crate::ast::Span;
 use crate::ast::{
     ExpressionKind, ExpressionNode, Ident, NodeId, Path, StatementKind, StatementNode, Symbol,
     SymbolType,
 };
-use crate::ast::Span;
 
 pub(crate) fn symbol<S: Sized + PartialEq>(value: S) -> Symbol<S> {
     Symbol {

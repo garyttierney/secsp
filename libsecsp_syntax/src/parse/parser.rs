@@ -1,7 +1,7 @@
 use codespan::{ByteIndex, ByteSpan};
 use codespan_reporting::Severity;
 use crate::ast::{
-    BinOp, BinOpKind, ContainerType, ExpressionKind, ExpressionNode, Ident, Module, NodeId, Path,
+    BinOp, BinOpKind, ContainerType, ExpressionKind, ExpressionNode, Ident, MacroParameter, Module, NodeId, Path,
     StatementKind, StatementNode, SymbolType, UnaryOp, UnaryOpKind,
 };
 use crate::keywords;
@@ -10,11 +10,12 @@ use crate::lex::token_cursor::TokenCursor;
 use crate::lex::token_tree::TokenTree;
 use crate::parse::expr::ExprContext;
 use crate::parse::parser_from_source;
+use crate::parse::ParseResult;
 use crate::parse::stmt::InitializerKind;
 use crate::parse::stmt::StatementType;
-use crate::parse::ParseResult;
 use crate::session::ParseSession;
 use std::borrow::Borrow;
+use std::str::FromStr;
 
 pub struct ParseError {}
 
@@ -119,7 +120,7 @@ impl<'sess> Parser<'sess> {
 
             if !self.eat(Token::Comma)
                 && self.token != Token::CloseDelimiter(DelimiterType::Parenthesis)
-            {}
+                {}
         }
 
         Ok(StatementKind::MacroCall(name, params))
@@ -158,7 +159,7 @@ impl<'sess> Parser<'sess> {
         ])?;
 
         let name = self.parse_ident()?;
-        let parents: Vec<Path> = if self.eat(keyword!(INHERITS_FROM)) {
+        let parents: Vec<Path> = if self.eat(keyword!(EXTENDS)) {
             let mut paths = vec![];
 
             while let Token::Name(_) = self.token {
@@ -205,7 +206,13 @@ impl<'sess> Parser<'sess> {
                     _ => return Ok(first_id),
                 }
             }
-            Token::OpenDelimiter(DelimiterType::Parenthesis) => unimplemented!(),
+            Token::OpenDelimiter(DelimiterType::Parenthesis) => {
+                self.bump();
+                let expr = self.parse_expr(Some(ctx))?;
+                self.expect(Token::CloseDelimiter(DelimiterType::Parenthesis))?;
+
+                return Ok(expr);
+            }
             Token::LogicalNot | Token::BitwiseNot => self.parse_unary_expr_tail(ctx)?,
             _ => unreachable!(),
         });
@@ -368,8 +375,38 @@ impl<'sess> Parser<'sess> {
     fn parse_macro(&mut self) -> ParseResult<StatementKind> {
         self.bump();
 
-        let _macro_name = self.parse_ident()?;
-        unimplemented!()
+        let macro_name = self.parse_ident()?;
+        let mut macro_parameters = vec![];
+
+        self.expect(Token::OpenDelimiter(DelimiterType::Parenthesis))?;
+
+        while let Token::Name(_) = self.token {
+            let start = self.span;
+            let qualifier = self.parse_ident().and_then(|v| {
+                SymbolType::from_str(&v.value)
+                    .map_err(|()| self.session.diagnostic(Severity::Error, "invalid keyword"))
+            })?;
+
+            let name = self.parse_ident()?;
+
+            macro_parameters.push(MacroParameter {
+                qualifier,
+                name,
+                span: start.to(self.span),
+            });
+
+            if !self.eat(Token::Comma) {
+                break;
+            }
+        }
+
+        self.expect(Token::CloseDelimiter(DelimiterType::Parenthesis))?;
+
+        Ok(StatementKind::MacroDeclaration(
+            macro_name,
+            macro_parameters,
+            self.parse_statement_block()?,
+        ))
     }
 
     fn parse_path(&mut self) -> ParseResult<Path> {
@@ -445,10 +482,12 @@ impl<'sess> Parser<'sess> {
             return Ok(());
         }
 
-        Err(self.session.diagnostic(
-            Severity::Error,
-            format!("expected {}", expected.borrow().description()),
-        ))
+        Err(self
+            .session
+            .diagnostic(
+                Severity::Error,
+                format!("expected {}", expected.borrow().description()),
+            ).span_err(self.span, format!("found keyword")))
     }
 
     fn expect_one_of<T: Sized>(&mut self, expected: Vec<(Token, T)>) -> ParseResult<T> {
@@ -474,8 +513,8 @@ impl<'sess> Parser<'sess> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use crate::parse::parser_test::{decl, expr, symbol, variable};
+    use super::*;
 
     fn parse_expr<S: Into<String>>(src: S) -> ExpressionNode {
         let sess = ParseSession::default();
@@ -502,7 +541,7 @@ mod tests {
                     role: variable("role"),
                     ty: variable("type"),
                     level_range: None,
-                }))
+                })),
             ),
             parse_stmt("context c = user:role:type;")
         );
@@ -558,7 +597,7 @@ mod tests {
                 role: variable("role"),
                 ty: variable("type"),
                 level_range: Some(expr(ExpressionKind::LevelRange(
-                    expr(ExpressionKind::Level(variable("s0"), variable("c0"),)),
+                    expr(ExpressionKind::Level(variable("s0"), variable("c0"))),
                     variable("l1"),
                 ))),
             }),
@@ -571,7 +610,7 @@ mod tests {
         assert_eq!(
             expr(ExpressionKind::UnaryOp(
                 symbol(UnaryOpKind::LogicalNot),
-                variable("a")
+                variable("a"),
             )),
             parse_expr("!a")
         );
