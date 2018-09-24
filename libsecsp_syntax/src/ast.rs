@@ -4,7 +4,6 @@
 use crate::keywords;
 use crate::lex::text_reader::TextRange;
 use crate::parse::expr::ExprContext;
-
 use std::ops::Deref;
 use std::str::FromStr;
 
@@ -34,23 +33,27 @@ pub trait NodeVisitor {
         rhs: &ExpressionNode,
     ) -> Self::Result;
 
-    fn visit_category_range_expr(&mut self, lo: &Ident, hi: &Ident) -> Self::Result;
+    fn visit_category_range_expr(
+        &mut self,
+        lo: &ExpressionNode,
+        hi: &ExpressionNode,
+    ) -> Self::Result;
     fn visit_context_expr(
         &mut self,
-        user: &Ident,
-        role: &Ident,
-        ty: &Ident,
+        user: &ExpressionNode,
+        role: &ExpressionNode,
+        ty: &ExpressionNode,
         level_range: Option<&ExpressionNode>,
     ) -> Self::Result;
     fn visit_level_expr(
         &mut self,
-        sensitivity: &Ident,
+        sensitivity: &ExpressionNode,
         categories: &ExpressionNode,
     ) -> Self::Result;
     fn visit_level_range_expr(&mut self, lo: &ExpressionNode, hi: &ExpressionNode) -> Self::Result;
     fn visit_unary_op_expr(&mut self, op: &UnaryOp, operand: &ExpressionNode) -> Self::Result;
-    fn visit_var_expr(&mut self, span: &Ident) -> Self::Result;
-    fn visit_varlist_expr(&mut self, vars: &[Ident]) -> Self::Result;
+    fn visit_var_expr(&mut self, span: &Path) -> Self::Result;
+    fn visit_varlist_expr(&mut self, vars: &[Path]) -> Self::Result;
 
     fn visit_class_decl(
         &mut self,
@@ -112,14 +115,14 @@ pub trait Node: Sized + Spanned {
     fn node_id(&self) -> NodeId;
 }
 
+#[derive(Debug)]
 pub struct Module {
-    body: Vec<StatementNode>,
-    span: Span,
+    pub(crate) body: Vec<StatementNode>,
 }
 
 impl Module {
-    pub fn new(body: Vec<StatementNode>, span: Span) -> Self {
-        Module { body, span }
+    pub fn new(body: Vec<StatementNode>) -> Self {
+        Module { body }
     }
 }
 
@@ -372,12 +375,20 @@ pub enum ConditionalType {
 }
 
 /// An AST node representing a `StatementKind` with a unique ID and codemap information.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug)]
 pub struct StatementNode {
     pub node_id: NodeId,
     pub kind: Box<StatementKind>,
     pub span: Span,
 }
+
+impl PartialEq for StatementNode {
+    fn eq(&self, other: &StatementNode) -> bool {
+        *self.kind == *other.kind
+    }
+}
+
+impl Eq for StatementNode {}
 
 impl_spanned!(StatementNode);
 
@@ -517,7 +528,7 @@ impl Node for StatementNode {
 }
 
 /// An AST node representing an `ExpressionKind` with a unique ID and coedmap information.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug)]
 pub struct ExpressionNode {
     /// A unique identifier for this node.
     pub node_id: NodeId,
@@ -529,19 +540,39 @@ pub struct ExpressionNode {
     pub span: Span,
 }
 
+impl PartialEq for ExpressionNode {
+    fn eq(&self, other: &ExpressionNode) -> bool {
+        *self.kind == *other.kind
+    }
+}
+
+impl Eq for ExpressionNode {}
+
 impl_spanned!(ExpressionNode);
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum ExpressionKind {
     /// An expression consisting of two expressions joined by a binary operator.
-    BinaryOp(ExpressionNode, BinOp, ExpressionNode),
-    CategoryRange(Ident, Ident),
-    Context(Ident, Ident, Ident, Option<ExpressionNode>),
-    Level(Ident, ExpressionNode),
+    BinaryOp {
+        lhs: ExpressionNode,
+        op: BinOp,
+        rhs: ExpressionNode,
+    },
+    CategoryRange {
+        lo: ExpressionNode,
+        hi: ExpressionNode,
+    },
+    Context {
+        user: ExpressionNode,
+        role: ExpressionNode,
+        ty: ExpressionNode,
+        level_range: Option<ExpressionNode>,
+    },
+    Level(ExpressionNode, ExpressionNode),
     LevelRange(ExpressionNode, ExpressionNode),
     UnaryOp(UnaryOp, ExpressionNode),
-    Variable(Ident),
-    VariableList(Vec<Ident>),
+    Variable(Path),
+    VariableList(Vec<Path>),
 }
 
 impl Node for ExpressionNode {
@@ -550,11 +581,14 @@ impl Node for ExpressionNode {
         use self::ExpressionKind::*;
 
         match self.kind.as_ref() {
-            BinaryOp(lhs, op, rhs) => visitor.visit_binary_op_expr(lhs, op, rhs),
-            CategoryRange(lo, hi) => visitor.visit_category_range_expr(lo, hi),
-            Context(user, role, ty, range) => {
-                visitor.visit_context_expr(user, role, ty, range.as_ref())
-            }
+            BinaryOp { lhs, op, rhs } => visitor.visit_binary_op_expr(lhs, op, rhs),
+            CategoryRange { lo, hi } => visitor.visit_category_range_expr(lo, hi),
+            Context {
+                user,
+                role,
+                ty,
+                level_range,
+            } => visitor.visit_context_expr(user, role, ty, level_range.as_ref()),
             Level(sensitivity, categories) => visitor.visit_level_expr(sensitivity, categories),
             LevelRange(lo, hi) => visitor.visit_level_range_expr(lo, hi),
             UnaryOp(op, operand) => visitor.visit_unary_op_expr(op, operand),
@@ -569,11 +603,19 @@ impl Node for ExpressionNode {
     }
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug)]
 pub struct Path {
     pub span: Span,
     pub segments: Vec<Ident>,
 }
+
+impl PartialEq for Path {
+    fn eq(&self, other: &Path) -> bool {
+        self.segments == other.segments
+    }
+}
+
+impl Eq for Path {}
 
 impl Path {
     pub fn from_ident(ident: Ident) -> Self {
@@ -586,23 +628,37 @@ impl Path {
 
 impl_spanned!(Path);
 
-#[derive(Clone, Debug, PartialEq)]
-pub struct Symbol<T: Sized> {
+#[derive(Clone, Debug)]
+pub struct Symbol<T: Sized + PartialEq> {
     pub value: T,
     pub span: Span,
 }
 
-impl<T> Spanned for Symbol<T> {
+impl<T: Sized + PartialEq> PartialEq for Symbol<T> {
+    fn eq(&self, other: &Symbol<T>) -> bool {
+        self.value == other.value
+    }
+}
+
+impl<T: Sized + PartialEq> Eq for Symbol<T> {}
+
+impl<T: Sized + PartialEq> Spanned for Symbol<T> {
     fn span(&self) -> Span {
         self.span
     }
 }
 
-impl<T> Deref for Symbol<T> {
+impl<T: Sized + PartialEq> Deref for Symbol<T> {
     type Target = T;
 
     fn deref(&self) -> &T {
         &self.value
+    }
+}
+
+impl<T: Sized + PartialEq> Symbol<T> {
+    pub fn new(value: T, span: Span) -> Self {
+        Symbol { value, span }
     }
 }
 

@@ -36,8 +36,20 @@ pub enum Token {
     /// The period token.  Used to separate fully qualified names.
     Dot,
 
+    /// The double period token.  Used as the range operator.
+    DotDot,
+
+    /// The colon token.  Used as a security attribute delimiter.
+    Colon,
+
+    /// The hyphen token.  Used as a
+    Hyphen,
+
     /// The comma token.  Used as a delimiter.
     Comma,
+
+    /// The equals token.  Used as an initializer and assignemt token.
+    Equals,
 
     /// The bitwise binary AND operator: `&`.
     BitwiseAnd,
@@ -65,4 +77,30 @@ pub enum Token {
 
     /// A token indicating the end of file has been reached.
     Eof,
+}
+
+impl Token {
+    pub fn description(&self) -> &'static str {
+        match self {
+            Token::Name(_) => "identifier",
+            Token::Literal(_) => "string",
+            Token::OpenDelimiter(DelimiterType::Brace) => "{",
+            Token::CloseDelimiter(DelimiterType::Brace) => "}",
+            Token::OpenDelimiter(DelimiterType::Parenthesis) => "(",
+            Token::CloseDelimiter(DelimiterType::Parenthesis) => ")",
+            Token::Semicolon => ";",
+            Token::Dot => ".",
+            Token::Comma => ",",
+            Token::Equals => "=",
+            Token::BitwiseAnd => "&",
+            Token::BitwiseOr => "|",
+            Token::BitwiseXor => "^",
+            Token::BitwiseNot => "~",
+            Token::LogicalAnd => "&&",
+            Token::LogicalOr => "||",
+            Token::LogicalNot => "~",
+            Token::SetModifier => "|=",
+            _ => unreachable!("shouldn't show description for {:#?}", self),
+        }
+    }
 }

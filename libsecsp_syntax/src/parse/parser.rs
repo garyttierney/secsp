@@ -1,21 +1,20 @@
+use codespan::{ByteIndex, ByteSpan};
 use codespan_reporting::Severity;
-use std::borrow::Borrow;
-
 use crate::ast::{
-    ContainerType, ExpressionNode, Ident, Module, NodeId, Path, StatementKind, StatementNode,
-    SymbolType,
+    BinOp, BinOpKind, ContainerType, ExpressionKind, ExpressionNode, Ident, Module, NodeId, Path,
+    StatementKind, StatementNode, SymbolType, UnaryOp, UnaryOpKind,
 };
 use crate::keywords;
 use crate::lex::token::{DelimiterType, Token};
 use crate::lex::token_cursor::TokenCursor;
 use crate::lex::token_tree::TokenTree;
-use crate::lex::{ByteIndex, ByteSpan};
 use crate::parse::expr::ExprContext;
 use crate::parse::parser_from_source;
 use crate::parse::stmt::InitializerKind;
 use crate::parse::stmt::StatementType;
 use crate::parse::ParseResult;
 use crate::session::ParseSession;
+use std::borrow::Borrow;
 
 pub struct ParseError {}
 
@@ -60,7 +59,7 @@ impl<'sess> Parser<'sess> {
             }
         }
 
-        unimplemented!()
+        Ok(Module::new(statements))
     }
 
     pub fn parse_statement(&mut self) -> ParseResult<StatementNode> {
@@ -85,7 +84,9 @@ impl<'sess> Parser<'sess> {
             None => {
                 let path = self.parse_path()?;
                 let stmt = match self.token {
-                    Token::OpenDelimiter(DelimiterType::Parenthesis) => self.parse_arg_list(path)?,
+                    Token::OpenDelimiter(DelimiterType::Parenthesis) => {
+                        self.parse_arg_list(path)?
+                    }
                     Token::SetModifier => self.parse_set_modifier(path)?,
                     _ => return Err(self.session.diagnostic(Severity::Error, "unexpected token")),
                 };
@@ -110,11 +111,11 @@ impl<'sess> Parser<'sess> {
     }
 
     fn parse_arg_list(&mut self, name: Path) -> ParseResult<StatementKind> {
-        let params = vec![];
+        let mut params = vec![];
 
         self.expect(Token::OpenDelimiter(DelimiterType::Parenthesis))?;
         while !self.eat(Token::CloseDelimiter(DelimiterType::Parenthesis)) {
-            let _param = self.parse_expr(ExprContext::Any);
+            params.push(self.parse_expr(None)?);
 
             if !self.eat(Token::Comma)
                 && self.token != Token::CloseDelimiter(DelimiterType::Parenthesis)
@@ -180,10 +181,176 @@ impl<'sess> Parser<'sess> {
         ))
     }
 
-    fn parse_expr(&mut self, _ctx: ExprContext) -> ParseResult<ExpressionNode> {
-        unimplemented!()
+    fn parse_expr(&mut self, ctx: Option<ExprContext>) -> ParseResult<ExpressionNode> {
+        let start_span = self.span;
+        let ctx = ctx.unwrap_or_default();
+
+        let kind = Box::from(match self.token.clone() {
+            Token::Name(_) => {
+                let first_id = self.parse_path_to_expr_node()?;
+
+                match self.token {
+                    Token::Colon if ctx != ExprContext::NoSecLiteral => {
+                        self.parse_security_context_expr_tail(first_id, ctx)?
+                    }
+                    Token::Hyphen if ctx != ExprContext::NoSecLiteral => {
+                        self.parse_level_range_expr_tail(first_id, ctx)?
+                    }
+                    Token::DotDot => self.parse_category_range_expr_tail(first_id)?,
+                    Token::BitwiseAnd
+                    | Token::BitwiseOr
+                    | Token::BitwiseXor
+                    | Token::LogicalAnd
+                    | Token::LogicalOr => self.parse_binary_expr_tail(first_id, ctx)?,
+                    _ => return Ok(first_id),
+                }
+            }
+            Token::OpenDelimiter(DelimiterType::Parenthesis) => unimplemented!(),
+            Token::LogicalNot | Token::BitwiseNot => self.parse_unary_expr_tail(ctx)?,
+            _ => unreachable!(),
+        });
+
+        let span = start_span.to(self.last_span);
+
+        Ok(ExpressionNode {
+            node_id: NodeId(0),
+            span,
+            kind,
+        })
     }
 
+    fn parse_path_to_expr_node(&mut self) -> ParseResult<ExpressionNode> {
+        let path = self.parse_path()?;
+
+        Ok(ExpressionNode {
+            span: path.span,
+            kind: Box::from(ExpressionKind::Variable(path)),
+            node_id: NodeId(0),
+        })
+    }
+
+    fn parse_binary_expr_tail(
+        &mut self,
+        lhs: ExpressionNode,
+        ctx: ExprContext,
+    ) -> ParseResult<ExpressionKind> {
+        let op = self.parse_binary_op()?;
+        let rhs = self.parse_expr(Some(ctx))?;
+
+        Ok(ExpressionKind::BinaryOp { lhs, op, rhs })
+    }
+
+    fn parse_category_range_expr_tail(
+        &mut self,
+        first_id: ExpressionNode,
+    ) -> ParseResult<ExpressionKind> {
+        self.bump();
+        let hi = self.parse_path_to_expr_node()?;
+
+        Ok(ExpressionKind::CategoryRange { lo: first_id, hi })
+    }
+
+    fn parse_level_range_expr_tail(
+        &mut self,
+        first_id: ExpressionNode,
+        ctx: ExprContext,
+    ) -> ParseResult<ExpressionKind> {
+        self.expect(Token::Hyphen)?;
+        let l1 = self.parse_expr(Some(ExprContext::LevelRange))?;
+
+        Ok(ExpressionKind::LevelRange(first_id, l1))
+    }
+
+    fn parse_security_context_expr_tail(
+        &mut self,
+        first_id: ExpressionNode,
+        ctx: ExprContext,
+    ) -> ParseResult<ExpressionKind> {
+        self.expect(Token::Colon)?;
+        let second_id = self.parse_expr(Some(ExprContext::NoSecLiteral))?;
+
+        if self.token == Token::Hyphen {
+            // Just parsed a sensitivity:category literal and are at a hyphen,
+            // so we must be at the start of a level-range expression.
+
+            let level_node = ExpressionNode {
+                span: first_id.span.to(second_id.span),
+                kind: Box::from(ExpressionKind::Level(first_id, second_id)),
+                node_id: NodeId(0),
+            };
+
+            self.parse_level_range_expr_tail(level_node, ExprContext::LevelRange)
+        } else if self.eat(Token::Colon) {
+            // Not a level-range expression, so must be a context literal
+            // expression.
+
+            let ty = self.parse_expr(Some(ExprContext::NoSecLiteral))?;
+            let level_range = if self.eat(Token::Colon) {
+                Some(self.parse_expr(Some(ExprContext::LevelRange))?)
+            } else {
+                None
+            };
+
+            Ok(ExpressionKind::Context {
+                user: first_id,
+                role: second_id,
+                ty,
+                level_range,
+            })
+        } else {
+            // We only have two expressions delimited by colons,
+            // so this must be a level expression.
+            Ok(ExpressionKind::Level(first_id, second_id))
+        }
+    }
+
+    fn parse_unary_expr_tail(&mut self, ctx: ExprContext) -> ParseResult<ExpressionKind> {
+        let op = self.parse_unary_op()?;
+        let expr = self.parse_expr(Some(ctx))?;
+
+        Ok(ExpressionKind::UnaryOp(op, expr))
+    }
+
+    fn parse_binary_op(&mut self) -> ParseResult<BinOp> {
+        let pos = self.span;
+        let op = match self.token {
+            Token::LogicalAnd => BinOpKind::LogicalAnd,
+            Token::LogicalOr => BinOpKind::LogicalOr,
+            Token::BitwiseAnd => BinOpKind::BitwiseAnd,
+            Token::BitwiseXor => BinOpKind::BitwiseXor,
+            Token::BitwiseOr => BinOpKind::BitwiseOr,
+            _ => {
+                let err = self
+                    .session
+                    .diagnostic(Severity::Error, "expected an operator");
+
+                return Err(err);
+            }
+        };
+
+        self.bump();
+        Ok(BinOp::new(op, pos))
+    }
+
+    fn parse_unary_op(&mut self) -> ParseResult<UnaryOp> {
+        let pos = self.span;
+        let op = match self.token {
+            Token::LogicalNot => UnaryOpKind::LogicalNot,
+            Token::BitwiseNot => UnaryOpKind::BitwiseNot,
+            _ => {
+                let err = self
+                    .session
+                    .diagnostic(Severity::Error, "expected unary operator");
+                return Err(err);
+            }
+        };
+
+        self.bump();
+        Ok(UnaryOp::new(op, pos))
+    }
+
+    /// Consume a single identifier token and return a Symbol
+    /// containing its value and location.
     fn parse_ident(&mut self) -> ParseResult<Ident> {
         let span = self.span;
         let token = self.token.clone();
@@ -236,7 +403,17 @@ impl<'sess> Parser<'sess> {
         let name = self.parse_ident()?;
         let expr: Option<ExpressionNode> = match initializer {
             InitializerKind::Invalid => None,
-            InitializerKind::Required(..) | InitializerKind::Optional(..) => unimplemented!(),
+            InitializerKind::Optional(ctx) => {
+                if self.eat(Token::Equals) {
+                    Some(self.parse_expr(Some(ctx))?)
+                } else {
+                    None
+                }
+            }
+            InitializerKind::Required(ctx) => {
+                self.expect(Token::Equals)?;
+                Some(self.parse_expr(Some(ctx))?)
+            }
         };
 
         Ok(StatementKind::SymbolDeclaration(ty, name, expr))
@@ -268,9 +445,10 @@ impl<'sess> Parser<'sess> {
             return Ok(());
         }
 
-        Err(self
-            .session
-            .diagnostic(Severity::Error, "expected token_name"))
+        Err(self.session.diagnostic(
+            Severity::Error,
+            format!("expected {}", expected.borrow().description()),
+        ))
     }
 
     fn expect_one_of<T: Sized>(&mut self, expected: Vec<(Token, T)>) -> ParseResult<T> {
@@ -282,7 +460,7 @@ impl<'sess> Parser<'sess> {
                 return Ok(value);
             }
 
-            token_names.push("token_name");
+            token_names.push(tok.description());
         }
 
         let err = self.session.diagnostic(
@@ -294,315 +472,121 @@ impl<'sess> Parser<'sess> {
     }
 }
 
-//use std::cell::RefCell;
-///// The parser for CSP is implemented as a recursive descent parser over the simple LL(1) grammar.
-//use std::rc::Rc;
-//use std::str::FromStr;
-//use super::ast::*;
-//use super::codemap::Span;
-//use super::keywords;
-//use super::lex::{DelimiterType, TextRange, Token, TokenAndSpan, Tokenizer};
-//use super::lex::Token::*;
-//use super::ParseSession;
-//
-//
-//#[derive(Debug)]
-//pub struct ParseError {
-//    kind: ParseErrorKind,
-//    location: Span,
-//}
-//
-//#[derive(Debug)]
-//pub enum ParseErrorKind {
-//    Msg(&'static str),
-//    Eof,
-//    InvalidKeyword,
-//}
-//
-//type ParseResult<T> = Result<T, ParseError>;
-//
-//macro_rules! parser_error {
-//    ($span:expr, $ty:expr) => {
-//        Err(ParseError {
-//            kind: $ty,
-//            location: $span,
-//        })
-//    };
-//}
-//
-//pub struct Parser<'a, 'sess> {
-//    module_name: Option<String>,
-//    parse_session: Rc<RefCell<ParseSession<'sess>>>,
-//    node_id_counter: u64,
-//    current: TokenAndSpan<'a>,
-//}
-//
-//impl<'a, 'sess> Parser<'a, 'sess> {
-//    pub fn new(module_name: Option<String>, tokenizer: Tokenizer<'a, 'sess>) -> Self {
-//        let mut tokenizer = tokenizer;
-//        let first_token = tokenizer.next();
-//
-//        Parser {
-//            module_name,
-//            tokenizer: tokenizer.peekable(),
-//            node_id_counter: 0,
-//            current: first_token.expect("No input available"),
-//        }
-//    }
-//
-//    /// Generate a new unique identifier for a node in the AST.
-//    fn new_node_id(&mut self) -> NodeId {
-//        self.node_id_counter += 1;
-//        NodeId(self.node_id_counter)
-//    }
-//
-//    fn advance(&mut self) -> ParseResult<()> {
-//        if let Some(tok) = self.tokenizer.next() {
-//            self.current = tok;
-//        }
-//
-//        Ok(())
-//    }
-//
-//    fn consume(&mut self, tok: Token) -> ParseResult<bool> {
-//        if self.current.token == tok {
-//            self.advance()?;
-//
-//            return Ok(true);
-//        }
-//
-//        return Ok(false);
-//    }
-//
-//    fn consume_if<F, T>(&mut self, predicate: F) -> ParseResult<T>
-//    where
-//        F: Fn(&TokenAndSpan) -> ParseResult<T>,
-//    {
-//        let result = predicate(&self.current);
-//
-//        if result.is_ok() {
-//            self.advance()?;
-//        }
-//
-//        return result;
-//    }
-//
-//    fn expect(&mut self, tok: Token) -> ParseResult<()> {
-//        if self.consume(tok)? {
-//            Ok(())
-//        } else {
-//            parser_error!(self.current.span, ParseErrorKind::InvalidKeyword) // @todo - specific error
-//        }
-//    }
-//
-//    fn lookahead(&mut self, tok: Token) -> bool {
-//        match self.peek() {
-//            Some(t) => t == &tok,
-//            _ => false,
-//        }
-//    }
-//
-//    fn peek(&mut self) -> Option<&Token<'a>> {
-//        match self.tokenizer.peek() {
-//            Some(tok) => Some(&tok.token),
-//            None => None,
-//        }
-//    }
-//
-//    /// Parse the input from the given `Tokenizer`, consuming all tokens until `EOF`
-//    /// and returning a `Module` as a result.
-//    ///
-//    /// Example:
-//    /// /// @todo
-//    pub fn parse(&mut self) -> ParseResult<Module> {
-//        let mut statements = vec![];
-//        let start_span = TextRange::default();
-//
-//        loop {
-//            if let Some(TokenAndSpan {
-//                token: Token::Eof, ..
-//            }) = self.tokenizer.peek()
-//            {
-//                break;
-//            }
-//
-//            match self.parse_statement() {
-//                Ok(stmt) => statements.push(stmt),
-//                Err(e) => return Err(e),
-//            };
-//        }
-//
-//        let end_span = &self.current.span;
-//
-//        Ok(Module::new(
-//            self.module_name.clone(),
-//            statements,
-//            start_span.join(end_span),
-//        ))
-//    }
-//
-//    fn parse_container_decl(&mut self) -> ParseResult<StatementKind> {
-//        let is_abstract = self.consume(Token::Name(keywords::ABSTRACT))?;
-//        let ty = self.consume_if(|tok| match tok.token {
-//            Token::Name(keywords::BLOCK) => Ok(ContainerType::Block(is_abstract)),
-//            Token::Name(keywords::OPTIONAL) => Ok(ContainerType::Optional),
-//            Token::Name(keywords::IN) => Ok(ContainerType::Extends),
-//            _ => parser_error!(tok.span, ParseErrorKind::InvalidKeyword),
-//        })?;
-//
-//        let name = self.parse_ident()?;
-//        self.expect(Token::OpenDelimiter(DelimiterType::Brace))?;
-//
-//        let mut body: Vec<StatementNode> = vec![];
-//
-//        while !self.consume(Token::CloseDelimiter(DelimiterType::Brace))? {
-//            body.push(self.parse_statement()?);
-//        }
-//
-//        Ok(StatementKind::ContainerDeclaration(ty, name, body))
-//    }
-//
-//    fn parse_macro_call(&mut self, name: Ident) -> ParseResult<StatementKind> {
-//        unimplemented!()
-//    }
-//
-//    fn parse_set_modifier(&mut self, name: Ident) -> ParseResult<StatementKind> {
-//        unimplemented!()
-//    }
-//
-//    fn parse_statement(&mut self) -> ParseResult<StatementNode> {
-//        let start_span = self.current.span;
-//
-//        let kind = Box::new(match self.current.token {
-//            Name(keywords::OPTIONAL) | Name(keywords::ABSTRACT) | Name(keywords::BLOCK) => {
-//                self.parse_container_decl()?
-//            }
-//            Name(kw) if SymbolType::from_str(kw).is_ok() => self.parse_symbol_decl()?,
-//            Name(_) => {
-//                let name = self.parse_ident()?;
-//
-//                match self.peek() {
-//                    Some(&OpenDelimiter(DelimiterType::Parenthesis)) => {
-//                        self.parse_macro_call(name)?
-//                    }
-//                    Some(&SetModifier) => self.parse_set_modifier(name)?,
-//                    _ => return parser_error!(self.current.span, ParseErrorKind::InvalidKeyword),
-//                }
-//            }
-//            _ => return parser_error!(self.current.span, ParseErrorKind::InvalidKeyword),
-//        });
-//
-//        let stmt_span = start_span.join(&self.current.span);
-//
-//        Ok(StatementNode {
-//            kind,
-//            node_id: self.new_node_id(),
-//            span: stmt_span,
-//        })
-//    }
-//
-//    fn parse_symbol_decl(&mut self) -> ParseResult<StatementKind> {
-//        let ty = self.consume_if(|tok| match tok.token {
-//            Token::Name(val) => Ok(SymbolType::from_str(val).expect("invalid symbol type")),
-//            _ => parser_error!(tok.span, ParseErrorKind::InvalidKeyword),
-//        })?;
-//
-//        let name = self.parse_ident()?;
-//        let terminated = self.lookahead(Token::Semicolon);
-//
-//        let initializer = match ty.initializer_kind() {
-//            SymbolInitializerKind::Optional | SymbolInitializerKind::Invalid if terminated => {
-//                self.advance()?;
-//                None
-//            }
-//
-//            SymbolInitializerKind::Required if terminated => {
-//                // @todo - report error.
-//                self.advance()?;
-//                None
-//            }
-//
-//            SymbolInitializerKind::Invalid if !terminated => {
-//                //@todo - skip until semicolon and report an error on the spanning input
-//                None
-//            }
-//
-//            SymbolInitializerKind::Optional | SymbolInitializerKind::Required if !terminated => {
-//                let expr = self.parse_expr()?;
-//                self.advance()?; //@todo -expect semi
-//
-//                Some(expr)
-//            }
-//            _ => None,
-//        };
-//
-//        Ok(StatementKind::SymbolDeclaration(ty, name, initializer))
-//    }
-//
-//    fn parse_expr(&mut self) -> ParseResult<ExpressionNode> {
-//        unimplemented!()
-//    }
-//
-//    fn parse_ident(&mut self) -> ParseResult<Ident> {
-//        match self.current.token {
-//            Token::Name(val) => {
-//                let value = String::from(val);
-//                let span = self.current.span;
-//
-//                self.advance()?;
-//
-//                Ok(Ident { value, span })
-//            }
-//            _ => parser_error!(self.current.span, ParseErrorKind::InvalidKeyword),
-//        }
-//    }
-//}
-//
-//#[cfg(test)]
-//mod tests {
-//    use super::*;
-//
-//    fn parser_with_input(input: &str) -> Parser {
-//        Parser::new(None, Tokenizer::new(input))
-//    }
-//
-//    #[test]
-//    pub fn parse_container_decl() {
-//        let mut parser = parser_with_input("block b {}");
-//        let result = parser
-//            .parse_statement()
-//            .expect("unable to parse container decl");
-//
-//        assert_eq!(Span::from(0, 9), result.span);
-//        assert_eq!(
-//            StatementKind::ContainerDeclaration(
-//                ContainerType::Block(false),
-//                Ident {
-//                    value: String::from("b"),
-//                    span: Span::at(6),
-//                },
-//                vec![],
-//            ),
-//            *result.kind
-//        );
-//    }
-//
-//    #[test]
-//    pub fn parse_simple_decl() {
-//        let mut parser = parser_with_input("type t;");
-//        let result = parser.parse_statement().expect("unable to parse decl");
-//
-//        assert_eq!(Span::from(0, 6), result.span);
-//        assert_eq!(
-//            StatementKind::SymbolDeclaration(
-//                SymbolType::Type,
-//                Ident {
-//                    value: String::from("t"),
-//                    span: Span::at(5),
-//                },
-//                None,
-//            ),
-//            *result.kind
-//        );
-//    }
-//}
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::parse::parser_test::{decl, expr, symbol, variable};
+    use matches::assert_matches;
+
+    fn parse_expr<S: Into<String>>(src: S) -> ExpressionNode {
+        let sess = ParseSession::default();
+        let mut parser = parser_from_source(&sess, src.into()).expect("couldn't initialize parser");
+
+        parser.parse_expr(None).expect("parsing failed")
+    }
+
+    fn parse_stmt<S: Into<String>>(src: S) -> StatementNode {
+        let sess = ParseSession::default();
+        let mut parser = parser_from_source(&sess, src.into()).expect("couldn't initialize parser");
+
+        parser.parse_statement().expect("parsing failed")
+    }
+
+    #[test]
+    fn parse_context_decl() {
+        assert_eq!(
+            decl(
+                SymbolType::Context,
+                "c",
+                Some(expr(ExpressionKind::Context {
+                    user: variable("user"),
+                    role: variable("role"),
+                    ty: variable("type"),
+                    level_range: None,
+                }))
+            ),
+            parse_stmt("context c = user:role:type;")
+        );
+    }
+
+    #[test]
+    fn parse_context_expr() {
+        assert_eq!(
+            expr(ExpressionKind::Context {
+                user: variable("user"),
+                role: variable("role"),
+                ty: variable("type"),
+                level_range: None,
+            }),
+            parse_expr("user:role:type")
+        );
+    }
+
+    #[test]
+    fn parse_mls_context_expr() {
+        assert_eq!(
+            expr(ExpressionKind::Context {
+                user: variable("user"),
+                role: variable("role"),
+                ty: variable("type"),
+                level_range: Some(variable("levelrange")),
+            }),
+            parse_expr("user:role:type:levelrange")
+        );
+    }
+
+    #[test]
+    fn parse_mls_context_inline_expr() {
+        assert_eq!(
+            expr(ExpressionKind::Context {
+                user: variable("user"),
+                role: variable("role"),
+                ty: variable("type"),
+                level_range: Some(expr(ExpressionKind::LevelRange(
+                    variable("l0"),
+                    variable("l1"),
+                ))),
+            }),
+            parse_expr("user:role:type:l0-l1")
+        );
+    }
+
+    #[test]
+    fn parse_mcs_context_inline_expr() {
+        assert_eq!(
+            expr(ExpressionKind::Context {
+                user: variable("user"),
+                role: variable("role"),
+                ty: variable("type"),
+                level_range: Some(expr(ExpressionKind::LevelRange(
+                    expr(ExpressionKind::Level(variable("s0"), variable("c0"),)),
+                    variable("l1"),
+                ))),
+            }),
+            parse_expr("user:role:type:s0:c0-l1")
+        );
+    }
+
+    #[test]
+    fn parse_unary_expr() {
+        assert_eq!(
+            expr(ExpressionKind::UnaryOp(
+                symbol(UnaryOpKind::LogicalNot),
+                variable("a")
+            )),
+            parse_expr("!a")
+        );
+    }
+
+    #[test]
+    fn parse_bin_expr() {
+        assert_eq!(
+            expr(ExpressionKind::BinaryOp {
+                lhs: variable("a"),
+                op: symbol(BinOpKind::LogicalAnd),
+                rhs: variable("b"),
+            }),
+            parse_expr("a && b")
+        );
+    }
+}

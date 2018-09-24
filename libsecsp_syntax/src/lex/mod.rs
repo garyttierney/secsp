@@ -3,18 +3,15 @@ pub mod token;
 pub mod token_cursor;
 pub mod token_tree;
 
-pub use codespan::ByteIndex;
-pub use codespan::ByteSpan;
-pub use codespan::Span;
-
 pub use self::text_reader::*;
 pub use self::token::*;
 pub use self::token_tree::*;
 
+use codespan::ByteIndex;
+use codespan::ByteSpan;
 use codespan::FileMap;
+use codespan::Span;
 use codespan_reporting::Severity;
-use std::borrow::Borrow;
-use std::sync::Arc;
 
 use crate::parse::ParseResult;
 use crate::session::ParseSession;
@@ -32,6 +29,9 @@ impl<'input> TextReader<'input> {
         let char = next.char();
 
         match char {
+            '=' => (Token::Equals, position),
+            ':' => (Token::Colon, position),
+            '-' => (Token::Hyphen, position),
             ';' => (Token::Semicolon, position),
             '.' => (Token::Dot, position),
             '(' => (Token::OpenDelimiter(DelimiterType::Parenthesis), position),
@@ -112,24 +112,14 @@ impl<'a, 'input> Tokenizer<'a, 'input> {
         }
     }
 
-    pub fn advance(&mut self) {
+    fn advance(&mut self) {
         let (token, span) = self.reader.read_next_token();
 
         self.token = token;
         self.span = span;
     }
 
-    pub fn tokenize(&mut self) -> ParseResult<Vec<TokenTree>> {
-        let mut tts: Vec<TokenTree> = vec![];
-
-        while self.token != Token::Eof {
-            tts.push(self.tokenize_tree()?);
-        }
-
-        Ok(tts)
-    }
-
-    pub fn tokenize_tree_until_delimiter(&mut self) -> Vec<TokenTree> {
+    fn tokenize_tree_until_delimiter(&mut self) -> Vec<TokenTree> {
         let mut tts: Vec<TokenTree> = vec![];
 
         loop {
@@ -149,7 +139,7 @@ impl<'a, 'input> Tokenizer<'a, 'input> {
         tts
     }
 
-    pub fn tokenize_tree(&mut self) -> ParseResult<TokenTree> {
+    fn tokenize_tree(&mut self) -> ParseResult<TokenTree> {
         match self.token {
             Token::Eof => {
                 let msg = "this file contains an un-closed delimiter";
@@ -221,6 +211,16 @@ impl<'a, 'input> Tokenizer<'a, 'input> {
                 Ok(tt)
             }
         }
+    }
+
+    pub fn tokenize(&mut self) -> ParseResult<Vec<TokenTree>> {
+        let mut tts: Vec<TokenTree> = vec![];
+
+        while self.token != Token::Eof {
+            tts.push(self.tokenize_tree()?);
+        }
+
+        Ok(tts)
     }
 }
 

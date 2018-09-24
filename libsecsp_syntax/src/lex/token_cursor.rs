@@ -1,8 +1,8 @@
 use codespan::ByteOffset;
+use codespan::ByteSpan;
 use crate::lex::token::DelimiterType;
 use crate::lex::token::Token;
 use crate::lex::token_tree::TokenTree;
-use crate::lex::ByteSpan;
 use std::mem;
 
 pub struct TokenAndSpan(Token, ByteSpan);

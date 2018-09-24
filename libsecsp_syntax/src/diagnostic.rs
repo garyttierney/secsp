@@ -1,3 +1,4 @@
+use codespan::ByteSpan;
 use codespan::CodeMap;
 use codespan_reporting;
 use codespan_reporting::termcolor::ColorChoice;
@@ -10,8 +11,6 @@ use parking_lot::RwLock;
 use std::fmt;
 use std::fmt::Debug;
 use std::sync::Arc;
-
-use crate::lex::ByteSpan;
 
 pub trait DiagnosticEmitter {
     fn emit(&mut self, code_map: &CodeMap, diagnostic: &Diagnostic);

@@ -8,12 +8,16 @@
 
 #![crate_name = "secsp_syntax"]
 #![crate_type = "dylib"]
-#![feature(rust_2018_preview)]
 #![feature(nll)]
+#![feature(crate_visibility_modifier)]
 #![warn(rust_2018_idioms)]
 //#![warn(missing_docs)]
 #![warn(trivial_casts)]
 #![warn(trivial_numeric_casts)]
+
+extern crate codespan;
+extern crate codespan_reporting;
+extern crate parking_lot;
 
 pub mod ast;
 pub mod codemap;

@@ -14,6 +14,9 @@ pub mod expr;
 pub mod parser;
 pub mod stmt;
 
+#[cfg(test)]
+pub(crate) mod parser_test;
+
 pub type ParseResult<T> = Result<T, DiagnosticBuilder>;
 
 pub fn parse_module_from_source<I>(sess: &ParseSession, source: I) -> ParseResult<Module>
