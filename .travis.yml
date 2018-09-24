@@ -9,6 +9,6 @@ cache: cargo
 rust:
   - nightly
 script:
-- cargo clean --all
+- cargo clean
 - cargo build --all
 - cargo test --all
