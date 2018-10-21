@@ -55,7 +55,8 @@ impl<'sess> Parser<'sess> {
                 Ok(stmt) => statements.push(stmt),
                 Err(mut e) => {
                     e.emit();
-                    // @todo - recover
+                    self.recover_stmt();
+                    self.eat(Token::CloseDelimiter(DelimiterType::Brace));
                 }
             }
         }
@@ -78,7 +79,7 @@ impl<'sess> Parser<'sess> {
 
         let requires_semicolon = stmt_ty.as_ref().map(|ty| !ty.is_block()).unwrap_or(true);
 
-        let kind = Box::new(match stmt_ty {
+        let kind = match stmt_ty {
             Some(StatementType::ContainerDeclaration) => self.parse_container_decl()?,
             Some(StatementType::MacroDeclaration) => self.parse_macro()?,
             Some(StatementType::SymbolDeclaration(ty, init)) => self.parse_symbol_decl(ty, init)?,
@@ -95,7 +96,7 @@ impl<'sess> Parser<'sess> {
                 stmt
             }
             _ => unimplemented!(),
-        });
+        };
 
         if requires_semicolon && !self.eat(Token::Semicolon) {
             self.session
@@ -106,9 +107,39 @@ impl<'sess> Parser<'sess> {
 
         Ok(StatementNode {
             node_id: NodeId(0),
-            kind,
+            kind: Box::from(kind),
             span: start.to(self.last_span),
         })
+    }
+
+    fn recover_stmt(&mut self) {
+        let mut brace_depth = 0;
+
+        loop {
+            match self.token {
+                Token::OpenDelimiter(DelimiterType::Brace) => {
+                    self.bump();
+                    brace_depth += 1;
+                }
+                Token::CloseDelimiter(DelimiterType::Brace) => {
+                    brace_depth -= 1;
+                    if brace_depth == 0 {
+                        return;
+                    }
+
+                    self.bump();
+                }
+                Token::Semicolon => {
+                    self.bump();
+                    return;
+                }
+                Token::Eof => {
+                    return;
+                }
+
+                _ => self.bump()
+            }
+        }
     }
 
     fn parse_arg_list(&mut self, name: Path) -> ParseResult<StatementKind> {
@@ -134,9 +165,8 @@ impl<'sess> Parser<'sess> {
             match self.parse_statement() {
                 Err(mut err) => {
                     err.emit();
-                    // self.recover_stmt_(SemiColonMode::Ignore, BlockMode::Ignore);
-                    // self.eat(&token::CloseDelim(token::Brace));
-                    // recovered = true;
+                    self.recover_stmt();
+                    self.eat(Token::CloseDelimiter(DelimiterType::Brace));
                     break;
                 }
                 Ok(stmt) => stmts.push(stmt),

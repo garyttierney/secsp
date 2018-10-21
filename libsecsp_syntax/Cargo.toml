@@ -1,8 +1,13 @@
+cargo-features = ["edition"]
+
 [package]
 name = "secsp_syntax"
 version = "0.1.0"
 authors = ["Gary Tierney <gary.tierney@gmx.com>"]
 edition = '2018'
+
+[profile.release]
+lto = true
 
 [dependencies]
 codespan = "0.1.2"
