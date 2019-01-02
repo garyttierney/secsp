@@ -4,7 +4,7 @@ version = "0.1.0"
 authors = ["Gary Tierney <gary.tierney@gmx.com>"]
 
 [dependencies]
-codespan-lsp = "0.1.0"
+codespan-lsp = "0.2.0"
 gen_lsp_server = "0.1.0"
 rayon = "1.0.2"
 threadpool = "1.7.1"
