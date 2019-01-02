@@ -1,12 +1,16 @@
 use crate::ast::SyntaxKind;
 use crate::grammar::atom;
+use crate::grammar::block::parse_block;
 use crate::grammar::block::BlockType;
 use crate::parser::CspParser;
 use crate::token::TokenType;
 use crate::grammar::expr::expression;
 
-pub fn parse_stmt(p: &mut CspParser) -> bool {
-    if !atom::is_at_path_start(p, 0) {
+pub fn statement(p: &mut CspParser) -> bool {
+    if p.at(TokenType::IfKw) {
+        conditional(p);
+        return true;
+    } else if !atom::is_at_path_start(p, 0) {
         p.error("expected identifier");
         return false;
     }
@@ -15,8 +19,13 @@ pub fn parse_stmt(p: &mut CspParser) -> bool {
 
     let (block_type, kind) = match p.current() {
         SyntaxKind::Token(TokenType::OpenParenthesis) => {
-            parse_macro_call(p);
+            macro_call(p);
             (BlockType::NotBlockLike, SyntaxKind::MacroCall)
+        }
+        SyntaxKind::Token(TokenType::IfKw) => {
+            conditional(p);
+            m.abandon(p);
+            return true;
         }
         _ => {
             m.complete(p, SyntaxKind::ParseError);
@@ -34,7 +43,27 @@ pub fn parse_stmt(p: &mut CspParser) -> bool {
     true
 }
 
-pub fn parse_macro_call(p: &mut CspParser) {
+fn conditional(p: &mut CspParser) {
+    assert!(p.at(TokenType::IfKw));
+    let m = p.mark();
+    p.bump();
+
+    expression(p);
+    parse_block(p, true);
+
+    if p.at(TokenType::ElseKw) {
+        p.bump();
+        if p.at(TokenType::IfKw) {
+            conditional(p);
+        } else {
+            parse_block(p, true);
+        }
+    }
+
+    m.complete(p,SyntaxKind::ConditionalStmt);
+}
+
+fn macro_call(p: &mut CspParser) {
     assert!(p.at(TokenType::OpenParenthesis));
     p.bump();
 

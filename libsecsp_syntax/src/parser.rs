@@ -12,6 +12,7 @@ use crate::parser::input::TokenBase;
 use crate::token::Token;
 use rowan::WalkEvent;
 use std::marker::PhantomData;
+use crate::token::TokenType;
 
 mod builder;
 mod event;
@@ -261,3 +262,9 @@ pub fn parse<S: EventSink<SyntaxKind>>(
 }
 
 pub type CspParser<'a> = Parser<'a, SyntaxKind, Token>;
+
+impl<'a> CspParser<'a> {
+    pub fn at_kw(&self) -> bool {
+        self.at(TokenType::Name) || self.at(TokenType::IfKw) || self.at(TokenType::ElseKw)
+    }
+}

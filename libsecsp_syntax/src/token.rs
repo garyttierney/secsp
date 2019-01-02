@@ -13,6 +13,12 @@ pub enum TokenType {
     #[regex = "\"([^\"\\\\]|\\\\.)*\""]
     String,
 
+    #[token = "if"]
+    IfKw,
+
+    #[token = "else"]
+    ElseKw,
+
     #[token = "true"]
     True,
 

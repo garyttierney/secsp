@@ -3,13 +3,13 @@ use crate::ast::SyntaxKind;
 use crate::grammar::atom;
 use crate::grammar::block::BlockType;
 use crate::grammar::{
-    container::parse_container, macros::parse_macro, stmt::parse_stmt, var::parse_var,
+    container::parse_container, macros::parse_macro, stmt::statement, var::parse_var,
 };
 use crate::parser::CspParser;
 use crate::token::TokenType;
 
 pub fn parse_item(p: &mut CspParser) -> bool {
-    if !p.at(TokenType::Name) {
+    if !p.at_kw() {
         p.error("expected keyword");
         return false;
     }
@@ -44,7 +44,7 @@ pub fn parse_item(p: &mut CspParser) -> bool {
         }
         _ => {
             m.abandon(p);
-            return parse_stmt(p);
+            return statement(p);
         }
     };
 
