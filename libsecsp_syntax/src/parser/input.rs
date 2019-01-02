@@ -16,7 +16,10 @@ pub trait SyntaxKindBase: Sized + PartialEq + Eq + Debug + Copy + Send + Sync {
 
     fn is_whitespace(&self) -> bool;
 
+    fn is_root(&self) -> bool;
+
     fn is_trivia(&self) -> bool;
+
 }
 
 impl SyntaxKindBase for SyntaxKind {
@@ -33,6 +36,10 @@ impl SyntaxKindBase for SyntaxKind {
 
     fn is_whitespace(&self) -> bool {
         *self == SyntaxKind::Token(TokenType::Whitespace)
+    }
+
+    fn is_root(&self) -> bool {
+        *self == SyntaxKind::SourceFile
     }
 
     fn is_trivia(&self) -> bool {

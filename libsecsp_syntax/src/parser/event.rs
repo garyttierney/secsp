@@ -129,6 +129,11 @@ impl<'a, K: SyntaxKindBase, T: TokenBase<K>, S: EventSink<K>> EventProcessor<'a,
     }
 
     fn start(&mut self, kind: K) {
+        if kind.is_root() {
+            self.sink.begin(kind);
+            return;
+        }
+
         let n_trivias = self.tokens[self.token_pos..]
             .iter()
             .take_while(|it| it.kind().is_trivia())
