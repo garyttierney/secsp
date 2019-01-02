@@ -1,0 +1,11 @@
+[package]
+name = "secsp_analysis"
+version = "0.1.0"
+authors = ["Gary Tierney <gary.tierney@gmx.com>"]
+edition = "2018"
+
+[dependencies]
+log = "0.4"
+rustc-hash = "1.0.1"
+salsa = "0.9.0"
+secsp_syntax = { path = "../libsecsp_syntax", version = "0.1.0 "}

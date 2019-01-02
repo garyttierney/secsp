@@ -1,6 +1,9 @@
 [workspace]
 members = [
+    "libsecsp_analysis",
     "libsecsp_syntax",
+    "secsp_language_server",
+    "secspc",
     "tools/sexp_cmp",
 ]
 
