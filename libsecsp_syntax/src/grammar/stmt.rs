@@ -2,9 +2,9 @@ use crate::ast::SyntaxKind;
 use crate::grammar::atom;
 use crate::grammar::block::parse_block;
 use crate::grammar::block::BlockType;
+use crate::grammar::expr::expression;
 use crate::parser::CspParser;
 use crate::token::TokenType;
-use crate::grammar::expr::expression;
 
 pub fn statement(p: &mut CspParser) -> bool {
     if p.at(TokenType::IfKw) {
@@ -60,7 +60,7 @@ fn conditional(p: &mut CspParser) {
         }
     }
 
-    m.complete(p,SyntaxKind::ConditionalStmt);
+    m.complete(p, SyntaxKind::ConditionalStmt);
 }
 
 fn macro_call(p: &mut CspParser) {
@@ -73,4 +73,34 @@ fn macro_call(p: &mut CspParser) {
     }
 
     p.expect(TokenType::CloseParenthesis);
+}
+
+#[test]
+fn parse_macro_call() {
+    crate::grammar::test::test_parser(
+        r#"
+        <marker type="MacroCall">macro_name(a && b, "test", 123);</marker>
+    "#,
+    );
+}
+
+#[test]
+fn parse_conditional() {
+    crate::grammar::test::test_parser(
+        r#"
+        <marker type="conditionalstmt">if a && b {
+        }</marker>
+      "#,
+    );
+}
+
+#[test]
+fn parse_conditional_with_else() {
+    crate::grammar::test::test_parser(
+        r#"
+        <marker type="conditionalstmt">if a {
+        } else {
+        }</marker>
+        "#
+    )
 }

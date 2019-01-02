@@ -1,5 +1,5 @@
-use crate::ast::SyntaxKind;
 use crate::ast::BinaryOperator;
+use crate::ast::SyntaxKind;
 use crate::grammar::atom;
 use crate::grammar::error_recovery;
 use crate::parser::CompletedMarker;

@@ -19,7 +19,6 @@ pub trait SyntaxKindBase: Sized + PartialEq + Eq + Debug + Copy + Send + Sync {
     fn is_root(&self) -> bool;
 
     fn is_trivia(&self) -> bool;
-
 }
 
 impl SyntaxKindBase for SyntaxKind {

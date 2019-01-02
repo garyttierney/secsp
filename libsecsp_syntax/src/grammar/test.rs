@@ -14,13 +14,13 @@ struct Assertion {
 }
 
 pub(crate) fn test_parser(text: &str) {
-    let regex: Regex = RegexBuilder::new(r#"<([a-zA-Z\(\)]+)>(.*)</([a-zA-Z\(\)]+)>"#)
+    let regex: Regex = RegexBuilder::new(r#"<marker type="([a-zA-Z\(\)]+)">(.*)</marker>"#)
         .multi_line(true)
         .dot_matches_new_line(true)
         .build()
         .unwrap();
 
-    let ws_regex: Regex = RegexBuilder::new(r#"\s"#).build().unwrap();
+    let ws_regex = Regex::new(r#"\s"#).unwrap();
 
     let mut code = text.to_owned();
     let mut assertions: Vec<Assertion> = vec![];
@@ -29,7 +29,6 @@ pub(crate) fn test_parser(text: &str) {
         let full_match = &capture[0];
         let open_tag = &capture[1];
         let content = &capture[2];
-        let close_tag = &capture[3];
 
         code = code.replace(full_match, content);
 
@@ -44,6 +43,10 @@ pub(crate) fn test_parser(text: &str) {
     }
 
     let ast = parse_file(code.as_str());
+
+    if assertions.is_empty() {
+        panic!("No assertions found");
+    }
 
     for assertion in assertions.into_iter() {
         let node = ast.syntax.borrowed().covering_node(TextRange::from_to(

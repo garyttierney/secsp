@@ -10,9 +10,9 @@ use crate::parser::input::ParserInput;
 use crate::parser::input::SyntaxKindBase;
 use crate::parser::input::TokenBase;
 use crate::token::Token;
+use crate::token::TokenType;
 use rowan::WalkEvent;
 use std::marker::PhantomData;
-use crate::token::TokenType;
 
 mod builder;
 mod event;

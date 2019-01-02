@@ -53,17 +53,17 @@ pub fn parse_extends_list(p: &mut CspParser) {
 #[test]
 fn parse_abstract_container() {
     crate::grammar::test::test_parser(
-        "
-        <Keyword(ABSTRACT)>abstract</Keyword(ABSTRACT)> block test {}
-    ",
+        r#"
+        <marker type="Keyword(ABSTRACT)">abstract</marker> block test {}
+    "#,
     );
 }
 
 #[test]
 fn parse_abstract_container_with_extends_list() {
     crate::grammar::test::test_parser(
-        "
-        abstract block test <ExtendsList>extends abc</ExtendsList> {}
-    ",
+        r#"
+        abstract block test <marker type="ExtendsList">extends abc</marker> {}
+    "#,
     );
 }
