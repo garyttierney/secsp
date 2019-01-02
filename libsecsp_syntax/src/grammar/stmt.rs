@@ -101,6 +101,17 @@ fn parse_conditional_with_else() {
         <marker type="conditionalstmt">if a {
         } else {
         }</marker>
-        "#
+        "#,
+    )
+}
+
+#[test]
+fn parse_conditional_with_else_if() {
+    crate::grammar::test::test_parser(
+        r#"
+        <marker type="conditionalstmt">if a {
+        } else <marker type="conditionalstmt"> if b || c {
+        }</marker></marker>
+        "#,
     )
 }

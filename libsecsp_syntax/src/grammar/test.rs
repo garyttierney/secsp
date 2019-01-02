@@ -1,58 +1,29 @@
 use regex::{Regex, RegexBuilder};
 use text_unit::TextRange;
+use text_unit::TextUnit;
 
 use crate::ast::SyntaxNode;
 use crate::ast::SyntaxNodeRef;
 use crate::parser::parse_file;
-use text_unit::TextUnit;
 
 #[derive(Debug)]
 struct Assertion {
     ty: String,
-    start_pos: usize,
-    end_pos: usize,
+    range: TextRange,
 }
 
 pub(crate) fn test_parser(text: &str) {
-    let regex: Regex = RegexBuilder::new(r#"<marker type="([a-zA-Z\(\)]+)">(.*)</marker>"#)
-        .multi_line(true)
-        .dot_matches_new_line(true)
-        .build()
-        .unwrap();
-
-    let ws_regex = Regex::new(r#"\s"#).unwrap();
-
-    let mut code = text.to_owned();
-    let mut assertions: Vec<Assertion> = vec![];
-
-    for capture in regex.captures_iter(text) {
-        let full_match = &capture[0];
-        let open_tag = &capture[1];
-        let content = &capture[2];
-
-        code = code.replace(full_match, content);
-
-        let code_start_pos = code.find(content).unwrap();
-        let assertion = Assertion {
-            ty: open_tag.to_owned(),
-            start_pos: code_start_pos,
-            end_pos: code_start_pos + content.len() - 1,
-        };
-
-        assertions.push(assertion);
-    }
-
-    let ast = parse_file(code.as_str());
+    let (code, assertions) = strip_markers(0.into(), text);
 
     if assertions.is_empty() {
         panic!("No assertions found");
     }
 
+    let ast = parse_file(code.as_str());
+    let ws_regex = Regex::new(r#"\s"#).unwrap();
+
     for assertion in assertions.into_iter() {
-        let node = ast.syntax.borrowed().covering_node(TextRange::from_to(
-            TextUnit::from_usize(assertion.start_pos),
-            TextUnit::from_usize(assertion.end_pos),
-        ));
+        let node = ast.syntax.borrowed().covering_node(assertion.range);
 
         let raw_kind = format!("{:#?}", node.kind());
         let kind = ws_regex.replace_all(raw_kind.as_str(), "");
@@ -60,4 +31,38 @@ pub(crate) fn test_parser(text: &str) {
 
         assert_eq!(expected_kind.to_lowercase(), kind.to_lowercase());
     }
+}
+
+fn strip_markers(offset: TextUnit, text: &str) -> (String, Vec<Assertion>) {
+    let regex: Regex = RegexBuilder::new(r#"(<marker type="([a-zA-Z\(\)]+)">)(.*)(</marker>)"#)
+        .multi_line(true)
+        .dot_matches_new_line(true)
+        .build()
+        .unwrap();
+
+    let mut code = text.to_owned();
+    let mut assertions: Vec<Assertion> = vec![];
+    let mut capture_locations = regex.capture_locations();
+
+    while let Some(m) = regex.captures_read(&mut capture_locations, code.as_str()) {
+        let (start, end) = (m.start(), m.end());
+        let (marker_start, marker_end) = capture_locations.get(1).unwrap();
+        let (type_start, type_end) = capture_locations.get(2).unwrap();
+        let (contents_start, contents_end) = capture_locations.get(3).unwrap();
+
+        let contents_offset =
+            offset + TextUnit::from_usize(contents_start - (marker_end - marker_start));
+
+        let ty = &code[type_start..type_end];
+        let contents = &code[contents_start..contents_end];
+
+        let (stripped_contents, mut submatches) = strip_markers(contents_offset, contents);
+        let range = TextRange::offset_len(contents_offset, TextUnit::of_str(&stripped_contents));
+
+        assertions.push(Assertion { ty: ty.to_string(), range });
+        assertions.append(&mut submatches);
+        code.replace_range(start..end, stripped_contents.as_str());
+    }
+
+    (code, assertions)
 }

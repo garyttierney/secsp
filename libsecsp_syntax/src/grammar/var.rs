@@ -17,14 +17,18 @@ pub fn parse_var(p: &mut CspParser) {
 
 #[test]
 fn parse_var_decl() {
-    crate::grammar::test::test_parser(r#"
+    crate::grammar::test::test_parser(
+        r#"
         <marker type="variable">type a;</marker>
-    "#)
+    "#,
+    )
 }
 
 #[test]
 fn parse_var_with_initializer() {
-    crate::grammar::test::test_parser(r#"
-        <marker type="variable">type_attribute a = a | b;</marker>
-    "#)
+    crate::grammar::test::test_parser(
+        r#"
+        <marker type="variable">type_attribute a = <marker type="binaryexpr">a | b</marker>;</marker>
+    "#,
+    )
 }
