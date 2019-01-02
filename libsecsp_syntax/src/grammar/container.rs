@@ -63,7 +63,7 @@ fn parse_abstract_container() {
 fn parse_abstract_container_with_extends_list() {
     crate::grammar::test::test_parser(
         "
-        abstract block test <extends-list>extends abc</extends-list> {}
+        abstract block test <ExtendsList>extends abc</ExtendsList> {}
     ",
     );
 }

@@ -1,14 +1,21 @@
-language: rust
 sudo: required
-dist: trusty
-addons:
-    apt:
-        packages:
-            - libssl-dev
+language: rust
+
+services:
+  - docker
+
 cache: cargo
+
 rust:
-  - nightly
+  - stable
+
+# the main build
 script:
-- cargo clean
-- cargo build --all
-- cargo test --all
+  - |
+    cargo build &&
+    cargo test
+
+after_success:
+  - docker pull xd009642/tarpaulin:develop-nightly
+  - docker run --security-opt seccomp=unconfined -v "$PWD:/volume" xd009642/tarpaulin:develop-nightly sh -c "cargo tarpaulin --out Xml"
+  - bash <(curl -s https://codecov.io/bash)
