@@ -1,3 +1,9 @@
+branches:
+  only:
+    - staging
+    - master
+    - trying
+
 sudo: required
 language: rust
 
@@ -14,6 +20,17 @@ script:
   - |
     cargo build &&
     cargo test
+  - |
+    if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then
+      pushd secsp_fuzzer/
+      cargo afl build
+      timeout 10m cargo afl fuzz -i ../examples -o out target/debug/secsp-fuzzer > /dev/null || true
+      cat out/fuzzer_stats
+      grep "unique_crashes *: 0" out/fuzzer_stats
+      popd
+    else
+      echo "Building pull request, not running AFL."
+    fi
 
 after_success:
   - docker pull xd009642/tarpaulin:develop-nightly
