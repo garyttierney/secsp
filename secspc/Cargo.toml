@@ -13,4 +13,4 @@ fern = "0.5"
 log = "0.4"
 secsp_analysis = { path = "../libsecsp_analysis" }
 secsp_syntax = { path = "../libsecsp_syntax" }
-symbolic_expressions = "~4.1.9"
+symbolic_expressions = "~5.0.3"
