@@ -1,19 +1,15 @@
-[package]
-name = "cspc"
-version = "0.1.0"
-authors = ["Gary Tierney <gary.tierney@gmx.com>"]
-description = "A C-style policy language for SELinux"
-
 [workspace]
 members = [
-    "sexp_cmp",
-    "libsecsp"
+    "libsecsp_analysis",
+    "libsecsp_syntax",
+    "secsp_language_server",
+    "secspc",
+    "tools/sexp_cmp",
 ]
+
+
 
 [profile.release]
 debug = true
-
-[dependencies]
-secsp = { path = "libsecsp" }
-symbolic_expressions = "~4.1.9"
-clap = "~2.26.0"
+lto = true
+panic = 'abort'

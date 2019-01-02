@@ -1,0 +1,67 @@
+{
+    "name": "secsp-vscode",
+    "displayName": "secsp-vscode",
+    "description": "SELinux C-style policy support for VS Code.",
+    "version": "0.0.1",
+    "publisher": "Gary Tierney",
+    "repository": "https://github.com/garyttierney/secsp/tree/master/editors/vscode",
+    "engines": {
+        "vscode": "^1.30.0"
+    },
+    "categories": [
+        "Other"
+    ],
+    "activationEvents": [
+        "onLanguage:secsp"
+    ],
+    "main": "./out/extension.js",
+    "contributes": {
+        "languages": [
+            {
+                "id": "secsp",
+                "aliases": [
+                    "secsp",
+                    "csp"
+                ],
+                "extensions": [
+                    ".csp",
+                    ".secsp"
+                ],
+                "configuration": "./config/secsp-language-configuration.json"
+            },
+            {
+                "id": "secil",
+                "aliases": [
+                    "secil",
+                    "cil"
+                ],
+                "extensions": [
+                    ".cil"
+                ],
+                "configuration": "./config/secil-language-configuration.json"
+            }
+        ],
+        "grammars": [
+            {
+                "language": "secsp",
+                "scopeName": "source.secsp",
+                "path": "./syntaxes/secsp.tmLanguage.json"
+            }
+        ]
+    },
+    "scripts": {
+        "vscode:prepublish": "npm run compile",
+        "compile": "tsc -p ./",
+        "watch": "tsc -watch -p ./",
+        "postinstall": "node ./node_modules/vscode/bin/install"
+    },
+    "dependencies": {
+        "vscode-languageclient": "^4.1.4"
+    },
+    "devDependencies": {
+        "@types/node": "^8.10.25",
+        "tslint": "^5.11.0",
+        "typescript": "^2.6.1",
+        "vscode": "^1.1.22"
+    }
+}

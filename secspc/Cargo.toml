@@ -1,0 +1,16 @@
+[package]
+name = "secspc"
+version = "0.1.0"
+authors = ["Gary Tierney <gary.tierney@gmx.com>"]
+edition = "2018"
+
+[profile.release]
+lto = true
+
+[dependencies]
+clap = "2"
+fern = "0.5"
+log = "0.4"
+secsp_analysis = { path = "../libsecsp_analysis" }
+secsp_syntax = { path = "../libsecsp_syntax" }
+symbolic_expressions = "~4.1.9"
