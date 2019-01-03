@@ -23,27 +23,15 @@ workflow "secsp/ci-heavy" {
   ]
 }
 
-action "secsp/ci-heavy/is-master" {
-  uses = "actions/bin/filter@master"
-  args = ["branch", "master"]
-}
-
-action "secsp/ci-heavy/is-staging" {
-  uses = "actions/bin/filter@master"
-  args = ["branch", "is-staging"]
-}
-
-action "secsp/ci-heavy/is-trying" {
-  uses = "actions/bin/filter@master"
-  args = ["branch", "trying"]
+action "secsp/ci-heavy/is-mainline" {
+  uses = "actions/bin/sh@master"
+  args = "[ $GITHUB_REF = 'refs/heads/master' ] || [ $GITHUB_REF = 'refs/heads/trying' ] || [ $GITHUB_REF = 'refs/heads/staging' ] || exit 78"
 }
 
 action "secsp/ci-heavy/test" {
   uses = "docker://rust:latest"
   needs = [
-    "secsp/ci-heavy/is-master",
-    "secsp/ci-heavy/is-staging",
-    "secsp/ci-heavy/is-trying",
+    "secsp/ci-heavy/is-mainline",
   ]
   runs = "cargo afl build"
 }
