@@ -17,7 +17,7 @@ action "secsp/ci/test" {
 action "secsp/ci/is-bors-branch" {
   uses = "actions/bin/filter@master"
   needs = ["secsp/ci/build"]
-  args = "branch master|trying|staging"
+  args = ["branch", "master|trying|staging"]
 }
 
 action "secsp/ci/heavy-test" {
