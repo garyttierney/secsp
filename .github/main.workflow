@@ -25,7 +25,7 @@ workflow "secsp/ci-heavy" {
 
 action "secsp/ci-heavy/is-mainline" {
   uses = "docker://bash:latest"
-  runs = "bash -c '[ $GITHUB_REF = 'refs/heads/master' ] || [ $GITHUB_REF = 'refs/heads/trying' ] || [ $GITHUB_REF = 'refs/heads/staging' ] || exit 78'"
+  args = [ "-c",  "[ $GITHUB_REF = 'refs/heads/master' ] || [ $GITHUB_REF = 'refs/heads/trying' ] || [ $GITHUB_REF = 'refs/heads/staging' ] || exit 78"]
 }
 
 action "secsp/ci-heavy/test" {
@@ -33,5 +33,6 @@ action "secsp/ci-heavy/test" {
   needs = [
     "secsp/ci-heavy/is-mainline",
   ]
-  runs = "cargo install afl ; cargo afl build"
+  runs = "/bin/sh"
+  args = ["-c", "cargo install afl --force"]
 }
