@@ -5,6 +5,7 @@ use crate::grammar::block::BlockType;
 use crate::grammar::expr::expression;
 use crate::parser::CspParser;
 use crate::token::TokenType;
+use crate::grammar::error_recovery;
 
 pub fn statement(p: &mut CspParser) -> bool {
     if p.at(TokenType::IfKw) {
@@ -68,7 +69,10 @@ fn macro_call(p: &mut CspParser) {
     p.bump();
 
     while !p.at(TokenType::CloseParenthesis) {
-        expression(p);
+        if !expression(p) {
+            break;
+        }
+
         p.eat(TokenType::Comma);
     }
 

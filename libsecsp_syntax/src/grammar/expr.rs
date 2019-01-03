@@ -7,8 +7,8 @@ use crate::parser::CspParser;
 use crate::token::Token;
 use crate::token::TokenType;
 
-pub fn expression(p: &mut CspParser) {
-    expression_prec(p, 1);
+pub fn expression(p: &mut CspParser) -> bool {
+    expression_prec(p, 1)
 }
 
 fn expression_lhs(p: &mut CspParser) -> Option<CompletedMarker<SyntaxKind, Token>> {
@@ -33,10 +33,10 @@ fn expression_lhs(p: &mut CspParser) -> Option<CompletedMarker<SyntaxKind, Token
     }
 }
 
-fn expression_prec(p: &mut CspParser, precedence: u8) {
+fn expression_prec(p: &mut CspParser, precedence: u8) -> bool {
     let mut lhs = match expression_lhs(p) {
         Some(lhs) => lhs,
-        None => return,
+        None => return false,
     };
 
     loop {
@@ -54,4 +54,6 @@ fn expression_prec(p: &mut CspParser, precedence: u8) {
         expression_prec(p, precedence + 1);
         lhs = m.complete(p, SyntaxKind::BinaryExpr);
     }
+
+    true
 }

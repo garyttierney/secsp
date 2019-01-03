@@ -23,10 +23,7 @@ script:
   - |
     if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then
       pushd secsp_fuzzer/
-      cargo afl build
-      timeout 10m cargo afl fuzz -i ../examples -o out target/debug/secsp-fuzzer > /dev/null || true
-      cat out/fuzzer_stats
-      grep "unique_crashes *: 0" out/fuzzer_stats
+      ./tools/run-fuzzer.sh || exit 1
       popd
     else
       echo "Building pull request, not running AFL."
