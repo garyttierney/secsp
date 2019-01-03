@@ -20,7 +20,7 @@ action "secsp/ci/test" {
 action "secsp/ci/is-mainline" {
   uses = "tngan/bin/filter@master"
   needs = ["secsp/ci/test"]
-  args = ["branch", "master|staging|trying"]
+  args = ["branch", "\"master|staging|trying\""]
 }
 
 action "secsp/ci/heavy-test" {
