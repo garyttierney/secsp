@@ -17,30 +17,16 @@ action "secsp/ci/test" {
   runs = "cargo test"
 }
 
-action "secsp/ci/is-master" {
-  uses = "actions/bin/filter@master"
+action "secsp/ci/is-mainline" {
+  uses = "tngan/bin/filter@master"
   needs = ["secsp/ci/build"]
-  args = "branch master"
-}
-
-action "secsp/ci/is-staging" {
-  uses = "actions/bin/filter@b2bea07"
-  needs = ["secsp/ci/build"]
-  runs = "branch staging"
-}
-
-action "secsp/ci/is-trying" {
-  uses = "actions/bin/filter@b2bea07"
-  needs = ["secsp/ci/build"]
-  args = "branch trying"
+  args = ["branch", "master|staging|trying"]
 }
 
 action "secsp/ci/heavy-test" {
   uses = "docker://rust:latest"
   needs = [
-    "secsp/ci/is-staging",
-    "secsp/ci/is-master",
-    "secsp/ci/is-trying",
+    "secsp/ci/is-mainline",
   ]
   runs = "cargo afl build"
 }
