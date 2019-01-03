@@ -1,4 +1,5 @@
 status = [
-  "continuous-integration/travis-ci/push",
+  "secsp/ci/test",
+  "secsp/ci-heavy/test",
 ]
 delete_merged_branches = true
