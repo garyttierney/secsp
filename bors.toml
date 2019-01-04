@@ -1,5 +1,5 @@
 status = [
   "secsp/ci/test",
-#  "secsp/ci-heavy/test", TODO: We're allowing heavy tests to fail until the parser is stable enough that a crash is worthy of preventing a merge.
+  "secsp/ci-heavy/test",
 ]
 delete_merged_branches = true

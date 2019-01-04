@@ -26,6 +26,7 @@ pub trait EventSink<K: SyntaxKindBase> {
     fn finish(self) -> Self::Output;
 }
 
+#[derive(Debug)]
 pub enum Event<K: SyntaxKindBase> {
     BeginMarker,
     Begin(K, Option<usize>),
@@ -78,7 +79,8 @@ impl<'a, K: SyntaxKindBase, T: TokenBase<K>, S: EventSink<K>> EventProcessor<'a,
                                 forward_parents.push(kind);
                                 forward_parent
                             }
-                            _ => unreachable!(),
+                            Event::Tombstone => None,
+                            e => unreachable!("found unresolved {:#?} at position {}", e, parent_idx)
                         };
                     }
 

@@ -190,6 +190,11 @@ impl<K: SyntaxKindBase, T: TokenBase<K>> Marker<K, T> {
     }
 
     pub fn abandon(mut self, parser: &mut Parser<K, T>) {
+        match &mut parser.events[self.pos] {
+            evt @ Event::BeginMarker => *evt = Event::Tombstone,
+            e => unreachable!("trying to abandon a {:#?} marker", e)
+        };
+
         if self.pos == parser.events.len() - 1 {
             parser.events.pop();
         }

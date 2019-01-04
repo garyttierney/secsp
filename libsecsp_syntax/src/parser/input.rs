@@ -1,13 +1,10 @@
-use std::clone::Clone;
-
-use text_unit::TextRange;
+use std::fmt::Debug;
+use std::marker::PhantomData;
+use std::ops::Range;
 
 use crate::ast::SyntaxKind;
 use crate::token::Token;
 use crate::token::TokenType;
-use std::fmt::Debug;
-use std::marker::PhantomData;
-use std::ops::Range;
 
 pub trait SyntaxKindBase: Sized + PartialEq + Eq + Debug + Copy + Send + Sync {
     fn eof() -> Self;

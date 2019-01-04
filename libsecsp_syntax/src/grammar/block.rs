@@ -16,6 +16,7 @@ pub fn parse_block(p: &mut CspParser, include_braces: bool) {
     if include_braces && !p.eat(TokenType::OpenBrace) {
         p.error("expected open brace");
         m.abandon(p);
+        error_recovery::recover_from_item(p);
         return;
     }
 
