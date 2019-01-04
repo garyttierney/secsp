@@ -24,15 +24,15 @@ workflow "secsp/ci-heavy" {
 }
 
 action "secsp/ci-heavy/is-mainline" {
-  uses = "docker://bash:latest"
-  args = [ "-c",  "[ $GITHUB_REF = 'refs/heads/master' ] || [ $GITHUB_REF = 'refs/heads/trying' ] || [ $GITHUB_REF = 'refs/heads/staging' ] || exit 78"]
+  uses = "actions/bin/filter@master"
+  args = "branch master || branch trying || branch staging"
 }
 
 action "secsp/ci-heavy/test" {
-  uses = "docker://rust:latest"
+  uses = "docker://rustlang/rust:nightly"
   needs = [
     "secsp/ci-heavy/is-mainline",
   ]
   runs = "/bin/sh"
-  args = ["-c", "cargo install afl --force"]
+  args = ["-c", "cd /github/workspace/secsp_fuzzer && ./tools/run-fuzzer.sh || exit 1"]
 }

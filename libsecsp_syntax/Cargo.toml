@@ -4,9 +4,6 @@ version = "0.1.0"
 authors = ["Gary Tierney <gary.tierney@gmx.com>"]
 edition = "2018"
 
-[profile.release]
-lto = true
-
 [dependencies]
 logos = "0.9.7"
 codespan = "0.1.2"
