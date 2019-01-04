@@ -65,14 +65,14 @@ pub fn tokenize<S: AsRef<str>>(str: S) -> Vec<Token> {
 
     while let Some((token, range)) = iter.next() {
         match token {
-            TokenType::Illegal => {
-                let leading_range = iter
-                    .peeking_take_while(|(ty, _)| *ty == TokenType::Illegal)
+            TokenType::Illegal | TokenType::Whitespace | TokenType::LineComment => {
+                let range = iter
+                    .peeking_take_while(|(ty, _)| *ty == token)
                     .map(|(_, range)| range)
                     .last()
-                    .unwrap_or(range.clone());
+                    .map_or(range.clone(), |to| range.start..to.end);
 
-                tokens.push(Token::new(TokenType::Illegal, range.start..leading_range.end))
+                tokens.push(Token::new(token, range))
             }
             _ => tokens.push(Token::new(token, range)),
         }
