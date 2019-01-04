@@ -2,7 +2,21 @@ workflow "secsp/ci" {
   on = "push"
   resolves = [
     "secsp/ci/test",
+    "secsp/ci/test-coverage",
   ]
+}
+
+action "secsp/ci/test-coverage-generate" {
+  uses = "docker://xd009642/tarpaulin:develop-nightly"
+  runs = "sh"
+  args = ["-c", "cargo tarpaulin --out Xml"]
+}
+
+action "secsp/ci/test-coverage" {
+  uses = "docker://bash:latest"
+  needs = ["secsp/ci/test-coverage-generate"]
+  secrets = ["CODECOV_TOKEN"]
+  args = ["<(curl -s https://codecov.io/bash)"]
 }
 
 action "secsp/ci/build" {
