@@ -63,6 +63,10 @@ impl<'a, K: SyntaxKindBase, T: TokenBase<K>> Parser<'a, K, T> {
     /// Advance the position of the parser within the token stream and produce an event
     /// for the current leaf.
     pub fn bump(&mut self) {
+        if self.current() == K::eof() {
+            return;
+        }
+
         self.events.push(Event::Leaf(self.current()));
         self.pos += 1;
     }
