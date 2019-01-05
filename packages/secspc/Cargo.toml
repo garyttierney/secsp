@@ -3,6 +3,7 @@ name = "secspc"
 version = "0.1.0"
 authors = ["Gary Tierney <gary.tierney@gmx.com>"]
 edition = "2018"
+autobenches = false
 
 [dependencies]
 clap = "2"
@@ -11,3 +12,8 @@ log = "0.4"
 secsp_analysis = { path = "../libsecsp_analysis" }
 secsp_syntax = { path = "../libsecsp_syntax" }
 symbolic_expressions = "~4.1.9"
+
+[[bin]]
+name = "secspc"
+path = "src/main.rs"
+bench = false

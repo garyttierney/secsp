@@ -3,6 +3,7 @@ name = "secsp_syntax"
 version = "0.1.0"
 authors = ["Gary Tierney <gary.tierney@gmx.com>"]
 edition = "2018"
+autobenches = false
 
 [dependencies]
 drop_bomb = "0.1"
@@ -15,3 +16,11 @@ text_unit = "0.1"
 
 [dev-dependencies]
 criterion = "0.2"
+
+[[bench]]
+name = "parse_file"
+path = "benches/parse_file.rs"
+harness = false
+
+[lib]
+bench = false
