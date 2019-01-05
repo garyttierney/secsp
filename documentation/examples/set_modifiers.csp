@@ -1,0 +1,4 @@
+type_attribute my_attrib;
+type my_type;
+
+my_attrib |= (type) my_type;

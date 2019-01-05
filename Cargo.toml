@@ -1,17 +1,11 @@
 [workspace]
 members = [
-    "libsecsp_analysis",
-    "libsecsp_syntax",
-    "secsp_language_server",
-    "secspc",
-    "tools/sexp_cmp",
+    "packages/libsecsp_analysis",
+    "packages/libsecsp_syntax",
+    "packages/secsp_language_server",
+    "packages/secspc",
 ]
-
-
-[profile.dev]
-lto = false
 
 [profile.release]
 debug = true
-lto = false
 panic = 'abort'

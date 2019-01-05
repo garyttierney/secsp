@@ -1,0 +1,14 @@
+= SELinux C-style Policy Documentation
+
+[NOTE]
+====
+This documentation is largely a work in progress. If you'd like to contribute see <<developer/03-writing-documentation#,writing documentation>>.
+====
+
+== Links
+
+<<reference/00-index#,Reference documentation>>::
+Reference documentation on the syntax and language itself.
+
+<<developer/00-index#,Developer documentation>>::
+Information on extending, testing, and contributing to secsp.

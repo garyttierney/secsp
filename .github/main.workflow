@@ -34,5 +34,5 @@ action "secsp/ci-heavy/test" {
     "secsp/ci-heavy/is-mainline",
   ]
   runs = "/bin/sh"
-  args = ["-c", "cd /github/workspace/secsp_fuzzer && ./tools/run-fuzzer.sh || exit 1"]
+  args = ["-c", "cd /github/workspace/packages/secsp_fuzzer && ./tools/run-fuzzer.sh || exit 1"]
 }
