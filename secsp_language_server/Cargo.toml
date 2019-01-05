@@ -1,6 +1,0 @@
-[package]
-name = "secsp_language_server"
-version = "0.1.0"
-authors = ["Gary Tierney <gary.tierney@gmx.com>"]
-
-[dependencies]
