@@ -2,6 +2,7 @@ workflow "secsp/ci" {
   on = "push"
   resolves = [
     "secsp/ci/test",
+    "secsp/ci/benchmark",
   ]
 }
 
@@ -14,6 +15,12 @@ action "secsp/ci/test" {
   uses = "docker://rust:latest"
   needs = ["secsp/ci/build"]
   runs = "cargo test"
+}
+
+action "secsp/ci/benchmark" {
+  uses = "docker://garyttierney/gh-action-critcmp:latest"
+  needs = ["secsp/ci/build"]
+  secrets = ["GITHUB_TOKEN"]
 }
 
 workflow "secsp/ci-heavy" {

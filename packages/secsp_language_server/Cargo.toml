@@ -2,6 +2,15 @@
 name = "secsp_language_server"
 version = "0.1.0"
 authors = ["Gary Tierney <gary.tierney@gmx.com>"]
+autobenches = false
 
 [dependencies]
 jsonrpc-core = "9.0.0"
+
+[[bin]]
+path = "src/main.rs"
+name = "secsp-language-server"
+bench = false
+
+[lib]
+bench = false
