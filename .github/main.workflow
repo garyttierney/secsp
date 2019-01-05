@@ -36,7 +36,7 @@ action "secsp/ci-heavy/is-mainline" {
 }
 
 action "secsp/ci-heavy/test" {
-  uses = "docker://rustlang/rust:nightly"
+  uses = "docker://garyttierney/gh-action-afl-fuzz:latest"
   needs = [
     "secsp/ci-heavy/is-mainline",
   ]
