@@ -9,7 +9,6 @@ LABEL "repository"="http://github.com/garyttierney/secsp"
 LABEL "homepage"="http://github.com/garyttierney/secsp"
 LABEL "maintainer"="Gary Tierney <gary.tierney@fastmail.com>"
 
-RUN cargo install critcmp --force
 RUN apt-get update && apt-get install jq -y
 
 WORKDIR "/github/workspace"

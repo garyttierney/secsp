@@ -28,48 +28,34 @@ if ! git fetch ; then
     exit 1
 fi
 
-if ! cargo bench -- --save-baseline change ; then
-    echo "ERROR: Failed to create change benchmark"
-    exit 1
-fi
-
 if ! git checkout "$BASELINE_BRANCH" ; then
     echo "ERROR: Unable to checkout baseline branch"
     exit 1
 fi
 
 if ! cargo bench -- --save-baseline baseline ; then
-    echo "ERROR: Unable to create baseline benchmark"
-    exit 78
+    echo "ERROR: Failed to create change benchmark"
+    exit 1
 fi
 
-if ! cargo install --force critcmp ; then
-    echo "ERROR: Failed to install critcmp"
+if ! git checkout "$ORIGINAL_BRANCH" ; then
+    echo "ERROR: Unable to checkout original ref"
     exit 1
 fi
 
 BENCHMARK_LOG_FILE=$(mktemp)
-
-if ! critcmp baseline change -t 5 > "$BENCHMARK_LOG_FILE" ; then
-    echo "ERROR: Failed to create benchmark diff"
-    exit 1
+if ! cargo bench --quiet -- -b baseline > "$BENCHMARK_LOG_FILE" ; then
+    echo "ERROR: Unable to create baseline benchmark"
+    exit 78
 fi
-
-LOG=$(cat "$BENCHMARK_LOG_FILE")
 
 echo "RESULT:"
 cat "$BENCHMARK_LOG_FILE"
 
-if [ -z "$LOG" ]; then
+if grep --quiet -iE "no change in performance|change within noise threshold" "$BENCHMARK_LOG_FILE" ; then
     echo "OK: No performance regressions found"
     exit 0
 else
     echo "WARNING: Found performance regressions."
-
-    if [ -n "$GITHUB_TOKEN" ]; then
-        COMMENT_PAYLOAD=$(echo "{}" | jq --arg body "$LOG" '.body = $body')
-        COMMENTS_URL=$(jq -r ".pull_request.comments_url" < /github/workflow/event.json)
-
-        [ -n "$COMMENTS_URL" ] && curl -s -S -H "Authorization: token $GITHUB_TOKEN" --header "Content-Type: application/json" --data "$COMMENT_PAYLOAD" "$COMMENTS_URL" > /dev/null
-    fi
+    exit 78
 fi
