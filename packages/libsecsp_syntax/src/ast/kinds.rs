@@ -41,38 +41,38 @@ impl BinaryOperator {
     }
 }
 
-ast_type!(pub struct SourceFileNode => SourceFile: BlockOwner);
-ast_type!(pub struct BlockNode => Block:);
+ast_type!(pub struct SourceFile: BlockOwner {});
+ast_type!(pub struct Block: BlockOwner {});
 
-ast_type!(pub struct ContainerNode => Container: BlockOwner);
+ast_type!(pub struct Container: BlockOwner {});
 
 ast_enum!(
-    pub enum BlockItem {
+    pub enum BlockItem => BlockItemKind {
         Container,
         Variable,
     }
 );
 
-ast_type!(pub struct VariableNode => Variable: {});
+ast_type!(pub struct Variable: {});
 
 ast_enum!(
-    pub enum Stmt {
+    pub enum Stmt => StmtKind {
         Variable,
     }
 );
 
-ast_type!(pub struct PathExprNode => PathExpr:);
-ast_type!(pub struct PrefixExprNode => PrefixExpr:);
+ast_type!(pub struct PathExpr:);
+ast_type!(pub struct PrefixExpr => PrefixExpr:);
 
 ast_enum!(
-    pub enum Expr {
+    pub enum Expr => ExprKind {
         PathExpr,
         PrefixExpr,
     }
 );
 
-pub trait BlockOwner<'a>: AstNode<'a> {
-    fn items(self) -> AstChildren<'a, BlockItem<'a>> {
+pub trait BlockOwner: AstNode {
+    fn items(&self) -> AstChildren<BlockItem> {
         self.child::<Block>().children()
     }
 }
