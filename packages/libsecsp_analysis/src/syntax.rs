@@ -7,12 +7,12 @@ use crate::input::{FileId, FilesDatabase};
 
 salsa::query_group! {
     pub trait SyntaxDatabase: FilesDatabase + Database {
-        fn source_file(file_id: FileId) -> ast::SourceFileNode {
+        fn source_file(file_id: FileId) -> ast::TreeArc<ast::SourceFile> {
             type SourceFileQuery;
         }
     }
 }
 
-fn source_file(db: &impl SyntaxDatabase, file_id: FileId) -> ast::SourceFileNode {
+fn source_file(db: &impl SyntaxDatabase, file_id: FileId) -> ast::TreeArc<ast::SourceFile> {
     parser::parse_file(&*db.file_text(file_id))
 }

@@ -2,6 +2,7 @@ use regex::{Regex, RegexBuilder};
 use text_unit::TextRange;
 use text_unit::TextUnit;
 
+use crate::ast::AstNode;
 use crate::ast::SyntaxNode;
 use crate::ast::SyntaxNodeRef;
 use crate::parser::parse_file;
@@ -23,7 +24,7 @@ pub(crate) fn test_parser(text: &str) {
     let ws_regex = Regex::new(r#"\s"#).unwrap();
 
     for assertion in assertions.into_iter() {
-        let node = ast.syntax.borrowed().covering_node(assertion.range);
+        let node = ast.syntax().covering_node(assertion.range);
 
         let raw_kind = format!("{:#?}", node.kind());
         let kind = ws_regex.replace_all(raw_kind.as_str(), "");
@@ -59,7 +60,10 @@ fn strip_markers(offset: TextUnit, text: &str) -> (String, Vec<Assertion>) {
         let (stripped_contents, mut submatches) = strip_markers(contents_offset, contents);
         let range = TextRange::offset_len(contents_offset, TextUnit::of_str(&stripped_contents));
 
-        assertions.push(Assertion { ty: ty.to_string(), range });
+        assertions.push(Assertion {
+            ty: ty.to_string(),
+            range,
+        });
         assertions.append(&mut submatches);
         code.replace_range(start..end, stripped_contents.as_str());
     }
