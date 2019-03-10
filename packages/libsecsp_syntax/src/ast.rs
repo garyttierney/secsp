@@ -13,7 +13,9 @@ pub mod visitor;
 // Re-export AST types under the crate::ast root namespace.
 pub use self::error::SyntaxError;
 pub use self::kinds::*;
-pub use self::types::{GreenNode, GreenNodeBuilder, SyntaxNode, SyntaxNodeChildren, SyntaxNodeRef};
+pub use self::types::{
+    GreenNode, GreenNodeBuilder, SyntaxNode, SyntaxNodeChildren, SyntaxNodeRef, TreeArc,
+};
 use crate::ast::types::WalkEvent;
 use smol_str::SmolStr;
 
@@ -84,22 +86,21 @@ pub enum SyntaxKind {
     SourceFile,
 }
 
-/// Allows going from an un-typed [SyntaxNodeRef] to a typed [AstNode] implementation.
-pub trait AstNode<'a>: Clone + Copy + 'a {
-    fn cast(syntax: SyntaxNodeRef<'a>) -> Option<Self>
+pub trait AstNode:
+    rowan::TransparentNewType<Repr = SyntaxNode> + ToOwned<Owned = TreeArc<Self>>
+{
+    fn cast(syntax: &SyntaxNode) -> Option<&Self>
     where
         Self: Sized;
 
-    fn syntax(self) -> SyntaxNodeRef<'a>;
+    fn syntax(&self) -> &SyntaxNode;
 
-    fn children<C: AstNode<'a>>(self) -> AstChildren<'a, C> {
-        AstChildren::new(self.syntax())
+    fn child<C: AstNode>(&self) -> &C {
+        self.children().next().unwrap()
     }
 
-    fn child<C: AstNode<'a>>(self) -> C {
-        self.children()
-            .next()
-            .expect("ast representation is broken")
+    fn children<C: AstNode>(&self) -> AstChildren<C> {
+        AstChildren::new(self.syntax())
     }
 }
 
@@ -110,7 +111,7 @@ pub struct AstChildren<'a, N> {
 }
 
 impl<'a, N> AstChildren<'a, N> {
-    fn new(parent: SyntaxNodeRef<'a>) -> Self {
+    fn new(parent: &'a SyntaxNode) -> Self {
         AstChildren {
             inner: parent.children(),
             ph: PhantomData,
@@ -118,9 +119,9 @@ impl<'a, N> AstChildren<'a, N> {
     }
 }
 
-impl<'a, N: AstNode<'a>> Iterator for AstChildren<'a, N> {
-    type Item = N;
-    fn next(&mut self) -> Option<N> {
+impl<'a, N: AstNode + 'a> Iterator for AstChildren<'a, N> {
+    type Item = &'a N;
+    fn next(&mut self) -> Option<&'a N> {
         loop {
             if let Some(n) = N::cast(self.inner.next()?) {
                 return Some(n);

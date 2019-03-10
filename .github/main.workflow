@@ -6,21 +6,15 @@ workflow "secsp/ci" {
   ]
 }
 
-action "secsp/ci/build" {
-  uses = "docker://rust:latest"
-  runs = "cargo build"
-}
-
 action "secsp/ci/test" {
   uses = "docker://rust:latest"
-  needs = ["secsp/ci/build"]
-  runs = "cargo test"
+  runs = "cargo test --all"
 }
 
 action "secsp/ci/benchmark" {
   uses = "docker://garyttierney/gh-action-critcmp:latest"
-  needs = ["secsp/ci/build"]
   secrets = ["GITHUB_TOKEN"]
+  needs = ["secsp/ci/test"]
 }
 
 workflow "secsp/ci-heavy" {

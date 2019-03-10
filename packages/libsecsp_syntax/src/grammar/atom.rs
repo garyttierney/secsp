@@ -64,31 +64,38 @@ pub fn is_at_path_start(p: &CspParser, offset: usize) -> bool {
     tok == SyntaxKind::Token(TokenType::Dot) || tok == SyntaxKind::Token(TokenType::Name)
 }
 
-
 #[test]
 fn parse_global_path() {
-    crate::grammar::test::test_parser(r#"
+    crate::grammar::test::test_parser(
+        r#"
         callstub(<marker type="pathexpr">.global.item</marker>);
-    "#)
+    "#,
+    )
 }
 
 #[test]
 fn parse_nested_path() {
-    crate::grammar::test::test_parser(r#"
+    crate::grammar::test::test_parser(
+        r#"
         callstub(<marker type="pathexpr">nested1.nested2.nested3</marker>);
-    "#)
+    "#,
+    )
 }
 
 #[test]
 fn parse_list_expr() {
-    crate::grammar::test::test_parser(r#"
+    crate::grammar::test::test_parser(
+        r#"
         callstub(<marker type="listexpr">(item1, item2, item3)</marker>);
-    "#)
+    "#,
+    )
 }
 
 #[test]
 fn parse_paren_expr() {
-    crate::grammar::test::test_parser(r#"
+    crate::grammar::test::test_parser(
+        r#"
         callstub(<marker type="parenexpr">(a && b)</marker>);
-    "#)
+    "#,
+    )
 }
