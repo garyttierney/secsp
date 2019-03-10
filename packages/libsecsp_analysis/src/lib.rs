@@ -114,7 +114,7 @@ impl AnalysisHost {
         AnalysisHost { db }
     }
 
-    pub fn source_file(&self, file_id: input::FileId) -> ast::SourceFileNode {
+    pub fn source_file(&self, file_id: input::FileId) -> ast::TreeArc<ast::SourceFile> {
         self.db.query(syntax::SourceFileQuery).get(file_id).clone()
     }
 

@@ -1,7 +1,7 @@
 use drop_bomb::DropBomb;
 
 use crate::ast;
-use crate::ast::SyntaxKind;
+use crate::ast::{AstNode, SyntaxKind, TreeArc};
 use crate::grammar;
 use crate::lexer::tokenize;
 use crate::parser::builder::SyntaxTreeBuilder;
@@ -196,7 +196,7 @@ impl<K: SyntaxKindBase, T: TokenBase<K>> Marker<K, T> {
     pub fn abandon(mut self, parser: &mut Parser<K, T>) {
         match &mut parser.events[self.pos] {
             evt @ Event::BeginMarker => *evt = Event::Tombstone,
-            e => unreachable!("trying to abandon a {:#?} marker", e)
+            e => unreachable!("trying to abandon a {:#?} marker", e),
         };
 
         if self.pos == parser.events.len() - 1 {
@@ -248,13 +248,13 @@ impl<K: SyntaxKindBase, T: TokenBase<K>> CompletedMarker<K, T> {
     }
 }
 
-pub fn parse_file(text: &str) -> ast::SourceFileNode {
+pub fn parse_file(text: &str) -> TreeArc<ast::SourceFile> {
     let (node, errors) = parse(text, builder::SyntaxTreeBuilder::new(), grammar::root);
     let root = ast::SyntaxNode::new(node, errors);
 
     assert_eq!(root.kind(), ast::SyntaxKind::SourceFile);
 
-    ast::SourceFileNode { syntax: root }
+    ast::SourceFile::cast(&root).unwrap().to_owned()
 }
 
 pub fn parse<S: EventSink<SyntaxKind>>(

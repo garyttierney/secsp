@@ -2,10 +2,10 @@ use crate::ast::SyntaxKind;
 use crate::grammar::atom;
 use crate::grammar::block::parse_block;
 use crate::grammar::block::BlockType;
+use crate::grammar::error_recovery;
 use crate::grammar::expr::expression;
 use crate::parser::CspParser;
 use crate::token::TokenType;
-use crate::grammar::error_recovery;
 
 pub fn statement(p: &mut CspParser) -> bool {
     if p.at(TokenType::IfKw) {

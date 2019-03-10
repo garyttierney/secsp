@@ -80,7 +80,9 @@ impl<'a, K: SyntaxKindBase, T: TokenBase<K>, S: EventSink<K>> EventProcessor<'a,
                                 forward_parent
                             }
                             Event::Tombstone => None,
-                            e => unreachable!("found unresolved {:#?} at position {}", e, parent_idx)
+                            e => {
+                                unreachable!("found unresolved {:#?} at position {}", e, parent_idx)
+                            }
                         };
                     }
 

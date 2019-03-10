@@ -55,18 +55,22 @@ pub fn parse_macro_param_list_item(p: &mut CspParser) -> bool {
 
 #[test]
 fn parse_macro_def_no_params() {
-    crate::grammar::test::test_parser(r#"
+    crate::grammar::test::test_parser(
+        r#"
         <marker type="macrodef">macro test<marker type="macroparamlist">()</marker> {
         }</marker>
-    "#)
+    "#,
+    )
 }
 
 #[test]
 fn parse_macro_def() {
-    crate::grammar::test::test_parser(r#"
+    crate::grammar::test::test_parser(
+        r#"
         <marker type="macrodef">macro test<marker type="macroparamlist">(
             <marker type="macroparamlistitem">type t</marker>
         )</marker> {
         }</marker>
-    "#)
+    "#,
+    )
 }
