@@ -14,6 +14,7 @@ action "secsp/ci/test" {
 action "secsp/ci/benchmark" {
   uses = "docker://garyttierney/gh-action-critcmp:latest"
   secrets = ["GITHUB_TOKEN"]
+  needs = ["secsp/ci/test"]
 }
 
 workflow "secsp/ci-heavy" {
