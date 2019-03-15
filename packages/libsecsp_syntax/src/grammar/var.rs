@@ -1,5 +1,5 @@
 use crate::ast::keywords::Keyword;
-use crate::grammar::expr::expression;
+use crate::grammar::expr::{expression, ExprRestriction};
 use crate::parser::CspParser;
 use crate::token::TokenType;
 
@@ -11,7 +11,7 @@ pub fn parse_var(p: &mut CspParser) {
     p.expect(TokenType::Name);
 
     if p.eat(TokenType::Equals) {
-        expression(p);
+        expression(p, ExprRestriction::None);
     }
 }
 
