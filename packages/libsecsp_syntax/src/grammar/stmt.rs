@@ -3,7 +3,7 @@ use crate::grammar::atom;
 use crate::grammar::block::parse_block;
 use crate::grammar::block::BlockType;
 use crate::grammar::error_recovery;
-use crate::grammar::expr::expression;
+use crate::grammar::expr::{expression, ExprRestriction};
 use crate::parser::CspParser;
 use crate::token::TokenType;
 
@@ -49,7 +49,7 @@ fn conditional(p: &mut CspParser) {
     let m = p.mark();
     p.bump();
 
-    expression(p);
+    expression(p, ExprRestriction::NoContext);
     parse_block(p, true);
 
     if p.at(TokenType::ElseKw) {
@@ -69,7 +69,7 @@ fn macro_call(p: &mut CspParser) {
     p.bump();
 
     while !p.at(TokenType::CloseParenthesis) {
-        if !expression(p) {
+        if !expression(p, ExprRestriction::None) {
             break;
         }
 

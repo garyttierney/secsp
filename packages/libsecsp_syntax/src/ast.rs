@@ -63,6 +63,14 @@ pub enum SyntaxKind {
     // region SyntaxKind::Expr(...)
     BinaryExpr,
 
+    CategoryRangeExpr,
+
+    LevelExpr,
+
+    LevelRangeExpr,
+
+    ContextExpr,
+
     LiteralExpr,
 
     /// Syntax-tree marker for a sub-list expression that takes a subset of children from a named list.

@@ -2,15 +2,36 @@ use regex::{Regex, RegexBuilder};
 use text_unit::TextRange;
 use text_unit::TextUnit;
 
+use crate::ast::types::WalkEvent;
 use crate::ast::AstNode;
+use crate::ast::SourceFile;
 use crate::ast::SyntaxNode;
 use crate::ast::SyntaxNodeRef;
 use crate::parser::parse_file;
+
+use std::fmt::Write;
 
 #[derive(Debug)]
 struct Assertion {
     ty: String,
     range: TextRange,
+}
+
+pub fn ast_to_string(source: &SourceFile) -> String {
+    let mut indent = 0;
+    let mut out = String::new();
+
+    for event in source.syntax().preorder() {
+        match event {
+            WalkEvent::Enter(node) => {
+                writeln!(out, "{:indent$}{:?}", "", node, indent = indent).unwrap();
+                indent += 2;
+            }
+            WalkEvent::Leave(_) => indent -= 2,
+        }
+    }
+
+    out
 }
 
 pub(crate) fn test_parser(text: &str) {
@@ -30,7 +51,12 @@ pub(crate) fn test_parser(text: &str) {
         let kind = ws_regex.replace_all(raw_kind.as_str(), "");
         let expected_kind = assertion.ty;
 
-        assert_eq!(expected_kind.to_lowercase(), kind.to_lowercase());
+        assert_eq!(
+            expected_kind.to_lowercase(),
+            kind.to_lowercase(),
+            "Resulting parse tree: {}",
+            ast_to_string(&ast)
+        );
     }
 }
 
