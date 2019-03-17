@@ -61,3 +61,23 @@ steps:
       testRunTitle: $(System.JobDisplayName)
       buildPlatform: $(System.JobDisplayName)
     condition: succeededOrFailed()
+  - task: CopyFiles@2
+    displayName: 'Copy Debug binaries [Windows]'
+    inputs:
+      Contents: |
+        target\debug\secspc.exe
+        target\debug\secsp-language-server.exe
+      TargetFolder: '$(Build.ArtifactStagingDirectory)'
+    condition: and(succeeded(), eq(variables['Agent.OS'],'Windows_NT'))
+  - task: CopyFiles@2
+    displayName: 'Copy Debug binaries [Linux & OSX]'
+    inputs:
+      Contents: |
+        target/debug/secspc
+        target/debug/secsp-language-server
+      TargetFolder: '$(Build.ArtifactStagingDirectory)'
+    condition: and(succeeded(), ne(variables['Agent.OS'],'Windows_NT'))
+  - task: PublishBuildArtifacts@1
+    inputs:
+      pathtoPublish: $(Build.ArtifactStagingDirectory)
+      artifactName: secsp-debug-binaries
