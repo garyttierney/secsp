@@ -44,8 +44,14 @@ steps:
       cargo build
     displayName: build
   - script: |
-      cargo test --all
-    displayName: run tests
+      cargo test --all -- -Z unstable-options --format json > test_results.json
+      type test_results.json
+    condition: and(succeeded(), eq(variables['Agent.OS'],'Windows_NT'))
+    displayName: run cargo test [Windows]
+  - script: |
+      cargo test --all -- -Z unstable-options --format json | tee test_results.json
+    condition: and(succeeded(), ne(variables['Agent.OS'],'Windows_NT'))
+    displayName: run cargo test [Linux & OSX]
   - script: |
       type test_results.json | cargo2junit > test_results_lkg.xml
     condition: and(succeededOrFailed(), eq(variables['Agent.OS'],'Windows_NT'))
