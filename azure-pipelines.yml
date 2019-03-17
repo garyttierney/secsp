@@ -86,4 +86,4 @@ steps:
   - task: PublishBuildArtifacts@1
     inputs:
       pathtoPublish: $(Build.ArtifactStagingDirectory)
-      artifactName: secsp-debug-binaries
+      artifactName: 'secsp-debug-binaries-$(HOST_IMAGE)'
