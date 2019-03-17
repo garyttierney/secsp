@@ -3,15 +3,7 @@
 //!
 //! The output of the tokenizer is lightweight, and only contains information about the
 //! type of a [Token] and where it occurred in the source.
-//!
-//! ```rust,ignore
-//! use crate::token::{Token, TokenType};
-//! use crate::lexer;
-//!
-//! let tokens = lexer::tokenize("test");
-//! assert_eq!(Token(TokenType::Name, 0..4), tokens[0]);
-//! assert_eq!(Token(TokenType::Eof, 4..5), tokens[1]);
-//! ```
+
 
 use crate::token::{Token, TokenType};
 use itertools::Itertools;
