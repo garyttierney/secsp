@@ -34,24 +34,14 @@ impl SourceRoot {
     }
 }
 
-salsa::query_group! {
-    pub trait FilesDatabase: Database {
-        /// Text of the file.
-        fn file_text(file_id: FileId) -> Arc<String> {
-            type FileTextQuery;
-            storage input;
-        }
+#[salsa::query_group(Files)]
+pub trait FilesDatabase: Database {
+    #[salsa::input]
+    fn file_text(&self, file_id: FileId) -> Arc<String>;
 
-        /// Relative path of a file to the analysis workspace.
-        fn file_relative_path(file_id: FileId) -> PathBuf {
-            type FileRelativePathQuery;
-            storage input;
-        }
+    #[salsa::input]
+    fn file_relative_path(&self, file_id: FileId) -> PathBuf;
 
-        /// The source root of the analysis workspace.
-        fn source_root() -> Arc<SourceRoot> {
-            type SourceRootQuery;
-            storage input;
-        }
-    }
+    #[salsa::input]
+    fn source_root(&self) -> Arc<SourceRoot>;
 }

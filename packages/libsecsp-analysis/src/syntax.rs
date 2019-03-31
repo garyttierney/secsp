@@ -5,12 +5,9 @@ use secsp_syntax::parser;
 
 use crate::input::{FileId, FilesDatabase};
 
-salsa::query_group! {
-    pub trait SyntaxDatabase: FilesDatabase + Database {
-        fn source_file(file_id: FileId) -> ast::TreeArc<ast::SourceFile> {
-            type SourceFileQuery;
-        }
-    }
+#[salsa::query_group(Syntax)]
+pub trait SyntaxDatabase: FilesDatabase + Database {
+    fn source_file(&self, file_id: FileId) -> ast::TreeArc<ast::SourceFile>;
 }
 
 fn source_file(db: &impl SyntaxDatabase, file_id: FileId) -> ast::TreeArc<ast::SourceFile> {

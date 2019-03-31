@@ -12,11 +12,13 @@ use salsa::Database;
 
 use secsp_syntax::ast;
 
+use crate::input::FilesDatabase;
 use crate::input::SourceRoot;
 
 pub mod input;
 pub mod syntax;
 
+#[salsa::database(input::Files, syntax::Syntax)]
 pub struct AnalysisDatabase {
     runtime: salsa::Runtime<AnalysisDatabase>,
 }
@@ -35,15 +37,15 @@ impl Default for AnalysisDatabase {
 
         let source_root = Arc::new(SourceRoot::default());
 
-        db.query_mut(input::SourceRootQuery).set((), source_root);
+        db.set_source_root(source_root);
         db
     }
 }
 
 impl AnalysisDatabase {
     pub fn from_workspace_root<P>(path: P) -> Result<Self, io::Error>
-    where
-        P: AsRef<PathBuf>,
+        where
+            P: AsRef<PathBuf>,
     {
         let ws_root_path = path.as_ref();
         let mut ws_dir_stack: Vec<PathBuf> = vec![ws_root_path.clone()];
@@ -78,30 +80,13 @@ impl AnalysisDatabase {
             let mut contents = String::new();
             file.read_to_string(&mut contents)?;
 
-            db.query_mut(input::FileTextQuery)
-                .set(id, Arc::new(contents));
-
-            db.query_mut(input::FileRelativePathQuery).set(id, ws_file);
+            db.set_file_text(id, Arc::new(contents));
+            db.set_file_relative_path(id, ws_file);
         }
 
-        db.query_mut(input::SourceRootQuery)
-            .set((), Arc::new(source_root));
+        db.set_source_root(Arc::new(source_root));
 
         Ok(db)
-    }
-}
-
-salsa::database_storage! {
-    pub struct AnalysisDatabaseStorage for AnalysisDatabase {
-        impl input::FilesDatabase {
-            fn file_text() for input::FileTextQuery;
-            fn file_relative_path() for input::FileRelativePathQuery;
-            fn source_root() for input::SourceRootQuery;
-        }
-
-        impl syntax::SyntaxDatabase {
-            fn source_file() for syntax::SourceFileQuery;
-        }
     }
 }
 

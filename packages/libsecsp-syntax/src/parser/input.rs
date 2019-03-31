@@ -84,7 +84,7 @@ impl<'a, K: SyntaxKindBase, T: TokenBase<K>> ParserInput<'a, K, T> {
         let non_trivia_tokens = tokens
             .iter()
             .filter(|tok| !tok.is_trivia())
-            .map(|tok| *tok)
+            .cloned()
             .collect();
 
         ParserInput {
