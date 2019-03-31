@@ -5,13 +5,13 @@
 //! type of a [Token] and where it occurred in the source.
 
 
-use crate::token::{Token, TokenType};
+use std::ops::Range;
+
 use itertools::Itertools;
 use logos::Lexer;
 use logos::Logos;
-use logos::Source;
-use std::marker::PhantomData;
-use std::ops::Range;
+
+use crate::token::{Token, TokenType};
 
 struct Tokenizer<'a> {
     lexer: Lexer<TokenType, &'a str>,

@@ -9,8 +9,8 @@ autobenches = false
 clap = "2"
 fern = "0.5"
 log = "0.4"
-secsp_analysis = { path = "../libsecsp_analysis" }
-secsp_syntax = { path = "../libsecsp_syntax" }
+secsp_analysis = { path = "../libsecsp-analysis" }
+secsp_syntax = { path = "../libsecsp-syntax" }
 symbolic_expressions = "~4.1.9"
 
 [[bin]]
