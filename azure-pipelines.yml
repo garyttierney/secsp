@@ -67,6 +67,10 @@ steps:
       testRunTitle: $(System.JobDisplayName)
       buildPlatform: $(System.JobDisplayName)
     condition: succeededOrFailed()
+  - script: |
+      cargo bench -- --save-baseline baseline
+    condition: and(succeeded(), ne(variables['Agent.OS'],'Windows_NT'))
+    displayName: 'Run benchmarks'
   - task: CopyFiles@2
     displayName: 'Copy Debug binaries [Windows]'
     inputs:
