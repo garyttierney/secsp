@@ -391,7 +391,7 @@ impl AsRef<str> for KeywordKind {
 }
 
 impl InternalSyntaxKind for KeywordKind {
-    const START: u16 = crate::KW_KIND_START;
+    const START: u16 = KW_KIND_START;
     const END: u16 = KeywordKind::__LAST as u16;
 }
 

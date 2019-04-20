@@ -8,8 +8,6 @@ use text_unit::TextUnit;
 use crate::ast::types::WalkEvent;
 use crate::ast::AstNode;
 use crate::ast::SourceFile;
-use crate::ast::SyntaxNode;
-use crate::ast::SyntaxNodeRef;
 use crate::parser::parse_file;
 use crate::parser::syntax::NodeKind;
 

@@ -1,14 +1,14 @@
+use std::str::FromStr;
+
 use crate::grammar::atom;
 use crate::grammar::block::BlockType;
 use crate::grammar::{
     container::parse_container, macros::parse_macro, stmt::statement, var::parse_var,
 };
+use crate::parser::syntax::KeywordKind;
 use crate::parser::syntax::NodeKind;
 use crate::parser::syntax::TokenKind;
-use crate::parser::syntax::KeywordKind;
 use crate::parser::CspParser;
-
-use std::str::FromStr;
 
 pub fn parse_item(p: &mut CspParser) -> bool {
     if !p.at_kw() {

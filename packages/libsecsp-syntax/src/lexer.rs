@@ -51,7 +51,7 @@ impl<'a> Iterator for Tokenizer<'a> {
 /// Runs the tokenizer on an input string and collects all of the output tokens
 /// into a list, continuing past lex errors.
 pub fn tokenize<S: AsRef<str>>(str: S) -> Vec<Token> {
-    let mut tokenizer = Tokenizer::new(str.as_ref());
+    let tokenizer = Tokenizer::new(str.as_ref());
     let mut tokens: Vec<Token> = vec![];
     let mut iter = tokenizer.into_iter().peekable();
 

@@ -1,12 +1,13 @@
+use std::str::FromStr;
+
 use crate::grammar::block;
 use crate::parser::syntax::KeywordKind;
 use crate::parser::syntax::NodeKind;
 use crate::parser::syntax::TokenKind;
 use crate::parser::CspParser;
 
-use std::str::FromStr;
-
 pub fn parse_macro(p: &mut CspParser) {
+    // pre-test: parser must be at a "macro" keyword.
     assert!(p.eat_keyword(KeywordKind::MACRO));
 
     p.bump_as(KeywordKind::MACRO);

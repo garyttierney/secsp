@@ -3,10 +3,10 @@ use std::convert::TryFrom;
 use crate::ast::BinaryOperator;
 use crate::grammar::atom;
 use crate::grammar::error_recovery;
-use crate::parser::CompletedMarker;
-use crate::parser::CspParser;
 use crate::parser::syntax::NodeKind;
 use crate::parser::syntax::TokenKind;
+use crate::parser::CompletedMarker;
+use crate::parser::CspParser;
 use crate::token::Token;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]

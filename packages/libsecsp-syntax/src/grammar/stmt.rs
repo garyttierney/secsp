@@ -3,7 +3,6 @@ use std::convert::TryFrom;
 use crate::grammar::atom;
 use crate::grammar::block::parse_block;
 use crate::grammar::block::BlockType;
-use crate::grammar::error_recovery;
 use crate::grammar::expr::{expression, ExprRestriction};
 use crate::parser::syntax::NodeKind;
 use crate::parser::syntax::TokenKind;

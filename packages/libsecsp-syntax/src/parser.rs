@@ -1,18 +1,17 @@
+use std::marker::PhantomData;
+
 use drop_bomb::DropBomb;
+use rowan::SyntaxKind;
 
 use crate::ast;
 use crate::ast::{AstNode, TreeArc};
 use crate::grammar;
 use crate::lexer::tokenize;
-use crate::parser::builder::SyntaxTreeBuilder;
 use crate::parser::event::{Event, EventSink};
 use crate::parser::input::ParserInput;
-use crate::parser::input::SyntaxKindBase;
 use crate::parser::input::TokenBase;
 use crate::parser::syntax::{NodeKind, TokenKind};
 use crate::token::Token;
-use rowan::{SyntaxKind, WalkEvent};
-use std::marker::PhantomData;
 
 mod builder;
 mod event;
@@ -120,7 +119,7 @@ impl<'a, T: TokenBase> Parser<'a, T> {
 
     /// Notify the parser that an error occurred at the given position with [text] as the error
     /// message.
-    pub fn error<S>(&mut self, text: S)
+    pub fn error<S>(&mut self, _text: S)
     where
         S: AsRef<str>,
     {

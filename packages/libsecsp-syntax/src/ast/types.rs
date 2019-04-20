@@ -1,7 +1,5 @@
 pub use rowan::WalkEvent;
 
-use crate::ast::SyntaxError;
-
 pub type GreenNode = ::rowan::GreenNode;
 pub type GreenNodeBuilder = ::rowan::GreenNodeBuilder;
 pub type SyntaxNode = ::rowan::SyntaxNode;

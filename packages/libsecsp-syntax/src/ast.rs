@@ -1,6 +1,13 @@
 use std::marker::PhantomData;
 
-use crate::parser::syntax::TokenKind;
+use crate::ast::types::WalkEvent;
+
+// Re-export AST types under the crate::ast root namespace.
+pub use self::error::SyntaxError;
+pub use self::kinds::*;
+pub use self::types::{
+    GreenNode, GreenNodeBuilder, SyntaxNode, SyntaxNodeChildren, SyntaxNodeRef, TreeArc,
+};
 
 #[macro_use]
 pub mod types;
@@ -9,15 +16,6 @@ pub mod keywords;
 mod error;
 mod kinds;
 pub mod visitor;
-
-// Re-export AST types under the crate::ast root namespace.
-pub use self::error::SyntaxError;
-pub use self::kinds::*;
-pub use self::types::{
-    GreenNode, GreenNodeBuilder, SyntaxNode, SyntaxNodeChildren, SyntaxNodeRef, TreeArc,
-};
-use crate::ast::types::WalkEvent;
-use smol_str::SmolStr;
 
 pub trait AstNode:
     rowan::TransparentNewType<Repr = SyntaxNode> + ToOwned<Owned = TreeArc<Self>>

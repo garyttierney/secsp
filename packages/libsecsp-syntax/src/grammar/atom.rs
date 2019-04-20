@@ -1,9 +1,10 @@
+use std::convert::TryFrom;
+
 use crate::grammar::expr::{expression, ExprRestriction};
 use crate::parser::syntax::{NodeKind, TokenKind};
 use crate::parser::CompletedMarker;
 use crate::parser::CspParser;
 use crate::token::Token;
-use std::convert::TryFrom;
 
 pub fn path_expr(p: &mut CspParser) -> CompletedMarker<Token> {
     let m = p.mark();

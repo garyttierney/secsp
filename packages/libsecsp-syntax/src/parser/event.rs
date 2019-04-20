@@ -1,12 +1,12 @@
 use std::mem;
+use std::ops::Range;
 
+use rowan::SyntaxKind;
 use smol_str::SmolStr;
 use text_unit::TextUnit;
 
 use crate::parser::input::SyntaxKindBase;
 use crate::parser::input::TokenBase;
-use rowan::SyntaxKind;
-use std::ops::Range;
 
 /// An event sink for parse events.
 pub trait EventSink {
@@ -166,7 +166,7 @@ impl<'a, T: TokenBase, S: EventSink> EventProcessor<'a, T, S> {
             .iter()
             .enumerate()
             .filter_map(|(idx, tok)| {
-                let kind = tok.kind();
+                let _kind = tok.kind();
 
                 if tok.is_trivia() && !tok.is_whitespace() {
                     Some(idx)

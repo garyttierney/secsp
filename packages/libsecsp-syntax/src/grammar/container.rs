@@ -1,10 +1,9 @@
-use crate::ast::keywords;
+use std::str::FromStr;
+
 use crate::grammar::atom;
 use crate::grammar::block;
 use crate::parser::syntax::{KeywordKind, NodeKind, TokenKind};
 use crate::parser::CspParser;
-
-use std::str::FromStr;
 
 pub fn parse_container(p: &mut CspParser) {
     let is_abstract = p.eat_keyword(KeywordKind::ABSTRACT);
