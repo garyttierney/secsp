@@ -4,31 +4,31 @@
 //! The output of the tokenizer is lightweight, and only contains information about the
 //! type of a [Token] and where it occurred in the source.
 
-
 use std::ops::Range;
 
 use itertools::Itertools;
 use logos::Lexer;
 use logos::Logos;
 
-use crate::token::{Token, TokenType};
+use crate::parser::syntax::TokenKind;
+use crate::token::Token;
 
 struct Tokenizer<'a> {
-    lexer: Lexer<TokenType, &'a str>,
+    lexer: Lexer<TokenKind, &'a str>,
     seen_eof: bool,
 }
 
 impl<'a> Tokenizer<'a> {
     fn new(text: &'a str) -> Self {
         Tokenizer {
-            lexer: TokenType::lexer(text),
+            lexer: TokenKind::lexer(text),
             seen_eof: false,
         }
     }
 }
 
 impl<'a> Iterator for Tokenizer<'a> {
-    type Item = (TokenType, Range<usize>);
+    type Item = (TokenKind, Range<usize>);
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.seen_eof {
@@ -40,7 +40,7 @@ impl<'a> Iterator for Tokenizer<'a> {
 
         self.lexer.advance();
 
-        if ty == TokenType::Eof {
+        if ty == TokenKind::Eof {
             self.seen_eof = true;
         }
 
@@ -57,7 +57,7 @@ pub fn tokenize<S: AsRef<str>>(str: S) -> Vec<Token> {
 
     while let Some((token, range)) = iter.next() {
         match token {
-            TokenType::Illegal | TokenType::Whitespace | TokenType::LineComment => {
+            TokenKind::Illegal | TokenKind::Whitespace | TokenKind::LineComment => {
                 let range = iter
                     .peeking_take_while(|(ty, _)| *ty == token)
                     .map(|(_, range)| range)
@@ -75,19 +75,19 @@ pub fn tokenize<S: AsRef<str>>(str: S) -> Vec<Token> {
 
 #[test]
 fn preserves_whitespace() {
-    let types: Vec<TokenType> = tokenize("test abc 123")
+    let types: Vec<TokenKind> = tokenize("test abc 123")
         .into_iter()
         .map(|t| t.into())
         .collect();
 
     assert_eq!(
         vec![
-            TokenType::Name,
-            TokenType::Whitespace,
-            TokenType::Name,
-            TokenType::Whitespace,
-            TokenType::Integer,
-            TokenType::Eof,
+            TokenKind::Name,
+            TokenKind::Whitespace,
+            TokenKind::Name,
+            TokenKind::Whitespace,
+            TokenKind::Integer,
+            TokenKind::Eof,
         ],
         types
     );

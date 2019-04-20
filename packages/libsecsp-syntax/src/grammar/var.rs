@@ -1,16 +1,17 @@
-use crate::ast::keywords::Keyword;
 use crate::grammar::expr::{expression, ExprRestriction};
+use crate::parser::syntax::{KeywordKind, TokenKind};
 use crate::parser::CspParser;
-use crate::token::TokenType;
+
+use std::str::FromStr;
 
 pub fn parse_var(p: &mut CspParser) {
-    let kw = Keyword::from_str(p.current_text()).expect("should be at var type keyword");
+    let kw = KeywordKind::from_str(p.current_text()).expect("should be at var type keyword");
     assert!(kw.is_var_type());
 
     p.bump_as(kw);
-    p.expect(TokenType::Name);
+    p.expect(TokenKind::Name);
 
-    if p.eat(TokenType::Equals) {
+    if p.eat(TokenKind::Equals) {
         expression(p, ExprRestriction::None);
     }
 }

@@ -1,7 +1,10 @@
+use std::convert::TryFrom;
+
+use rowan::SyntaxKind;
+
 use crate::ast::AstChildren;
 use crate::ast::AstNode;
-use crate::ast::SyntaxKind;
-use crate::token::TokenType;
+use crate::parser::syntax::TokenKind;
 
 pub enum BinaryOperator {
     LogicalAnd,
@@ -26,14 +29,15 @@ impl BinaryOperator {
 
     pub fn from(kind: SyntaxKind) -> Option<Self> {
         use self::BinaryOperator::*;
-        use self::TokenType::*;
+        use self::TokenKind::*;
 
-        let op = match kind {
-            SyntaxKind::Token(Caret) => BitwiseXor,
-            SyntaxKind::Token(Pipe) => BitwiseOr,
-            SyntaxKind::Token(Ampersand) => BitwiseAnd,
-            SyntaxKind::Token(DoubleAmpersand) => LogicalAnd,
-            SyntaxKind::Token(DoublePipe) => LogicalOr,
+        let tok = TokenKind::try_from(kind).ok()?;
+        let op = match tok {
+            Caret => BitwiseXor,
+            Pipe => BitwiseOr,
+            Ampersand => BitwiseAnd,
+            DoubleAmpersand => LogicalAnd,
+            DoublePipe => LogicalOr,
             _ => return None,
         };
 

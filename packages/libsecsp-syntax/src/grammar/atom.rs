@@ -1,29 +1,29 @@
-use crate::ast::SyntaxKind;
 use crate::grammar::expr::{expression, ExprRestriction};
+use crate::parser::syntax::{NodeKind, TokenKind};
 use crate::parser::CompletedMarker;
 use crate::parser::CspParser;
 use crate::token::Token;
-use crate::token::TokenType;
+use std::convert::TryFrom;
 
-pub fn path_expr(p: &mut CspParser) -> CompletedMarker<SyntaxKind, Token> {
+pub fn path_expr(p: &mut CspParser) -> CompletedMarker<Token> {
     let m = p.mark();
 
-    if p.at(TokenType::Dot) {
+    if p.at(TokenKind::Dot) {
         p.bump();
     }
 
-    p.expect(TokenType::Name);
+    p.expect(TokenKind::Name);
 
-    while p.at(TokenType::Dot) {
+    while p.at(TokenKind::Dot) {
         p.bump();
-        p.expect(TokenType::Name);
+        p.expect(TokenKind::Name);
     }
 
-    m.complete(p, SyntaxKind::PathExpr)
+    m.complete(p, NodeKind::PathExpr)
 }
 
-pub fn list_or_paren_expr(p: &mut CspParser) -> CompletedMarker<SyntaxKind, Token> {
-    assert!(p.at(TokenType::OpenParenthesis));
+pub fn list_or_paren_expr(p: &mut CspParser) -> CompletedMarker<Token> {
+    assert!(p.at(TokenKind::OpenParenthesis));
 
     let m = p.mark();
     p.bump();
@@ -31,30 +31,30 @@ pub fn list_or_paren_expr(p: &mut CspParser) -> CompletedMarker<SyntaxKind, Toke
     let mut non_empty = false;
     let mut has_comma = false;
 
-    while !p.at(TokenType::Eof) && !p.at(TokenType::CloseParenthesis) {
+    while !p.at(TokenKind::Eof) && !p.at(TokenKind::CloseParenthesis) {
         // TODO: Validate that we're at a valid expression token.
         non_empty = true;
         expression(p, ExprRestriction::NoContext);
 
-        if !p.at(TokenType::CloseParenthesis) {
+        if !p.at(TokenKind::CloseParenthesis) {
             has_comma = true;
-            p.expect(TokenType::Comma);
+            p.expect(TokenKind::Comma);
         }
     }
 
-    p.expect(TokenType::CloseParenthesis);
+    p.expect(TokenKind::CloseParenthesis);
     m.complete(
         p,
         if non_empty && !has_comma {
-            SyntaxKind::ParenExpr
+            NodeKind::ParenExpr
         } else {
-            SyntaxKind::ListExpr
+            NodeKind::ListExpr
         },
     )
 }
 
-pub fn context_expr(p: &mut CspParser, lhs: CompletedMarker<SyntaxKind, Token>) -> bool {
-    assert!(p.at(TokenType::Colon));
+pub fn context_expr(p: &mut CspParser, lhs: CompletedMarker<Token>) -> bool {
+    assert!(p.at(TokenKind::Colon));
     p.bump();
 
     // The `:category` part of a level expression, or the `:role` part of a context expression.
@@ -62,7 +62,7 @@ pub fn context_expr(p: &mut CspParser, lhs: CompletedMarker<SyntaxKind, Token>) 
         return false;
     }
 
-    if p.eat(TokenType::Colon) {
+    if p.eat(TokenKind::Colon) {
         let m = lhs.precede(p);
 
         // :type
@@ -72,34 +72,30 @@ pub fn context_expr(p: &mut CspParser, lhs: CompletedMarker<SyntaxKind, Token>) 
         }
 
         // optional (:mls)
-        let successful = if p.eat(TokenType::Colon) {
+        let successful = if p.eat(TokenKind::Colon) {
             expression(p, ExprRestriction::None)
         } else {
             true
         };
 
-        m.complete(p, SyntaxKind::ContextExpr);
+        m.complete(p, NodeKind::ContextExpr);
         successful
-    } else if p.at(TokenType::Hyphen) {
+    } else if p.at(TokenKind::Hyphen) {
         // Just parsed a sensitivity:category literal and are at a hyphen,
         // so we must be at the start of a level-range expression.
-        range_expr(p, lhs, SyntaxKind::LevelRangeExpr)
+        range_expr(p, lhs, NodeKind::LevelRangeExpr)
     } else {
         let m = lhs.precede(p);
-        m.complete(p, SyntaxKind::LevelExpr);
+        m.complete(p, NodeKind::LevelExpr);
         true
     }
 }
 
-pub fn range_expr(
-    p: &mut CspParser,
-    lhs: CompletedMarker<SyntaxKind, Token>,
-    kind: SyntaxKind,
-) -> bool {
+pub fn range_expr(p: &mut CspParser, lhs: CompletedMarker<Token>, kind: NodeKind) -> bool {
     let m = lhs.precede(p);
     let expected = match kind {
-        SyntaxKind::LevelRangeExpr => TokenType::Hyphen,
-        SyntaxKind::CategoryRangeExpr => TokenType::DotDot,
+        NodeKind::LevelRangeExpr => TokenKind::Hyphen,
+        NodeKind::CategoryRangeExpr => TokenKind::DotDot,
         _ => unreachable!(),
     };
 
@@ -110,15 +106,16 @@ pub fn range_expr(
     successful
 }
 
-pub fn literal_expr(p: &mut CspParser) -> CompletedMarker<SyntaxKind, Token> {
+pub fn literal_expr(p: &mut CspParser) -> CompletedMarker<Token> {
     let m = p.mark();
-    p.expect_one_of(vec![TokenType::String, TokenType::Integer]);
-    m.complete(p, SyntaxKind::LiteralExpr)
+    p.expect_one_of(vec![TokenKind::String, TokenKind::Integer]);
+    m.complete(p, NodeKind::LiteralExpr)
 }
 
 pub fn is_at_path_start(p: &CspParser, offset: usize) -> bool {
-    let tok = p.nth(offset);
-    tok == SyntaxKind::Token(TokenType::Dot) || tok == SyntaxKind::Token(TokenType::Name)
+    let tok = TokenKind::try_from(p.nth(offset)).ok();
+
+    tok == Some(TokenKind::Dot) || tok == Some(TokenKind::Name)
 }
 
 #[test]

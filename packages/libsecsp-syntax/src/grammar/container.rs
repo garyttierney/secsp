@@ -1,22 +1,17 @@
 use crate::ast::keywords;
-use crate::ast::keywords::Keyword;
-use crate::ast::SyntaxKind;
 use crate::grammar::atom;
 use crate::grammar::block;
+use crate::parser::syntax::{KeywordKind, NodeKind, TokenKind};
 use crate::parser::CspParser;
-use crate::token::TokenType;
+
+use std::str::FromStr;
 
 pub fn parse_container(p: &mut CspParser) {
-    let is_abstract = if p.at_text(keywords::ABSTRACT) {
-        p.bump_as(Keyword::ABSTRACT);
-        true
-    } else {
-        false
-    };
+    let is_abstract = p.eat_keyword(KeywordKind::ABSTRACT);
 
-    match Keyword::from_str(p.current_text()) {
-        Some(kw) if kw == Keyword::BLOCK => p.bump_as(kw),
-        Some(kw) if kw == Keyword::OPTIONAL || kw == Keyword::IN => {
+    match KeywordKind::from_str(p.current_text()).ok() {
+        Some(kw) if kw == KeywordKind::BLOCK => p.bump_as(kw),
+        Some(kw) if kw == KeywordKind::OPTIONAL || kw == KeywordKind::IN => {
             if is_abstract {
                 p.error("only blocks can be declared as abstract");
             }
@@ -26,9 +21,9 @@ pub fn parse_container(p: &mut CspParser) {
         _ => p.error("expected block or optional"),
     };
 
-    p.expect(TokenType::Name);
+    p.expect(TokenKind::Name);
 
-    if p.at_text(keywords::EXTENDS) {
+    if p.at_text(KeywordKind::EXTENDS) {
         parse_extends_list(p);
     }
 
@@ -36,25 +31,24 @@ pub fn parse_container(p: &mut CspParser) {
 }
 
 pub fn parse_extends_list(p: &mut CspParser) {
-    assert_eq!(keywords::EXTENDS, p.current_text());
-
     let m = p.mark();
 
-    p.bump_as(Keyword::EXTENDS);
+    assert!(p.eat_keyword(KeywordKind::EXTENDS));
     atom::path_expr(p);
 
-    while p.eat(TokenType::Comma) {
+    while p.eat(TokenKind::Comma) {
         atom::path_expr(p);
     }
 
-    m.complete(p, SyntaxKind::ExtendsList);
+    m.complete(p, NodeKind::ExtendsList);
 }
 
 #[test]
+#[ignore]
 fn parse_abstract_container() {
     crate::grammar::test::test_parser(
         r#"
-        <marker type="Keyword(ABSTRACT)">abstract</marker> block test {}
+        <marker type="KeywordKind(ABSTRACT)">abstract</marker> block test {}
     "#,
     );
 }

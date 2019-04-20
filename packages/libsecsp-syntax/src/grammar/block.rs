@@ -1,8 +1,10 @@
-use crate::ast::SyntaxKind;
+use std::convert::TryFrom;
+
 use crate::grammar::error_recovery;
 use crate::grammar::items;
+use crate::parser::syntax::NodeKind;
+use crate::parser::syntax::TokenKind;
 use crate::parser::CspParser;
-use crate::token::TokenType;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum BlockType {
@@ -13,24 +15,24 @@ pub enum BlockType {
 pub fn parse_block(p: &mut CspParser, include_braces: bool) {
     let m = p.mark();
 
-    if include_braces && !p.eat(TokenType::OpenBrace) {
+    if include_braces && !p.eat(TokenKind::OpenBrace) {
         p.error("expected open brace");
         m.abandon(p);
         error_recovery::recover_from_item(p);
         return;
     }
 
-    while !p.at(TokenType::Eof) {
-        match p.current() {
-            SyntaxKind::Token(TokenType::Semicolon) => p.bump(),
-            SyntaxKind::Token(TokenType::CloseBrace) if include_braces => {
+    while !p.at(TokenKind::Eof) {
+        match TokenKind::try_from(p.current()).ok() {
+            Some(TokenKind::Semicolon) => p.bump(),
+            Some(TokenKind::CloseBrace) if include_braces => {
                 break;
             }
             _ => {
                 if !items::parse_item(p) {
                     error_recovery::recover_from_item(p);
 
-                    if p.eat(TokenType::CloseBrace) {
+                    if p.eat(TokenKind::CloseBrace) {
                         break;
                     }
                 }
@@ -38,9 +40,9 @@ pub fn parse_block(p: &mut CspParser, include_braces: bool) {
         }
     }
 
-    if include_braces && !p.eat(TokenType::CloseBrace) {
+    if include_braces && !p.eat(TokenKind::CloseBrace) {
         p.error("expected closing brace");
     }
 
-    m.complete(p, SyntaxKind::Block);
+    m.complete(p, NodeKind::Block);
 }

@@ -1,23 +1,27 @@
 use std::mem;
 
 use smol_str::SmolStr;
-use text_unit::{TextRange, TextUnit};
+use text_unit::TextUnit;
 
-use crate::ast::SyntaxKind;
 use crate::parser::input::SyntaxKindBase;
 use crate::parser::input::TokenBase;
+use rowan::SyntaxKind;
 use std::ops::Range;
 
 /// An event sink for parse events.
-pub trait EventSink<K: SyntaxKindBase> {
+pub trait EventSink {
     /// The type that is outputted by this [EventSink] upon [finish]ing.
     type Output;
 
     /// Event handler that is called for every token in the input stream.
-    fn leaf(&mut self, kind: K, text: SmolStr);
+    fn leaf<K>(&mut self, kind: K, text: SmolStr)
+    where
+        K: Into<rowan::SyntaxKind>;
 
     /// Event handler that is called at the beginning of a compound syntax kind.
-    fn begin(&mut self, kind: K);
+    fn begin<K>(&mut self, kind: K)
+    where
+        K: Into<rowan::SyntaxKind>;
 
     /// Event handler that is called when a compound syntax kind has been completed.
     fn end(&mut self);
@@ -27,27 +31,30 @@ pub trait EventSink<K: SyntaxKindBase> {
 }
 
 #[derive(Debug)]
-pub enum Event<K: SyntaxKindBase> {
+pub enum Event {
     BeginMarker,
-    Begin(K, Option<usize>),
-    Leaf(K),
+    Begin(SyntaxKind, Option<usize>),
+    Leaf(SyntaxKind),
+    Trivia(SyntaxKind),
+    Whitespace(SyntaxKind),
     End,
     Error,
     Tombstone,
 }
 
 /// The [EventProcessor] takes eve
-pub struct EventProcessor<'a, K: SyntaxKindBase, T: TokenBase<K>, S: EventSink<K>> {
-    events: &'a mut [Event<K>],
+pub struct EventProcessor<'a, T: TokenBase, S: EventSink> {
+    events: &'a mut [Event],
     sink: S,
     text: &'a str,
     text_pos: TextUnit,
     tokens: &'a [T],
     token_pos: usize,
+    started: bool,
 }
 
-impl<'a, K: SyntaxKindBase, T: TokenBase<K>, S: EventSink<K>> EventProcessor<'a, K, T, S> {
-    pub fn new(text: &'a str, tokens: &'a [T], sink: S, events: &'a mut [Event<K>]) -> Self {
+impl<'a, T: TokenBase, S: EventSink> EventProcessor<'a, T, S> {
+    pub fn new(text: &'a str, tokens: &'a [T], sink: S, events: &'a mut [Event]) -> Self {
         EventProcessor {
             events,
             sink,
@@ -55,6 +62,7 @@ impl<'a, K: SyntaxKindBase, T: TokenBase<K>, S: EventSink<K>> EventProcessor<'a,
             text_pos: 0.into(),
             tokens,
             token_pos: 0,
+            started: false,
         }
     }
 
@@ -101,7 +109,10 @@ impl<'a, K: SyntaxKindBase, T: TokenBase<K>, S: EventSink<K>> EventProcessor<'a,
         self.sink.finish()
     }
 
-    fn bump(&mut self, expected: K) {
+    fn bump<K>(&mut self, expected: K)
+    where
+        K: Into<SyntaxKind>,
+    {
         let current = self.tokens[self.token_pos];
         self.leaf(expected, current.range());
     }
@@ -125,32 +136,39 @@ impl<'a, K: SyntaxKindBase, T: TokenBase<K>, S: EventSink<K>> EventProcessor<'a,
         }
     }
 
-    fn leaf(&mut self, kind: K, range: Range<usize>) {
+    fn leaf<K>(&mut self, kind: K, range: Range<usize>)
+    where
+        K: Into<SyntaxKind>,
+    {
         let text = &self.text[range];
 
         self.sink.leaf(kind, text.into());
         self.token_pos += 1;
     }
 
-    fn start(&mut self, kind: K) {
-        if kind.is_root() {
+    fn start<K>(&mut self, kind: K)
+    where
+        K: Into<SyntaxKind>,
+    {
+        if !self.started {
+            self.started = true;
             self.sink.begin(kind);
             return;
         }
 
         let n_trivias = self.tokens[self.token_pos..]
             .iter()
-            .take_while(|it| it.kind().is_trivia())
+            .take_while(|it| it.is_trivia())
             .count();
 
         let leading_trivias = &self.tokens[self.token_pos..self.token_pos + n_trivias];
         let n_attached_trivias = leading_trivias
             .iter()
             .enumerate()
-            .filter_map(|(idx, trivia)| {
-                let kind = trivia.kind();
+            .filter_map(|(idx, tok)| {
+                let kind = tok.kind();
 
-                if kind.is_trivia() && !kind.is_whitespace() {
+                if tok.is_trivia() && !tok.is_whitespace() {
                     Some(idx)
                 } else {
                     None

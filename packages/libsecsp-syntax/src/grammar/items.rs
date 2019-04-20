@@ -1,12 +1,14 @@
-use crate::ast::keywords::Keyword;
-use crate::ast::SyntaxKind;
 use crate::grammar::atom;
 use crate::grammar::block::BlockType;
 use crate::grammar::{
     container::parse_container, macros::parse_macro, stmt::statement, var::parse_var,
 };
+use crate::parser::syntax::NodeKind;
+use crate::parser::syntax::TokenKind;
+use crate::parser::syntax::KeywordKind;
 use crate::parser::CspParser;
-use crate::token::TokenType;
+
+use std::str::FromStr;
 
 pub fn parse_item(p: &mut CspParser) -> bool {
     if !p.at_kw() {
@@ -17,30 +19,30 @@ pub fn parse_item(p: &mut CspParser) -> bool {
     fn do_parse_item(
         p: &mut CspParser,
         ty: BlockType,
-        kind: SyntaxKind,
+        kind: NodeKind,
         parser: fn(&mut CspParser),
-    ) -> Option<(BlockType, SyntaxKind)> {
+    ) -> Option<(BlockType, NodeKind)> {
         parser(p);
         Some((ty, kind))
     }
 
     let m = p.mark();
 
-    let item = match Keyword::from_str(p.current_text()) {
-        Some(Keyword::ABSTRACT)
-        | Some(Keyword::BLOCK)
-        | Some(Keyword::OPTIONAL)
-        | Some(Keyword::IN) => do_parse_item(
+    let item = match KeywordKind::from_str(p.current_text()).ok() {
+        Some(KeywordKind::ABSTRACT)
+        | Some(KeywordKind::BLOCK)
+        | Some(KeywordKind::OPTIONAL)
+        | Some(KeywordKind::IN) => do_parse_item(
             p,
             BlockType::BlockLike,
-            SyntaxKind::Container,
+            NodeKind::Container,
             parse_container,
         ),
-        Some(Keyword::MACRO) => {
-            do_parse_item(p, BlockType::BlockLike, SyntaxKind::MacroDef, parse_macro)
+        Some(KeywordKind::MACRO) => {
+            do_parse_item(p, BlockType::BlockLike, NodeKind::MacroDef, parse_macro)
         }
         Some(kw) if kw.is_var_type() && atom::is_at_path_start(p, 1) => {
-            do_parse_item(p, BlockType::NotBlockLike, SyntaxKind::Variable, parse_var)
+            do_parse_item(p, BlockType::NotBlockLike, NodeKind::Variable, parse_var)
         }
         _ => {
             m.abandon(p);
@@ -51,9 +53,9 @@ pub fn parse_item(p: &mut CspParser) -> bool {
     match item {
         Some((ty, kind)) => {
             if ty == BlockType::NotBlockLike {
-                p.expect(TokenType::Semicolon);
+                p.expect(TokenKind::Semicolon);
             } else {
-                p.eat(TokenType::Semicolon);
+                p.eat(TokenKind::Semicolon);
             }
 
             m.complete(p, kind);
