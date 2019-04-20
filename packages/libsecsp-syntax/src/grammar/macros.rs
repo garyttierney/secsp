@@ -1,15 +1,17 @@
-use crate::ast::keywords;
-use crate::ast::keywords::Keyword;
-use crate::ast::SyntaxKind;
+use std::str::FromStr;
+
 use crate::grammar::block;
+use crate::parser::syntax::KeywordKind;
+use crate::parser::syntax::NodeKind;
+use crate::parser::syntax::TokenKind;
 use crate::parser::CspParser;
-use crate::token::TokenType;
 
 pub fn parse_macro(p: &mut CspParser) {
-    assert_eq!(keywords::MACRO, p.current_text());
+    // pre-test: parser must be at a "macro" keyword.
+    assert!(p.eat_keyword(KeywordKind::MACRO));
 
-    p.bump_as(Keyword::MACRO);
-    p.expect(TokenType::Name);
+    p.bump_as(KeywordKind::MACRO);
+    p.expect(TokenKind::Name);
 
     parse_macro_param_list(p);
     block::parse_block(p, true);
@@ -18,9 +20,9 @@ pub fn parse_macro(p: &mut CspParser) {
 pub fn parse_macro_param_list(p: &mut CspParser) {
     let m = p.mark();
 
-    p.expect(TokenType::OpenParenthesis);
+    p.expect(TokenKind::OpenParenthesis);
 
-    if !p.at(TokenType::CloseParenthesis) {
+    if !p.at(TokenKind::CloseParenthesis) {
         loop {
             if !parse_macro_param_list_item(p) {
                 break;
@@ -28,16 +30,16 @@ pub fn parse_macro_param_list(p: &mut CspParser) {
         }
     }
 
-    p.expect(TokenType::CloseParenthesis);
-    m.complete(p, SyntaxKind::MacroParamList);
+    p.expect(TokenKind::CloseParenthesis);
+    m.complete(p, NodeKind::MacroParamList);
 }
 
 pub fn parse_macro_param_list_item(p: &mut CspParser) -> bool {
     let m = p.mark();
 
-    match Keyword::from_str(p.current_text()) {
+    match KeywordKind::from_str(p.current_text()).ok() {
         Some(kw) => p.bump_as(kw),
-        None if p.at(TokenType::Name) => {
+        None if p.at(TokenKind::Name) => {
             p.error("expected keyword");
             p.bump();
         }
@@ -47,10 +49,10 @@ pub fn parse_macro_param_list_item(p: &mut CspParser) -> bool {
         }
     }
 
-    p.expect(TokenType::Name);
-    m.complete(p, SyntaxKind::MacroParamListItem);
+    p.expect(TokenKind::Name);
+    m.complete(p, NodeKind::MacroParamListItem);
 
-    p.eat(TokenType::Comma)
+    p.eat(TokenKind::Comma)
 }
 
 #[test]

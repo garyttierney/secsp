@@ -1,24 +1,22 @@
 use rowan::GreenNode;
 use rowan::GreenNodeBuilder;
-use rowan::Types;
 use smol_str::SmolStr;
 
-use crate::ast::{SyntaxError, SyntaxKind};
+use crate::ast::SyntaxError;
 use crate::parser::event::EventSink;
-use crate::parser::input::SyntaxKindBase;
 
-pub struct SyntaxTreeBuilder<K: SyntaxKindBase, T: Types<Kind = K>> {
-    inner: rowan::GreenNodeBuilder<T>,
+pub struct SyntaxTreeBuilder {
+    inner: rowan::GreenNodeBuilder,
     errors: Vec<SyntaxError>,
 }
 
-impl<K: SyntaxKindBase, T: Types<Kind = K>> SyntaxTreeBuilder<K, T> {
+impl SyntaxTreeBuilder {
     pub fn new() -> Self {
         Self::default()
     }
 }
 
-impl<K: SyntaxKindBase, T: Types<Kind = K>> Default for SyntaxTreeBuilder<K, T> {
+impl Default for SyntaxTreeBuilder {
     fn default() -> Self {
         SyntaxTreeBuilder {
             inner: GreenNodeBuilder::new(),
@@ -27,19 +25,25 @@ impl<K: SyntaxKindBase, T: Types<Kind = K>> Default for SyntaxTreeBuilder<K, T> 
     }
 }
 
-impl<K: SyntaxKindBase, T: Types<Kind = K>> EventSink<K> for SyntaxTreeBuilder<K, T> {
-    type Output = (GreenNode<T>, Vec<SyntaxError>);
+impl EventSink for SyntaxTreeBuilder {
+    type Output = (GreenNode, Vec<SyntaxError>);
 
-    fn leaf(&mut self, kind: K, text: SmolStr) {
-        self.inner.leaf(kind, text);
+    fn leaf<K>(&mut self, kind: K, text: SmolStr)
+    where
+        K: Into<rowan::SyntaxKind>,
+    {
+        self.inner.token(kind.into(), text);
     }
 
-    fn begin(&mut self, kind: K) {
-        self.inner.start_internal(kind);
+    fn begin<K>(&mut self, kind: K)
+    where
+        K: Into<rowan::SyntaxKind>,
+    {
+        self.inner.start_node(kind.into());
     }
 
     fn end(&mut self) {
-        self.inner.finish_internal();
+        self.inner.finish_node();
     }
 
     fn finish(self) -> Self::Output {

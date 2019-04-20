@@ -1,21 +1,11 @@
 pub use rowan::WalkEvent;
 
-use crate::ast::{SyntaxError, SyntaxKind};
-
-pub type GreenNode = ::rowan::GreenNode<Types>;
-pub type GreenNodeBuilder = ::rowan::GreenNodeBuilder<Types>;
-pub type SyntaxNode = ::rowan::SyntaxNode<Types>;
+pub type GreenNode = ::rowan::GreenNode;
+pub type GreenNodeBuilder = ::rowan::GreenNodeBuilder;
+pub type SyntaxNode = ::rowan::SyntaxNode;
 pub type SyntaxNodeRef<'a> = &'a SyntaxNode;
-pub type SyntaxNodeChildren<'a> = ::rowan::SyntaxNodeChildren<'a, Types>;
-pub type TreeArc<T> = ::rowan::TreeArc<Types, T>;
-
-#[derive(Debug, Clone, Copy)]
-pub enum Types {}
-
-impl rowan::Types for Types {
-    type Kind = SyntaxKind;
-    type RootData = Vec<SyntaxError>;
-}
+pub type SyntaxNodeChildren<'a> = ::rowan::SyntaxNodeChildren<'a>;
+pub type TreeArc<T> = ::rowan::TreeArc<T>;
 
 macro_rules! ast_enum {
     ($meta_item:tt $vis:vis enum $name:ident => $tykind:ident { $($kind:ident $(,)*)* }) => {
@@ -35,8 +25,9 @@ macro_rules! ast_enum {
 
         impl $name {
             pub fn kind(&self) -> $tykind {
-                match self.syntax.kind() {
-                    $(crate::ast::SyntaxKind::$kind => $tykind::$kind($kind::cast(&self.syntax).unwrap()),)*
+                let kind : crate::parser::syntax::NodeKind = unsafe { std::mem::transmute(self.syntax.kind().0) };
+                match kind {
+                    $(crate::parser::syntax::NodeKind::$kind => $tykind::$kind($kind::cast(&self.syntax).unwrap()),)*
                     _ => unreachable!()
                 }
             }
@@ -45,9 +36,10 @@ macro_rules! ast_enum {
         impl crate::ast::AstNode for $name {
             fn cast(syntax: &crate::ast::SyntaxNode) -> Option<&Self> {
                 use ::rowan::TransparentNewType;
+                let kind : crate::parser::syntax::NodeKind = unsafe { std::mem::transmute(syntax.kind().0) };
 
-                match syntax.kind() {
-                    $(| crate::ast::SyntaxKind::$kind) * => Some($name::from_repr(syntax.into_repr())),
+                match kind {
+                    $(|crate::parser::syntax::NodeKind::$kind) * => Some($name::from_repr(syntax.into_repr())),
                     _ => None
                 }
             }
@@ -89,7 +81,7 @@ macro_rules! ast_type {
             fn cast(node: &crate::ast::types::SyntaxNode) -> Option<&Self> {
                 use ::rowan::TransparentNewType;
 
-                if node.kind() == crate::ast::SyntaxKind::$kind {
+                if node.kind().0 == crate::parser::syntax::NodeKind::$kind as u16 {
                     Some(Self::from_repr(node))
                 } else {
                     None

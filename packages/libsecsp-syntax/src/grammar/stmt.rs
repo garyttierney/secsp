@@ -1,14 +1,15 @@
-use crate::ast::SyntaxKind;
+use std::convert::TryFrom;
+
 use crate::grammar::atom;
 use crate::grammar::block::parse_block;
 use crate::grammar::block::BlockType;
-use crate::grammar::error_recovery;
 use crate::grammar::expr::{expression, ExprRestriction};
+use crate::parser::syntax::NodeKind;
+use crate::parser::syntax::TokenKind;
 use crate::parser::CspParser;
-use crate::token::TokenType;
 
 pub fn statement(p: &mut CspParser) -> bool {
-    if p.at(TokenType::IfKw) {
+    if p.at(TokenKind::IfKw) {
         conditional(p);
         return true;
     } else if !atom::is_at_path_start(p, 0) {
@@ -18,26 +19,26 @@ pub fn statement(p: &mut CspParser) -> bool {
 
     let m = atom::path_expr(p).precede(p);
 
-    let (block_type, kind) = match p.current() {
-        SyntaxKind::Token(TokenType::OpenParenthesis) => {
+    let (block_type, kind) = match TokenKind::try_from(p.current()).ok() {
+        Some(TokenKind::OpenParenthesis) => {
             macro_call(p);
-            (BlockType::NotBlockLike, SyntaxKind::MacroCall)
+            (BlockType::NotBlockLike, NodeKind::MacroCall)
         }
-        SyntaxKind::Token(TokenType::IfKw) => {
+        Some(TokenKind::IfKw) => {
             conditional(p);
             m.abandon(p);
             return true;
         }
         _ => {
-            m.complete(p, SyntaxKind::ParseError);
+            m.complete(p, NodeKind::ParseError);
             return false;
         }
     };
 
     if block_type == BlockType::NotBlockLike {
-        p.expect(TokenType::Semicolon);
+        p.expect(TokenKind::Semicolon);
     } else {
-        p.eat(TokenType::Semicolon);
+        p.eat(TokenKind::Semicolon);
     }
 
     m.complete(p, kind);
@@ -45,38 +46,38 @@ pub fn statement(p: &mut CspParser) -> bool {
 }
 
 fn conditional(p: &mut CspParser) {
-    assert!(p.at(TokenType::IfKw));
+    assert!(p.at(TokenKind::IfKw));
     let m = p.mark();
     p.bump();
 
     expression(p, ExprRestriction::NoContext);
     parse_block(p, true);
 
-    if p.at(TokenType::ElseKw) {
+    if p.at(TokenKind::ElseKw) {
         p.bump();
-        if p.at(TokenType::IfKw) {
+        if p.at(TokenKind::IfKw) {
             conditional(p);
         } else {
             parse_block(p, true);
         }
     }
 
-    m.complete(p, SyntaxKind::ConditionalStmt);
+    m.complete(p, NodeKind::ConditionalStmt);
 }
 
 fn macro_call(p: &mut CspParser) {
-    assert!(p.at(TokenType::OpenParenthesis));
+    assert!(p.at(TokenKind::OpenParenthesis));
     p.bump();
 
-    while !p.at(TokenType::CloseParenthesis) {
+    while !p.at(TokenKind::CloseParenthesis) {
         if !expression(p, ExprRestriction::None) {
             break;
         }
 
-        p.eat(TokenType::Comma);
+        p.eat(TokenKind::Comma);
     }
 
-    p.expect(TokenType::CloseParenthesis);
+    p.expect(TokenKind::CloseParenthesis);
 }
 
 #[test]

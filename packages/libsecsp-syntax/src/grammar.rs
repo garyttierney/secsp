@@ -1,4 +1,4 @@
-use crate::ast::SyntaxKind;
+use crate::parser::syntax::NodeKind;
 use crate::parser::CspParser;
 
 pub(crate) mod atom;
@@ -17,5 +17,5 @@ mod test;
 pub fn root(p: &mut CspParser) {
     let m = p.mark();
     self::block::parse_block(p, false);
-    m.complete(p, SyntaxKind::SourceFile);
+    m.complete(p, NodeKind::SourceFile);
 }
