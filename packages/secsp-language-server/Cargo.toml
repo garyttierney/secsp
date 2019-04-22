@@ -6,6 +6,17 @@ autobenches = false
 
 [dependencies]
 jsonrpc-core = "9.0.0"
+gen_lsp_server = { version = "0.1", git = "https://github.com/rust-analyzer/rust-analyzer", branch = "master" }
+lsp-types = "0.56"
+failure = "0.1.5"
+crossbeam = "0.7"
+crossbeam-channel = "0.3"
+crossbeam-utils="0.6"
+env_logger = "0.6"
+log = "0.4"
+secsp_analysis = { path = "../libsecsp-analysis"}
+serde=  "1.0"
+threadpool = "1.7"
 
 [[bin]]
 path = "src/main.rs"
@@ -13,4 +24,4 @@ name = "secsp-language-server"
 bench = false
 
 [lib]
-bench = false
+path = "src/lib.rs"
