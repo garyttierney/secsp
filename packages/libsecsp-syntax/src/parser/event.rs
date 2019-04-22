@@ -3,9 +3,7 @@ use std::ops::Range;
 
 use rowan::SyntaxKind;
 use smol_str::SmolStr;
-use text_unit::TextUnit;
 
-use crate::parser::input::SyntaxKindBase;
 use crate::parser::input::TokenBase;
 
 /// An event sink for parse events.
@@ -35,8 +33,6 @@ pub enum Event {
     BeginMarker,
     Begin(SyntaxKind, Option<usize>),
     Leaf(SyntaxKind),
-    Trivia(SyntaxKind),
-    Whitespace(SyntaxKind),
     End,
     Error,
     Tombstone,
@@ -47,7 +43,6 @@ pub struct EventProcessor<'a, T: TokenBase, S: EventSink> {
     events: &'a mut [Event],
     sink: S,
     text: &'a str,
-    text_pos: TextUnit,
     tokens: &'a [T],
     token_pos: usize,
     started: bool,
@@ -59,7 +54,6 @@ impl<'a, T: TokenBase, S: EventSink> EventProcessor<'a, T, S> {
             events,
             sink,
             text,
-            text_pos: 0.into(),
             tokens,
             token_pos: 0,
             started: false,
@@ -158,7 +152,7 @@ impl<'a, T: TokenBase, S: EventSink> EventProcessor<'a, T, S> {
 
         let n_trivias = self.tokens[self.token_pos..]
             .iter()
-            .take_while(|it| it.is_trivia())
+            .take_while(|tok| tok.is_trivia())
             .count();
 
         let leading_trivias = &self.tokens[self.token_pos..self.token_pos + n_trivias];

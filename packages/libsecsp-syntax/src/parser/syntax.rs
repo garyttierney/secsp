@@ -2,28 +2,25 @@ use std::convert::TryFrom;
 use std::str::FromStr;
 
 use logos::Logos;
+use num_enum::{IntoPrimitive, TryFromPrimitive};
 use rowan::SyntaxKind;
 
-const TOKEN_KIND_START: u16 = 0;
 const NODE_KIND_START: u16 = 1_000;
 const KW_KIND_START: u16 = 10_000;
 
-// TODO: Generate these enums using some code generation tool.
+pub trait SyntaxKindClass:
+    TryFrom<u16, Error = String> + Into<u16> + std::fmt::Debug + Copy
+{
+    fn into_syntax_kind(self) -> SyntaxKind {
+        SyntaxKind(self.into())
+    }
 
-trait InternalSyntaxKind: Sized {
-    const START: u16;
-    const END: u16;
-
-    fn check_bounds(val: u16) -> Result<(), ()> {
-        if val < Self::START || val > Self::END {
-            return Err(());
-        }
-
-        Ok(())
+    fn from_syntax_kind(kind: SyntaxKind) -> Option<Self> {
+        Self::try_from(kind.0).ok()
     }
 }
 
-#[derive(Logos, Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(IntoPrimitive, TryFromPrimitive, Logos, Copy, Clone, Debug, PartialEq, Eq)]
 #[repr(u16)]
 pub enum TokenKind {
     /// A name identifier token, containing a reference to the original source data.
@@ -141,33 +138,12 @@ pub enum TokenKind {
     Eof,
 
     Tombstone,
-
-    #[doc(hidden)]
-    __LAST,
 }
 
-impl InternalSyntaxKind for TokenKind {
-    const START: u16 = TokenKind::Name as u16;
-    const END: u16 = TokenKind::__LAST as u16;
-}
-
-impl Into<SyntaxKind> for TokenKind {
-    fn into(self) -> SyntaxKind {
-        SyntaxKind(self as u16)
-    }
-}
-
-impl TryFrom<SyntaxKind> for TokenKind {
-    type Error = ();
-
-    fn try_from(value: SyntaxKind) -> Result<Self, Self::Error> {
-        Self::check_bounds(value.0)?;
-        Ok(unsafe { std::mem::transmute(value.0) })
-    }
-}
+impl SyntaxKindClass for TokenKind {}
 
 #[repr(u16)]
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(IntoPrimitive, TryFromPrimitive, Copy, Clone, Debug, PartialEq, Eq)]
 pub enum NodeKind {
     /// Syntax-tree marker for the a list of statements within `{ ... }`.
     Block = NODE_KIND_START,
@@ -233,190 +209,113 @@ pub enum NodeKind {
     SourceFile,
 
     ParseError,
-
-    #[doc(hidden)]
-    __LAST,
 }
 
-impl InternalSyntaxKind for NodeKind {
-    const START: u16 = NODE_KIND_START;
-    const END: u16 = NodeKind::__LAST as u16;
-}
+impl SyntaxKindClass for NodeKind {}
 
-impl Into<SyntaxKind> for NodeKind {
-    fn into(self) -> SyntaxKind {
-        SyntaxKind(self as u16)
-    }
-}
+macro_rules! enum_string_mapping {
+    (enum $name:ident {
+        $($variant:ident = $val:expr),*,
+    }) => {
+        impl FromStr for $name {
+            type Err = ();
 
-impl PartialEq<NodeKind> for SyntaxKind {
-    fn eq(&self, other: &NodeKind) -> bool {
-        self.0 == *other as u16
-    }
-}
+            fn from_str(input: &str) -> Result<Self, Self::Err> {
+                let kind = match input {
+                    $($val => $name::$variant,)*
+                    _ => return Err(())
+                };
 
-impl TryFrom<SyntaxKind> for NodeKind {
-    type Error = ();
+                Ok(kind)
+            }
+        }
 
-    fn try_from(value: SyntaxKind) -> Result<Self, Self::Error> {
-        Self::check_bounds(value.0)?;
-        Ok(unsafe { std::mem::transmute(value.0) })
-    }
+        impl AsRef<str> for $name {
+            fn as_ref(&self) -> &str {
+                match self {
+                    $($name::$variant => $val),*
+                }
+            }
+        }
+    };
 }
 
 #[repr(u16)]
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(IntoPrimitive, TryFromPrimitive, Copy, Clone, Debug, PartialEq, Eq)]
 pub enum KeywordKind {
-    TYPE = KW_KIND_START,
-    //"The `type` statement keyword, which declares a new named security type.",
-    TYPE_ATTRIBUTE,
-    //"The `type_attribute` statement keyword, which declares a new bitset of types.",
-    ROLE,
-    //"The `role` statement keyword, which declares a new role for role-based access control.",
-    ROLE_ATTRIBUTE,
-    //"The `role_attribute` statement keyword, which declares a new bitset of roles.",
-    USER,
-    //"The `user` statement keyword, which declares a new security identity.",
-    USER_ATTRIBUTE,
-    //"The `user_attribute` statement keyword, which declares a new bitset of users",
-    OPTIONAL,
-    //"The `optional` statement keyword, which declares a new optional container",
-    SENSITIVITY,
-    //"The `sensitivity` statement keyword, which declares a new multi-level security sensitivity level",
-    CATEGORY,
-    //"The `category` statement keyword, which declares a new multi-level security compartment for compartmentalization",
-    LEVEL_RANGE,
-    //"The `level_range` statement keyword, which declares a new low and high pair of sensitivities and category sets",
-    BLOCK,
-    //"The `block` statement keyword, which declares a new namespace container",
-    IN,
-    //"The `in` statement keyword, which extends an existing namespace container",
-    ABSTRACT,
-    //"The `abstract` modifier, used to mark a `block` as abstract",
-    EXTENDS,
-    //"The `extends` keyword, used to begin an inheritance list",
-    ALLOW,
-    //"The `allow` statement keyword, which represents an allowed type-enforcement rule",
-    AUDIT_ALLOW,
-    //"The `audit_allow` statement keyword, which represents a type-enforcement rule that logs when allowed",
-    NEVER_ALLOW,
-    //"The `never_allow` statement keyword, which represents a build time type-enforcement check on `allow` rules",
-    DONT_AUDIT,
-    //"The `dont_audit` statement keyword, which represents a type-enforcement rule that prevents logging when denied",
-    MACRO,
-    #[doc(hidden)]
-    __LAST,
+    /// The `type` statement keyword, which declares a new named security type.
+    Type = KW_KIND_START,
+    /// The `type_attribute` statement keyword, which declares a new bitset of types.
+    TypeAttribute,
+    /// The `role` statement keyword, which declares a new role for role-based access control.
+    Role,
+    /// The `role_attribute` statement keyword, which declares a new bitset of roles.
+    RoleAttribute,
+    /// The `user` statement keyword, which declares a new security identity.
+    User,
+    /// The `user_attribute` statement keyword, which declares a new bitset of users
+    UserAttribute,
+    /// The `optional` statement keyword, which declares a new optional container
+    Optional,
+    /// The `sensitivity` statement keyword, which declares a new multi-level security sensitivity level
+    Sensitivity,
+    /// The `category` statement keyword, which declares a new multi-level security compartment for compartmentalization
+    Category,
+    /// The `level_range` statement keyword, which declares a new low and high pair of sensitivities and category sets
+    LevelRange,
+    /// The `block` statement keyword, which declares a new namespace container
+    Block,
+    /// The `in` statement keyword, which extends an existing namespace container
+    In,
+    /// The `abstract` modifier, used to mark a `block` as abstract
+    Abstract,
+    /// The `extends` keyword, used to begin an inheritance list
+    Extends,
+    /// The `allow` statement keyword, which represents an allowed type-enforcement rule
+    Allow,
+    /// The `audit_allow` statement keyword, which represents a type-enforcement rule that logs when allowed
+    AuditAllow,
+    /// The `never_allow` statement keyword, which represents a build time type-enforcement check on `allow` rules
+    NeverAllow,
+    /// The `dont_audit` statement keyword, which represents a type-enforcement rule that prevents logging when denied
+    DontAudit,
+    /// The `macro` keyword, which defines a new macro.
+    Macro,
 }
 
-impl FromStr for KeywordKind {
-    type Err = ();
-
-    fn from_str(input: &str) -> Result<Self, Self::Err> {
-        use self::KeywordKind::*;
-        let ty = match input {
-            "type" => TYPE,
-            "type_attribute" => TYPE_ATTRIBUTE,
-            "role" => ROLE,
-            "role_attribute" => ROLE_ATTRIBUTE,
-            "optional" => OPTIONAL,
-            //"The `optional` statement keyword, which declares a new optional container",
-            "sensitivity" => SENSITIVITY,
-            //"The `sensitivity` statement keyword, which declares a new multi-level security sensitivity level",
-            "categoriy" => CATEGORY,
-            //"The `category` statement keyword, which declares a new multi-level security compartment for compartmentalization",
-            "level_range" => LEVEL_RANGE,
-            //"The `level_range` statement keyword, which declares a new low and high pair of sensitivities and category sets",
-            "block" => BLOCK,
-            //"The `block` statement keyword, which declares a new namespace container",
-            "in" => IN,
-            //"The `in` statement keyword, which extends an existing namespace container",
-            "abstract" => ABSTRACT,
-            //"The `abstract` modifier, used to mark a `block` as abstract",
-            "extends" => EXTENDS,
-            //"The `extends` keyword, used to begin an inheritance list",
-            "allow" => ALLOW,
-            //"The `allow` statement keyword, which represents an allowed type-enforcement rule",
-            "audit_allow" => AUDIT_ALLOW,
-            //"The `audit_allow` statement keyword, which represents a type-enforcement rule that logs when allowed",
-            "never_allow" => NEVER_ALLOW,
-            //"The `never_allow` statement keyword, which represents a build time type-enforcement check on `allow` rules",
-            "dont_audit" => DONT_AUDIT,
-            //"The `dont_audit` statement keyword, which represents a type-enforcement rule that prevents logging when denied",
-            "macro" => MACRO,
-            #[doc(hidden)]
-            _ => return Err(()),
-        };
-
-        Ok(ty)
+enum_string_mapping!(
+    enum KeywordKind {
+        Type = "type",
+        TypeAttribute = "type_attribute",
+        Role = "role",
+        RoleAttribute = "role_attribute",
+        User = "user",
+        UserAttribute = "user_attribute",
+        Optional = "optional",
+        Sensitivity = "sensitivity",
+        Category = "categoriy",
+        LevelRange = "level_range",
+        Block = "block",
+        In = "in",
+        Abstract = "abstract",
+        Extends = "extends",
+        Allow = "allow",
+        AuditAllow = "audit_allow",
+        NeverAllow = "never_allow",
+        DontAudit = "dont_audit",
+        Macro = "macro",
     }
-}
+);
 
-impl AsRef<str> for KeywordKind {
-    fn as_ref(&self) -> &str {
+impl SyntaxKindClass for KeywordKind {}
+
+impl KeywordKind {
+    pub fn is_var_type(self) -> bool {
         use self::KeywordKind::*;
 
         match self {
-            TYPE => "type",
-            TYPE_ATTRIBUTE => "type_attribute",
-            ROLE => "role",
-            ROLE_ATTRIBUTE => "role_attribute",
-            OPTIONAL => "optional",
-            //"The `optional` statement keyword, which declares a new optional container",
-            SENSITIVITY => "sensitivity",
-            //"The `sensitivity` statement keyword, which declares a new multi-level security sensitivity level",
-            CATEGORY => "categoriy",
-            //"The `category` statement keyword, which declares a new multi-level security compartment for compartmentalization",
-            LEVEL_RANGE => "level_range",
-            //"The `level_range` statement keyword, which declares a new low and high pair of sensitivities and category sets",
-            BLOCK => "block",
-            //"The `block` statement keyword, which declares a new namespace container",
-            IN => "in",
-            //"The `in` statement keyword, which extends an existing namespace container",
-            ABSTRACT => "abstract",
-            //"The `abstract` modifier, used to mark a `block` as abstract",
-            EXTENDS => "extends",
-            //"The `extends` keyword, used to begin an inheritance list",
-            ALLOW => "allow",
-            //"The `allow` statement keyword, which represents an allowed type-enforcement rule",
-            AUDIT_ALLOW => "audit_allow",
-            //"The `audit_allow` statement keyword, which represents a type-enforcement rule that logs when allowed",
-            NEVER_ALLOW => "never_allow",
-            //"The `never_allow` statement keyword, which represents a build time type-enforcement check on `allow` rules",
-            DONT_AUDIT => "dont_audit",
-            //"The `dont_audit` statement keyword, which represents a type-enforcement rule that prevents logging when denied",
-            MACRO => "macro",
-            _ => unreachable!(),
-        }
-    }
-}
-
-impl InternalSyntaxKind for KeywordKind {
-    const START: u16 = KW_KIND_START;
-    const END: u16 = KeywordKind::__LAST as u16;
-}
-
-impl Into<SyntaxKind> for KeywordKind {
-    fn into(self) -> SyntaxKind {
-        SyntaxKind(self as u16)
-    }
-}
-
-impl TryFrom<SyntaxKind> for KeywordKind {
-    type Error = ();
-
-    fn try_from(value: SyntaxKind) -> Result<Self, Self::Error> {
-        Self::check_bounds(value.0)?;
-        Ok(unsafe { std::mem::transmute(value.0) })
-    }
-}
-
-impl KeywordKind {
-    pub fn is_var_type(&self) -> bool {
-        use self::KeywordKind::*;
-
-        match *self {
-            TYPE | TYPE_ATTRIBUTE | ROLE | ROLE_ATTRIBUTE | USER | USER_ATTRIBUTE | SENSITIVITY
-            | CATEGORY | LEVEL_RANGE => true,
+            Type | TypeAttribute | Role | RoleAttribute | User | UserAttribute | Sensitivity
+            | Category | LevelRange => true,
             _ => false,
         }
     }

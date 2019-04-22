@@ -1,6 +1,5 @@
-use std::convert::TryFrom;
-
 use crate::parser::syntax::NodeKind;
+use crate::parser::syntax::SyntaxKindClass;
 use crate::parser::syntax::TokenKind;
 use crate::parser::CspParser;
 
@@ -9,7 +8,7 @@ pub fn recover_from_item(p: &mut CspParser) {
     let m = p.mark();
 
     loop {
-        match TokenKind::try_from(p.current()).ok() {
+        match TokenKind::from_syntax_kind(p.current()) {
             Some(TokenKind::OpenBrace) => {
                 p.bump();
                 brace_depth += 1;

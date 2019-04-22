@@ -61,7 +61,6 @@ impl<'a, T: TokenBase> ParserInput<'a, T> {
         ParserInput {
             text,
             tokens: non_trivia_tokens,
-            pos: 0,
         }
     }
 
@@ -88,5 +87,4 @@ impl<'a, T: TokenBase> ParserInput<'a, T> {
 pub struct ParserInput<'a, T: TokenBase> {
     text: &'a str,
     tokens: Vec<T>,
-    pos: usize,
 }

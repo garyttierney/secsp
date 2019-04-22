@@ -1,6 +1,5 @@
-use std::convert::TryFrom;
-
 use crate::grammar::expr::{expression, ExprRestriction};
+use crate::parser::syntax::SyntaxKindClass;
 use crate::parser::syntax::{NodeKind, TokenKind};
 use crate::parser::CompletedMarker;
 use crate::parser::CspParser;
@@ -114,7 +113,7 @@ pub fn literal_expr(p: &mut CspParser) -> CompletedMarker<Token> {
 }
 
 pub fn is_at_path_start(p: &CspParser, offset: usize) -> bool {
-    let tok = TokenKind::try_from(p.nth(offset)).ok();
+    let tok = TokenKind::from_syntax_kind(p.nth(offset));
 
     tok == Some(TokenKind::Dot) || tok == Some(TokenKind::Name)
 }

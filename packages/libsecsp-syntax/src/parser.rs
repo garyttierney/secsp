@@ -10,7 +10,7 @@ use crate::lexer::tokenize;
 use crate::parser::event::{Event, EventSink};
 use crate::parser::input::ParserInput;
 use crate::parser::input::TokenBase;
-use crate::parser::syntax::{NodeKind, TokenKind};
+use crate::parser::syntax::{NodeKind, SyntaxKindClass, TokenKind};
 use crate::token::Token;
 
 mod builder;
@@ -46,14 +46,14 @@ impl<'a, T: TokenBase> Parser<'a, T> {
     /// Check if the parser is currently positioned at the [expected] type.
     pub fn at<E>(&self, expected: E) -> bool
     where
-        E: Into<rowan::SyntaxKind>,
+        E: SyntaxKindClass,
     {
-        self.current() == expected.into()
+        self.current() == expected.into_syntax_kind()
     }
 
     pub fn eat_keyword<K>(&mut self, kw: K) -> bool
     where
-        K: AsRef<str> + Into<rowan::SyntaxKind>,
+        K: AsRef<str> + SyntaxKindClass,
     {
         let at_kw = self.at_text(&kw);
         if at_kw {
@@ -87,9 +87,9 @@ impl<'a, T: TokenBase> Parser<'a, T> {
     /// for the current leaf, but remap it to the given [kind].
     pub fn bump_as<F>(&mut self, kind: F)
     where
-        F: Into<rowan::SyntaxKind>,
+        F: SyntaxKindClass,
     {
-        self.events.push(Event::Leaf(kind.into()));
+        self.events.push(Event::Leaf(kind.into_syntax_kind()));
         self.pos += 1;
     }
 
@@ -107,14 +107,14 @@ impl<'a, T: TokenBase> Parser<'a, T> {
     /// advancing the parsers position.
     pub fn eat<E>(&mut self, expected: E) -> bool
     where
-        E: Into<rowan::SyntaxKind>,
+        E: SyntaxKindClass,
     {
         if self.at(expected) {
             self.bump();
             return true;
         }
 
-        return false;
+        false
     }
 
     /// Notify the parser that an error occurred at the given position with [text] as the error
@@ -129,12 +129,10 @@ impl<'a, T: TokenBase> Parser<'a, T> {
     /// emitting an error if the current token doesn't match what is expected.
     pub fn expect<E>(&mut self, expected: E)
     where
-        E: Into<rowan::SyntaxKind>,
+        E: SyntaxKindClass,
     {
-        let kind = expected.into();
-
-        if !self.eat(kind) {
-            self.error(format!("expected {:#?}", kind));
+        if !self.eat(expected) {
+            self.error(format!("expected {:#?}", expected));
         }
     }
 
@@ -143,15 +141,18 @@ impl<'a, T: TokenBase> Parser<'a, T> {
     /// error if the current token doesn't match any of the inputs.
     pub fn expect_one_of<E>(&mut self, items: Vec<E>)
     where
-        E: Into<rowan::SyntaxKind>,
+        E: SyntaxKindClass,
     {
         let current_kind = self.current();
-        let kinds: Vec<SyntaxKind> = items.into_iter().map(|item| item.into()).collect();
+        let kinds: Vec<SyntaxKind> = items
+            .into_iter()
+            .map(self::syntax::SyntaxKindClass::into_syntax_kind)
+            .collect();
 
         if kinds.iter().any(|k| *k == current_kind) {
             self.bump();
         } else {
-            self.error(format!("expected one of (todo)"));
+            self.error("expected one of (todo)".to_string());
         }
     }
 
@@ -160,12 +161,12 @@ impl<'a, T: TokenBase> Parser<'a, T> {
     /// if the current token text doesn't match any of the inputs.
     pub fn expect_one_of_str<S: Into<String>>(&mut self, items: Vec<S>) {
         let current_text = self.current_text();
-        let strs: Vec<String> = items.into_iter().map(|item| item.into()).collect();
+        let strs: Vec<String> = items.into_iter().map(Into::into).collect();
 
         if strs.iter().any(|str| *str == current_text) {
             self.bump();
         } else {
-            self.error(format!("expected one of (todo)"));
+            self.error("expected one of (todo)".to_string());
         }
     }
 
@@ -218,9 +219,9 @@ impl<T: TokenBase> Marker<T> {
 
     pub fn complete<K>(mut self, parser: &mut Parser<T>, kind: K) -> CompletedMarker<T>
     where
-        K: Into<rowan::SyntaxKind>,
+        K: SyntaxKindClass,
     {
-        let rowan_kind = kind.into();
+        let rowan_kind = kind.into_syntax_kind();
         match parser.events[self.pos] {
             ref mut evt @ Event::BeginMarker => *evt = Event::Begin(rowan_kind, None),
             _ => unreachable!(),
@@ -260,13 +261,17 @@ impl<T: TokenBase> CompletedMarker<T> {
 
         m
     }
+
+    pub fn kind(&self) -> rowan::SyntaxKind {
+        self.kind
+    }
 }
 
 pub fn parse_file(text: &str) -> TreeArc<ast::SourceFile> {
     let (node, errors) = parse(text, builder::SyntaxTreeBuilder::new(), grammar::root);
     let root = ast::SyntaxNode::new(node, Some(Box::new(errors)));
 
-    assert_eq!(root.kind(), NodeKind::SourceFile);
+    assert_eq!(root.kind(), NodeKind::SourceFile.into_syntax_kind());
 
     ast::SourceFile::cast(&root).unwrap().to_owned()
 }

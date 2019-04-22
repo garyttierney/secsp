@@ -53,7 +53,7 @@ impl<'a> Iterator for Tokenizer<'a> {
 pub fn tokenize<S: AsRef<str>>(str: S) -> Vec<Token> {
     let tokenizer = Tokenizer::new(str.as_ref());
     let mut tokens: Vec<Token> = vec![];
-    let mut iter = tokenizer.into_iter().peekable();
+    let mut iter = tokenizer.peekable();
 
     while let Some((token, range)) = iter.next() {
         match token {

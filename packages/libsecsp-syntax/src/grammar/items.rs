@@ -29,16 +29,16 @@ pub fn parse_item(p: &mut CspParser) -> bool {
     let m = p.mark();
 
     let item = match KeywordKind::from_str(p.current_text()).ok() {
-        Some(KeywordKind::ABSTRACT)
-        | Some(KeywordKind::BLOCK)
-        | Some(KeywordKind::OPTIONAL)
-        | Some(KeywordKind::IN) => do_parse_item(
+        Some(KeywordKind::Abstract)
+        | Some(KeywordKind::Block)
+        | Some(KeywordKind::Optional)
+        | Some(KeywordKind::In) => do_parse_item(
             p,
             BlockType::BlockLike,
             NodeKind::Container,
             parse_container,
         ),
-        Some(KeywordKind::MACRO) => {
+        Some(KeywordKind::Macro) => {
             do_parse_item(p, BlockType::BlockLike, NodeKind::MacroDef, parse_macro)
         }
         Some(kw) if kw.is_var_type() && atom::is_at_path_start(p, 1) => {
