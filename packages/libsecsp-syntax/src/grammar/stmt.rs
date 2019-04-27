@@ -1,10 +1,9 @@
-use std::convert::TryFrom;
-
 use crate::grammar::atom;
 use crate::grammar::block::parse_block;
 use crate::grammar::block::BlockType;
 use crate::grammar::expr::{expression, ExprRestriction};
 use crate::parser::syntax::NodeKind;
+use crate::parser::syntax::SyntaxKindClass;
 use crate::parser::syntax::TokenKind;
 use crate::parser::CspParser;
 
@@ -19,7 +18,7 @@ pub fn statement(p: &mut CspParser) -> bool {
 
     let m = atom::path_expr(p).precede(p);
 
-    let (block_type, kind) = match TokenKind::try_from(p.current()).ok() {
+    let (block_type, kind) = match TokenKind::from_syntax_kind(p.current()) {
         Some(TokenKind::OpenParenthesis) => {
             macro_call(p);
             (BlockType::NotBlockLike, NodeKind::MacroCall)

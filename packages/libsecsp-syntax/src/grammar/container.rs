@@ -6,11 +6,11 @@ use crate::parser::syntax::{KeywordKind, NodeKind, TokenKind};
 use crate::parser::CspParser;
 
 pub fn parse_container(p: &mut CspParser) {
-    let is_abstract = p.eat_keyword(KeywordKind::ABSTRACT);
+    let is_abstract = p.eat_keyword(KeywordKind::Abstract);
 
     match KeywordKind::from_str(p.current_text()).ok() {
-        Some(kw) if kw == KeywordKind::BLOCK => p.bump_as(kw),
-        Some(kw) if kw == KeywordKind::OPTIONAL || kw == KeywordKind::IN => {
+        Some(kw) if kw == KeywordKind::Block => p.bump_as(kw),
+        Some(kw) if kw == KeywordKind::Optional || kw == KeywordKind::In => {
             if is_abstract {
                 p.error("only blocks can be declared as abstract");
             }
@@ -22,7 +22,7 @@ pub fn parse_container(p: &mut CspParser) {
 
     p.expect(TokenKind::Name);
 
-    if p.at_text(KeywordKind::EXTENDS) {
+    if p.at_text(KeywordKind::Extends) {
         parse_extends_list(p);
     }
 
@@ -32,7 +32,7 @@ pub fn parse_container(p: &mut CspParser) {
 pub fn parse_extends_list(p: &mut CspParser) {
     let m = p.mark();
 
-    assert!(p.eat_keyword(KeywordKind::EXTENDS));
+    assert!(p.eat_keyword(KeywordKind::Extends));
     atom::path_expr(p);
 
     while p.eat(TokenKind::Comma) {

@@ -1,9 +1,8 @@
-use std::convert::TryFrom;
-
 use crate::ast::BinaryOperator;
 use crate::grammar::atom;
 use crate::grammar::error_recovery;
 use crate::parser::syntax::NodeKind;
+use crate::parser::syntax::SyntaxKindClass;
 use crate::parser::syntax::TokenKind;
 use crate::parser::CompletedMarker;
 use crate::parser::CspParser;
@@ -37,7 +36,7 @@ fn expression_lhs(p: &mut CspParser) -> Option<CompletedMarker<Token>> {
         return Some(atom::literal_expr(p));
     }
 
-    match TokenKind::try_from(p.current()).ok() {
+    match TokenKind::from_syntax_kind(p.current()) {
         Some(TokenKind::Exclamation) | Some(TokenKind::Tilde) => {
             let m = p.mark();
             p.bump();
@@ -58,7 +57,7 @@ fn expression_prec(p: &mut CspParser, precedence: u8, restriction: ExprRestricti
         None => return false,
     };
 
-    match TokenKind::try_from(p.current()).ok() {
+    match TokenKind::from_syntax_kind(p.current()) {
         Some(TokenKind::Colon) if restriction.allows_context() => {
             return atom::context_expr(p, lhs);
         }

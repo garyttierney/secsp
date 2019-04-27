@@ -1,20 +1,23 @@
 use crossbeam_channel::{Receiver, Sender};
-use gen_lsp_server::{handle_shutdown, ErrorCode, RawMessage, RawResponse};
-use lsp_types::request::{GotoDefinition, HoverRequest};
+use gen_lsp_server::{ErrorCode, RawMessage, RawResponse};
+use lsp_types::request::HoverRequest;
 use lsp_types::InitializeParams;
 use threadpool::ThreadPool;
+
+use secsp_analysis::AnalysisHost;
 
 use crate::query;
 use crate::server::dispatcher::PoolDispatcher;
 
 mod dispatcher;
-mod handler;
 
-pub struct Server {}
+pub struct Server {
+    params: InitializeParams,
+}
 
 impl Server {
     pub fn new(params: InitializeParams) -> Self {
-        Server {}
+        Server { params }
     }
 
     pub fn run(
@@ -22,6 +25,8 @@ impl Server {
         receiver: &Receiver<RawMessage>,
         sender: &Sender<RawMessage>,
     ) -> Result<(), failure::Error> {
+        let analysis_root = self.params.root_path.unwrap_or_else(|| ".".to_owned());
+        let _analysis = AnalysisHost::from_workspace(analysis_root);
         let pool = ThreadPool::new(8);
 
         for msg in receiver {

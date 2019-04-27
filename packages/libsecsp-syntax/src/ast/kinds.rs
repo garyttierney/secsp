@@ -1,9 +1,8 @@
-use std::convert::TryFrom;
-
 use rowan::SyntaxKind;
 
 use crate::ast::AstChildren;
 use crate::ast::AstNode;
+use crate::parser::syntax::SyntaxKindClass;
 use crate::parser::syntax::TokenKind;
 
 pub enum BinaryOperator {
@@ -31,7 +30,7 @@ impl BinaryOperator {
         use self::BinaryOperator::*;
         use self::TokenKind::*;
 
-        let tok = TokenKind::try_from(kind).ok()?;
+        let tok = TokenKind::from_syntax_kind(kind)?;
         let op = match tok {
             Caret => BitwiseXor,
             Pipe => BitwiseOr,

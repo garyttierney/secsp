@@ -7,16 +7,9 @@ extern crate lsp_types;
 extern crate secsp_analysis;
 extern crate secsp_language_server;
 
-use std::io::BufReader;
-use std::net::TcpListener;
-use std::sync::{Arc, RwLock};
-use std::thread;
-
-use crossbeam_channel::{bounded, Receiver, Sender};
+use crossbeam_channel::{Receiver, Sender};
 use env_logger::Target;
-use gen_lsp_server::{run_server, stdio_transport, RawMessage, RawResponse, Threads};
-use log::debug;
-use lsp_types::notification::Exit;
+use gen_lsp_server::{stdio_transport, RawMessage};
 use lsp_types::{InitializeParams, ServerCapabilities};
 
 use secsp_language_server::server::Server;

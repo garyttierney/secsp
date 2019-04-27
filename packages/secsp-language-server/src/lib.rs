@@ -3,6 +3,7 @@ extern crate crossbeam_channel;
 extern crate crossbeam_utils;
 extern crate gen_lsp_server;
 extern crate lsp_types;
+extern crate secsp_analysis;
 extern crate serde;
 extern crate threadpool;
 

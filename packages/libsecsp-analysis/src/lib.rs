@@ -5,7 +5,7 @@ extern crate secsp_syntax;
 use std::fs;
 use std::io;
 use std::io::Read;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use salsa::Database;
@@ -44,10 +44,10 @@ impl Default for AnalysisDatabase {
 
 impl AnalysisDatabase {
     pub fn from_workspace_root<P>(path: P) -> Result<Self, io::Error>
-        where
-            P: AsRef<PathBuf>,
+    where
+        P: AsRef<Path>,
     {
-        let ws_root_path = path.as_ref();
+        let ws_root_path = path.as_ref().to_path_buf();
         let mut ws_dir_stack: Vec<PathBuf> = vec![ws_root_path.clone()];
         let mut ws_files: Vec<PathBuf> = vec![];
 
@@ -96,6 +96,12 @@ pub struct AnalysisHost {
 
 impl AnalysisHost {
     pub fn new(db: AnalysisDatabase) -> AnalysisHost {
+        AnalysisHost { db }
+    }
+
+    pub fn from_workspace<P: AsRef<Path>>(ws: P) -> AnalysisHost {
+        let db = AnalysisDatabase::from_workspace_root(ws).expect("unable to initialize database");
+
         AnalysisHost { db }
     }
 

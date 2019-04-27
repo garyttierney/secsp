@@ -9,6 +9,7 @@ autobenches = false
 clap = "2"
 fern = "0.5"
 log = "0.4"
+serde="1.0"
 secsp_analysis = { path = "../libsecsp-analysis" }
 secsp_syntax = { path = "../libsecsp-syntax" }
 symbolic_expressions = "~4.1.9"

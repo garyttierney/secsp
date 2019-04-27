@@ -1,8 +1,7 @@
-use std::convert::TryFrom;
-
 use crate::grammar::error_recovery;
 use crate::grammar::items;
 use crate::parser::syntax::NodeKind;
+use crate::parser::syntax::SyntaxKindClass;
 use crate::parser::syntax::TokenKind;
 use crate::parser::CspParser;
 
@@ -23,7 +22,7 @@ pub fn parse_block(p: &mut CspParser, include_braces: bool) {
     }
 
     while !p.at(TokenKind::Eof) {
-        match TokenKind::try_from(p.current()).ok() {
+        match TokenKind::from_syntax_kind(p.current()) {
             Some(TokenKind::Semicolon) => p.bump(),
             Some(TokenKind::CloseBrace) if include_braces => {
                 break;

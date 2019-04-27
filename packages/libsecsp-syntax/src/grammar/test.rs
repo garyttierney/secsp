@@ -1,4 +1,3 @@
-use std::convert::TryFrom;
 use std::fmt::Write;
 
 use regex::{Regex, RegexBuilder};
@@ -10,6 +9,7 @@ use crate::ast::AstNode;
 use crate::ast::SourceFile;
 use crate::parser::parse_file;
 use crate::parser::syntax::NodeKind;
+use crate::parser::syntax::SyntaxKindClass;
 
 #[derive(Debug)]
 struct Assertion {
@@ -47,7 +47,7 @@ pub(crate) fn test_parser(text: &str) {
     for assertion in assertions.into_iter() {
         let node = ast.syntax().covering_node(assertion.range);
 
-        let node_kind = NodeKind::try_from(node.kind()).expect("not a node type");
+        let node_kind = NodeKind::from_syntax_kind(node.kind()).expect("not a node type");
         let raw_kind = format!("{:#?}", node_kind);
         let kind = ws_regex.replace_all(raw_kind.as_str(), "");
         let expected_kind = assertion.ty;

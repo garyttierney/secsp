@@ -1,7 +1,6 @@
-use crossbeam;
 use crossbeam_channel::Sender;
 use gen_lsp_server::{RawMessage, RawRequest, RawResponse};
-use lsp_types::request::{GotoDefinition, HoverRequest, Request};
+use lsp_types::request::Request;
 use threadpool::ThreadPool;
 
 pub struct PoolDispatcher<'a> {
@@ -34,7 +33,7 @@ impl<'a> PoolDispatcher<'a> {
                         _ => unimplemented!(),
                     };
 
-                    sender.send(RawMessage::Response(resp));
+                    sender.send(RawMessage::Response(resp)).unwrap();
                 });
                 self.res = Some(id);
             }

@@ -8,9 +8,9 @@ use crate::parser::CspParser;
 
 pub fn parse_macro(p: &mut CspParser) {
     // pre-test: parser must be at a "macro" keyword.
-    assert!(p.eat_keyword(KeywordKind::MACRO));
+    assert!(p.eat_keyword(KeywordKind::Macro));
 
-    p.bump_as(KeywordKind::MACRO);
+    p.bump_as(KeywordKind::Macro);
     p.expect(TokenKind::Name);
 
     parse_macro_param_list(p);

@@ -11,9 +11,7 @@ use std::path::PathBuf;
 use clap::App;
 use clap::Arg;
 
-use secsp_analysis::input::FileId;
 use secsp_analysis::{AnalysisDatabase, AnalysisHost};
-use secsp_syntax::ast;
 
 mod utils;
 
@@ -63,9 +61,9 @@ fn main() {
 
     let input_files = matches
         .values_of_lossy("input")
-        .unwrap_or(vec![])
+        .unwrap_or_else(|| vec![])
         .iter()
-        .map(|i| PathBuf::from(i))
+        .map(PathBuf::from)
         .collect();
 
     let analysis_db = AnalysisDatabase::from_files(input_files)
