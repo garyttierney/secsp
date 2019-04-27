@@ -7,7 +7,7 @@ autobenches = false
 [dependencies]
 jsonrpc-core = "9.0.0"
 gen_lsp_server = { version = "0.1", git = "https://github.com/rust-analyzer/rust-analyzer", branch = "master" }
-lsp-types = "0.56"
+lsp-types = "0.57.0"
 failure = "0.1.5"
 crossbeam = "0.7"
 crossbeam-channel = "0.3"
