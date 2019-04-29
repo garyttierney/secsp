@@ -1,12 +1,12 @@
 #![recursion_limit = "128"]
 extern crate proc_macro;
 
-use proc_macro::{Ident, TokenStream};
+use proc_macro::TokenStream;
 
 use quote::quote;
-use syn::parse_quote::parse;
-use syn::Meta;
+use quote::ToTokens;
 use syn::{parse_macro_input, DeriveInput, Path};
+use syn::{Meta, NestedMeta};
 
 //
 //#[proc_macro_derive(AstEnum, attributes(AstKinds))]
@@ -17,21 +17,36 @@ pub fn ast_type(input: TokenStream) -> TokenStream {
     // Parse the input tokens into a syntax tree
     let input: DeriveInput = parse_macro_input!(input as DeriveInput);
     let name = input.ident;
-    let kind = input
+    let kinds = input
         .attrs
         .into_iter()
         .filter_map(|attr| attr.interpret_meta())
         .find(|attr| attr.name() == "kind")
         .map(|meta| match meta {
-            Meta::Word(v) => v,
-            Meta::NameValue(v) => v.ident,
-            _ => panic!("No name value on {:#?}", meta),
+            Meta::List(list) => list
+                .nested
+                .into_iter()
+                .map(|n| match n {
+                    NestedMeta::Meta(meta) => match meta {
+                        Meta::Word(id) => id,
+                        _ => panic!("Expected an identifier"),
+                    },
+                    _ => panic!("Expected meta info"),
+                })
+                .collect(),
+            _ => panic!("Expected a list of node kinds"),
         })
-        .unwrap_or_else(|| name.clone());
+        .unwrap_or_else(|| vec![name.clone()]);
+
+    let kinds_expr: Vec<proc_macro2::TokenStream> = kinds
+        .iter()
+        .map(|kind| {
+            quote! { NodeKind::#kind => Some(#name::from_repr(node.into_repr())), }
+        })
+        .collect();
 
     // Build the output, possibly using quasi-quotation
     let expanded = quote! {
-
          unsafe impl rowan::TransparentNewType for #name {
             type Repr = rowan::SyntaxNode;
          }
@@ -47,7 +62,7 @@ pub fn ast_type(input: TokenStream) -> TokenStream {
                 use secsp_parser::syntax::SyntaxKindClass;
 
                 match NodeKind::from_syntax_kind(node.kind())? {
-                    NodeKind::#kind => Some(#name::from_repr(node.into_repr())),
+                    #(#kinds_expr)*
                     _ => None
                 }
             }

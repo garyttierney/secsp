@@ -15,21 +15,3 @@ pub(crate) fn parse_var(p: &mut Parser) {
         expression(p, ExprRestriction::None);
     }
 }
-
-#[test]
-fn parse_var_decl() {
-    crate::grammar::test::test_parser(
-        r#"
-        <marker type="variable">type a;</marker>
-    "#,
-    )
-}
-
-#[test]
-fn parse_var_with_initializer() {
-    crate::grammar::test::test_parser(
-        r#"
-        <marker type="variable">type_attribute a = <marker type="binaryexpr">a | b</marker>;</marker>
-    "#,
-    )
-}

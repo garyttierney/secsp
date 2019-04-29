@@ -27,3 +27,8 @@ impl SourceFile {
         SourceFile::new(green, errors)
     }
 }
+
+#[test]
+fn parse_source_file() {
+    let _ = SourceFile::parse("block abc { type t; }");
+}

@@ -5,6 +5,8 @@ use secsp_parser::ParseError;
 use self::text_token_source::TextTokenSource;
 use self::text_tree_sink::TextTreeSink;
 
+#[cfg(test)]
+mod tests;
 mod text_token_source;
 mod text_tree_sink;
 mod tokenizer;

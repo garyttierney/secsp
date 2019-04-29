@@ -31,11 +31,11 @@ impl<'t> TextTreeSink<'t> {
             text_pos: TextUnit::from(0),
             builder: GreenNodeBuilder::new(),
             errors: Vec::new(),
-            state: State::Normal,
+            state: State::PendingStart,
         }
     }
 
-    pub fn finish(self) -> (GreenNode, Vec<ParseError>) {
+    pub fn finish(mut self) -> (GreenNode, Vec<ParseError>) {
         (self.builder.finish(), self.errors)
     }
 
@@ -90,15 +90,19 @@ impl<'t> TreeSink for TextTreeSink<'t> {
         let mut trivia_end =
             self.text_pos + leading_trivias.iter().map(|it| it.len()).sum::<TextUnit>();
 
-        let n_attached_trivias = 0; /* @TODO - Fix this to attach doc comments {
-                                        let leading_trivias = leading_trivias.iter().rev().map(|it| {
-                                            let next_end = trivia_end - it.len();
-                                            let range = TextRange::from_to(next_end, trivia_end);
-                                            trivia_end = next_end;
-                                            (it.kind(), &self.text[range])
-                                        });
-                                        n_attached_trivias(kind, leading_trivias)
-                                    };*/
+        let n_attached_trivias = {
+            let leading_trivias = leading_trivias
+                .iter()
+                .rev()
+                .map(|it| {
+                    let next_end = trivia_end - it.len();
+                    let range = TextRange::from_to(next_end, trivia_end);
+                    trivia_end = next_end;
+                    (it.kind(), &self.text[range])
+                })
+                .count();
+            leading_trivias
+        };
         self.eat_n_trivias(n_trivias - n_attached_trivias);
         self.builder.start_node(kind);
         self.eat_n_trivias(n_attached_trivias);

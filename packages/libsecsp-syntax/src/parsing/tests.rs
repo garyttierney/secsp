@@ -1,15 +1,18 @@
 use std::fmt::Write;
 
 use regex::{Regex, RegexBuilder};
+use rowan::{SyntaxNode, WalkEvent};
 use text_unit::TextRange;
 use text_unit::TextUnit;
 
-use crate::ast::types::WalkEvent;
+use secsp_parser::syntax::NodeKind;
+use secsp_parser::syntax::SyntaxKindClass;
+
 use crate::ast::AstNode;
-use crate::ast::SourceFile;
-use crate::parser::parse_file;
-use crate::syntax::NodeKind;
-use crate::syntax::SyntaxKindClass;
+use crate::SourceFile;
+
+mod expr;
+mod macros;
 
 #[derive(Debug)]
 struct Assertion {
@@ -17,11 +20,11 @@ struct Assertion {
     range: TextRange,
 }
 
-pub fn ast_to_string(source: &SourceFile) -> String {
+pub fn ast_to_string(source: &SyntaxNode) -> String {
     let mut indent = 0;
     let mut out = String::new();
 
-    for event in source.syntax().preorder() {
+    for event in source.preorder() {
         match event {
             WalkEvent::Enter(node) => {
                 writeln!(out, "{:indent$}{:?}", "", node, indent = indent).unwrap();
@@ -41,7 +44,7 @@ pub(crate) fn test_parser(text: &str) {
         panic!("No assertions found");
     }
 
-    let ast = parse_file(code.as_str());
+    let ast = SourceFile::parse(code.as_str());
     let ws_regex = Regex::new(r#"\s"#).unwrap();
 
     for assertion in assertions.into_iter() {
@@ -56,7 +59,7 @@ pub(crate) fn test_parser(text: &str) {
             expected_kind.to_lowercase(),
             kind.to_lowercase(),
             "Resulting parse tree: {}",
-            ast_to_string(&ast)
+            ast_to_string(ast.syntax())
         );
     }
 }

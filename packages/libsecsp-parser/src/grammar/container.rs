@@ -41,22 +41,3 @@ fn parse_extends_list(p: &mut Parser) {
 
     m.complete(p, NodeKind::ExtendsList);
 }
-
-#[test]
-#[ignore]
-fn parse_abstract_container() {
-    crate::grammar::test::test_parser(
-        r#"
-        <marker type="KeywordKind(ABSTRACT)">abstract</marker> block test {}
-    "#,
-    );
-}
-
-#[test]
-fn parse_abstract_container_with_extends_list() {
-    crate::grammar::test::test_parser(
-        r#"
-        abstract block test <marker type="ExtendsList">extends abc</marker> {}
-    "#,
-    );
-}

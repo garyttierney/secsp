@@ -1,6 +1,6 @@
 use std::fmt::Write;
 
-use secsp_syntax::ast::types::WalkEvent;
+use secsp_syntax::ast::WalkEvent;
 use secsp_syntax::ast::AstNode;
 use secsp_syntax::ast::SourceFile;
 

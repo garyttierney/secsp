@@ -1,9 +1,13 @@
 use std::marker::PhantomData;
 
-use rowan::{SyntaxNode, SyntaxNodeChildren, TreeArc, WalkEvent};
+use crate::ast::types::BlockItem;
+pub use rowan::{SyntaxNode, SyntaxNodeChildren, TreeArc, WalkEvent};
+pub use types::*;
 
 pub mod types;
 pub mod visitor;
+
+
 
 pub trait AstNode:
     rowan::TransparentNewType<Repr = SyntaxNode> + ToOwned<Owned = TreeArc<Self>>

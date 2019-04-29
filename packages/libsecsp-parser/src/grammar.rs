@@ -11,9 +11,6 @@ pub(crate) mod macros;
 pub(crate) mod stmt;
 pub(crate) mod var;
 
-#[cfg(test)]
-mod test;
-
 pub(super) fn root(p: &mut Parser) {
     let m = p.mark();
     self::block::parse_block(p, false);

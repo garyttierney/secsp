@@ -18,6 +18,7 @@ secsp-syntax-derive = {path="../libsecsp-syntax-derive"}
 
 [dev-dependencies]
 criterion = "0.2"
+color-backtrace = { version = "0.1" }
 
 [[bench]]
 name = "parse_file"

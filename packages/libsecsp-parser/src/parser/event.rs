@@ -25,16 +25,19 @@ pub fn process(sink: &mut dyn TreeSink, mut events: Vec<Event>) {
 
                 // append `A` into parents.
                 forward_parents.push(kind);
-                let mut idx = i;
+                let mut parent_idx = i;
                 let mut fp = forward_parent;
+
                 while let Some(fwd) = fp {
-                    idx += fwd as usize;
-                    // append `A`'s forward_parent `B`
-                    fp = match mem::replace(&mut events[idx], Event::Tombstone) {
-                        Event::Begin(kind, forward_parent) => forward_parent,
-                        _ => unreachable!(),
+                    parent_idx += fwd;
+                    fp = match mem::replace(&mut events[parent_idx], Event::Tombstone) {
+                        Event::Begin(kind, forward_parent) => {
+                            forward_parents.push(kind);
+                            forward_parent
+                        }
+                        Event::Tombstone => None,
+                        e => unreachable!("found unresolved {:#?} at position {}", e, parent_idx),
                     };
-                    // append `B`'s forward_parent `C` in the next stage.
                 }
 
                 for kind in forward_parents.drain(..).rev() {
