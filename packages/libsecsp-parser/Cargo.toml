@@ -1,0 +1,15 @@
+[package]
+name = "secsp-parser"
+version = "0.1.0"
+authors = ["Gary Tierney <gary.tierney@gmx.com>"]
+edition = "2018"
+
+[dependencies]
+drop_bomb = "0.1"
+itertools = "0.8"
+logos = "0.9"
+regex = "1.1"
+rowan = "0.5"
+smol_str = "0.1"
+text_unit = "0.1"
+num_enum = "0.2.0"
