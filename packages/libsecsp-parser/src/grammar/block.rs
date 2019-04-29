@@ -1,9 +1,9 @@
 use crate::grammar::error_recovery;
 use crate::grammar::items;
-use crate::parser::syntax::NodeKind;
-use crate::parser::syntax::SyntaxKindClass;
-use crate::parser::syntax::TokenKind;
-use crate::parser::CspParser;
+use crate::parser::Parser;
+use crate::syntax::NodeKind;
+use crate::syntax::SyntaxKindClass;
+use crate::syntax::TokenKind;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum BlockType {
@@ -11,7 +11,7 @@ pub enum BlockType {
     NotBlockLike,
 }
 
-pub fn parse_block(p: &mut CspParser, include_braces: bool) {
+pub(crate) fn parse_block(p: &mut Parser, include_braces: bool) {
     let m = p.mark();
 
     if include_braces && !p.eat(TokenKind::OpenBrace) {

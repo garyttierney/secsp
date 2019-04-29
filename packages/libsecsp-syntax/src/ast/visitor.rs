@@ -3,7 +3,8 @@
 
 use std::marker::PhantomData;
 
-use crate::ast::{AstNode, SyntaxNode, SyntaxNodeRef};
+use crate::ast::AstNode;
+use rowan::SyntaxNode;
 
 pub fn visitor<'a, T>() -> impl Visitor<'a, Output = T> {
     EmptyVisitor { ph: PhantomData }
@@ -11,7 +12,7 @@ pub fn visitor<'a, T>() -> impl Visitor<'a, Output = T> {
 
 pub trait Visitor<'a>: Sized {
     type Output;
-    fn accept(self, node: SyntaxNodeRef<'a>) -> Option<Self::Output>;
+    fn accept(self, node: &'a SyntaxNode) -> Option<Self::Output>;
     fn visit<N, F>(self, f: F) -> Vis<Self, N, F>
     where
         N: AstNode + 'a,
@@ -33,7 +34,7 @@ struct EmptyVisitor<T> {
 impl<'a, T> Visitor<'a> for EmptyVisitor<T> {
     type Output = T;
 
-    fn accept(self, _node: SyntaxNodeRef<'a>) -> Option<T> {
+    fn accept(self, _node: &'a SyntaxNode) -> Option<T> {
         None
     }
 }

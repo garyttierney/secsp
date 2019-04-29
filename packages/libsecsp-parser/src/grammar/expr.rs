@@ -1,12 +1,51 @@
-use crate::ast::BinaryOperator;
+use rowan::SyntaxKind;
+
 use crate::grammar::atom;
 use crate::grammar::error_recovery;
-use crate::parser::syntax::NodeKind;
-use crate::parser::syntax::SyntaxKindClass;
-use crate::parser::syntax::TokenKind;
 use crate::parser::CompletedMarker;
-use crate::parser::CspParser;
-use crate::token::Token;
+use crate::parser::Parser;
+use crate::syntax::NodeKind;
+use crate::syntax::SyntaxKindClass;
+use crate::syntax::TokenKind;
+
+pub enum BinaryOperator {
+    LogicalAnd,
+    LogicalOr,
+    BitwiseAnd,
+    BitwiseOr,
+    BitwiseXor,
+}
+
+impl BinaryOperator {
+    pub fn precedence(&self) -> u8 {
+        use self::BinaryOperator::*;
+
+        match self {
+            LogicalOr => 1,
+            LogicalAnd => 2,
+            BitwiseOr => 3,
+            BitwiseXor => 4,
+            BitwiseAnd => 5,
+        }
+    }
+
+    pub fn from(kind: SyntaxKind) -> Option<Self> {
+        use self::BinaryOperator::*;
+        use self::TokenKind::*;
+
+        let tok = TokenKind::from_syntax_kind(kind)?;
+        let op = match tok {
+            Caret => BitwiseXor,
+            Pipe => BitwiseOr,
+            Ampersand => BitwiseAnd,
+            DoubleAmpersand => LogicalAnd,
+            DoublePipe => LogicalOr,
+            _ => return None,
+        };
+
+        Some(op)
+    }
+}
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum ExprRestriction {
@@ -25,11 +64,11 @@ impl ExprRestriction {
     }
 }
 
-pub fn expression(p: &mut CspParser, restriction: ExprRestriction) -> bool {
+pub(crate) fn expression(p: &mut Parser, restriction: ExprRestriction) -> bool {
     expression_prec(p, 1, restriction)
 }
 
-fn expression_lhs(p: &mut CspParser) -> Option<CompletedMarker<Token>> {
+fn expression_lhs(p: &mut Parser) -> Option<CompletedMarker> {
     if atom::is_at_path_start(p, 0) {
         return Some(atom::path_expr(p));
     } else if p.at(TokenKind::String) || p.at(TokenKind::Integer) {
@@ -51,7 +90,7 @@ fn expression_lhs(p: &mut CspParser) -> Option<CompletedMarker<Token>> {
     }
 }
 
-fn expression_prec(p: &mut CspParser, precedence: u8, restriction: ExprRestriction) -> bool {
+fn expression_prec(p: &mut Parser, precedence: u8, restriction: ExprRestriction) -> bool {
     let mut lhs = match expression_lhs(p) {
         Some(lhs) => lhs,
         None => return false,

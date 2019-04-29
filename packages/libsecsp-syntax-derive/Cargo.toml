@@ -1,0 +1,12 @@
+[package]
+name = "secsp-syntax-derive"
+version = "0.1.0"
+authors = ["Gary Tierney <gary.tierney@gmx.com>"]
+edition = "2018"
+
+[dependencies]
+syn = "0.15"
+quote = "0.6"
+
+[lib]
+proc-macro = true

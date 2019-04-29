@@ -1,9 +1,9 @@
-use crate::parser::syntax::NodeKind;
-use crate::parser::syntax::SyntaxKindClass;
-use crate::parser::syntax::TokenKind;
-use crate::parser::CspParser;
+use crate::parser::Parser;
+use crate::syntax::NodeKind;
+use crate::syntax::SyntaxKindClass;
+use crate::syntax::TokenKind;
 
-pub fn recover_from_item(p: &mut CspParser) {
+pub(crate) fn recover_from_item(p: &mut Parser) {
     let mut brace_depth = 0;
     let m = p.mark();
 
@@ -36,7 +36,7 @@ pub fn recover_from_item(p: &mut CspParser) {
     }
 }
 
-pub fn recover_from_expr(p: &mut CspParser) {
+pub(crate) fn recover_from_expr(p: &mut Parser) {
     let m = p.mark();
     p.bump();
     m.complete(p, NodeKind::ParseError);

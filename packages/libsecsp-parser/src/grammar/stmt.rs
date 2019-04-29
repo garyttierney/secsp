@@ -2,12 +2,12 @@ use crate::grammar::atom;
 use crate::grammar::block::parse_block;
 use crate::grammar::block::BlockType;
 use crate::grammar::expr::{expression, ExprRestriction};
-use crate::parser::syntax::NodeKind;
-use crate::parser::syntax::SyntaxKindClass;
-use crate::parser::syntax::TokenKind;
-use crate::parser::CspParser;
+use crate::parser::Parser;
+use crate::syntax::NodeKind;
+use crate::syntax::SyntaxKindClass;
+use crate::syntax::TokenKind;
 
-pub fn statement(p: &mut CspParser) -> bool {
+pub(crate) fn statement(p: &mut Parser) -> bool {
     if p.at(TokenKind::IfKw) {
         conditional(p);
         return true;
@@ -44,7 +44,7 @@ pub fn statement(p: &mut CspParser) -> bool {
     true
 }
 
-fn conditional(p: &mut CspParser) {
+fn conditional(p: &mut Parser) {
     assert!(p.at(TokenKind::IfKw));
     let m = p.mark();
     p.bump();
@@ -64,7 +64,7 @@ fn conditional(p: &mut CspParser) {
     m.complete(p, NodeKind::ConditionalStmt);
 }
 
-fn macro_call(p: &mut CspParser) {
+fn macro_call(p: &mut Parser) {
     assert!(p.at(TokenKind::OpenParenthesis));
     p.bump();
 

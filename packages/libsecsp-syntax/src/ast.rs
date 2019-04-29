@@ -1,19 +1,8 @@
 use std::marker::PhantomData;
 
-use crate::ast::types::WalkEvent;
+use rowan::{SyntaxNode, SyntaxNodeChildren, TreeArc, WalkEvent};
 
-// Re-export AST types under the crate::ast root namespace.
-pub use self::error::SyntaxError;
-pub use self::kinds::*;
-pub use self::types::{
-    GreenNode, GreenNodeBuilder, SyntaxNode, SyntaxNodeChildren, SyntaxNodeRef, TreeArc,
-};
-
-#[macro_use]
 pub mod types;
-
-mod error;
-mod kinds;
 pub mod visitor;
 
 pub trait AstNode:
@@ -60,7 +49,7 @@ impl<'a, N: AstNode + 'a> Iterator for AstChildren<'a, N> {
     }
 }
 
-pub fn descendants(tree: SyntaxNodeRef) -> impl Iterator<Item = SyntaxNodeRef> {
+pub fn descendants(tree: &SyntaxNode) -> impl Iterator<Item = &SyntaxNode> {
     tree.preorder().filter_map(|event| match event {
         WalkEvent::Enter(node) => Some(node),
         WalkEvent::Leave(_) => None,

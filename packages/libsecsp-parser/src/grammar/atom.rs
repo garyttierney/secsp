@@ -1,11 +1,10 @@
 use crate::grammar::expr::{expression, ExprRestriction};
-use crate::parser::syntax::SyntaxKindClass;
-use crate::parser::syntax::{NodeKind, TokenKind};
 use crate::parser::CompletedMarker;
-use crate::parser::CspParser;
-use crate::token::Token;
+use crate::parser::Parser;
+use crate::syntax::SyntaxKindClass;
+use crate::syntax::{NodeKind, TokenKind};
 
-pub fn path_expr(p: &mut CspParser) -> CompletedMarker<Token> {
+pub(crate) fn path_expr(p: &mut Parser) -> CompletedMarker {
     let m = p.mark();
 
     if p.at(TokenKind::Dot) {
@@ -22,7 +21,7 @@ pub fn path_expr(p: &mut CspParser) -> CompletedMarker<Token> {
     m.complete(p, NodeKind::PathExpr)
 }
 
-pub fn list_or_paren_expr(p: &mut CspParser) -> CompletedMarker<Token> {
+pub(crate) fn list_or_paren_expr(p: &mut Parser) -> CompletedMarker {
     assert!(p.at(TokenKind::OpenParenthesis));
 
     let m = p.mark();
@@ -53,7 +52,7 @@ pub fn list_or_paren_expr(p: &mut CspParser) -> CompletedMarker<Token> {
     )
 }
 
-pub fn context_expr(p: &mut CspParser, lhs: CompletedMarker<Token>) -> bool {
+pub(crate) fn context_expr(p: &mut Parser, lhs: CompletedMarker) -> bool {
     assert!(p.at(TokenKind::Colon));
     p.bump();
 
@@ -91,7 +90,7 @@ pub fn context_expr(p: &mut CspParser, lhs: CompletedMarker<Token>) -> bool {
     }
 }
 
-pub fn range_expr(p: &mut CspParser, lhs: CompletedMarker<Token>, kind: NodeKind) -> bool {
+pub(crate) fn range_expr(p: &mut Parser, lhs: CompletedMarker, kind: NodeKind) -> bool {
     let m = lhs.precede(p);
     let expected = match kind {
         NodeKind::LevelRangeExpr => TokenKind::Hyphen,
@@ -106,13 +105,13 @@ pub fn range_expr(p: &mut CspParser, lhs: CompletedMarker<Token>, kind: NodeKind
     successful
 }
 
-pub fn literal_expr(p: &mut CspParser) -> CompletedMarker<Token> {
+pub(crate) fn literal_expr(p: &mut Parser) -> CompletedMarker {
     let m = p.mark();
     p.expect_one_of(vec![TokenKind::String, TokenKind::Integer]);
     m.complete(p, NodeKind::LiteralExpr)
 }
 
-pub fn is_at_path_start(p: &CspParser, offset: usize) -> bool {
+pub(crate) fn is_at_path_start(p: &Parser, offset: usize) -> bool {
     let tok = TokenKind::from_syntax_kind(p.nth(offset));
 
     tok == Some(TokenKind::Dot) || tok == Some(TokenKind::Name)

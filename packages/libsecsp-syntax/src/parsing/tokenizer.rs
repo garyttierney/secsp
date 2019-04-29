@@ -10,7 +10,8 @@ use itertools::Itertools;
 use logos::Lexer;
 use logos::Logos;
 
-use crate::parser::syntax::TokenKind;
+use secsp_parser::syntax::TokenKind;
+
 use crate::token::Token;
 
 struct Tokenizer<'a> {

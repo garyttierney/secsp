@@ -1,10 +1,10 @@
 use std::str::FromStr;
 
 use crate::grammar::expr::{expression, ExprRestriction};
-use crate::parser::syntax::{KeywordKind, TokenKind};
-use crate::parser::CspParser;
+use crate::parser::Parser;
+use crate::syntax::{KeywordKind, TokenKind};
 
-pub fn parse_var(p: &mut CspParser) {
+pub(crate) fn parse_var(p: &mut Parser) {
     let kw = KeywordKind::from_str(p.current_text()).expect("should be at var type keyword");
     assert!(kw.is_var_type());
 

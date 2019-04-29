@@ -2,10 +2,10 @@ use std::str::FromStr;
 
 use crate::grammar::atom;
 use crate::grammar::block;
-use crate::parser::syntax::{KeywordKind, NodeKind, TokenKind};
-use crate::parser::CspParser;
+use crate::parser::Parser;
+use crate::syntax::{KeywordKind, NodeKind, TokenKind};
 
-pub fn parse_container(p: &mut CspParser) {
+pub(crate) fn parse_container(p: &mut Parser) {
     let is_abstract = p.eat_keyword(KeywordKind::Abstract);
 
     match KeywordKind::from_str(p.current_text()).ok() {
@@ -29,7 +29,7 @@ pub fn parse_container(p: &mut CspParser) {
     block::parse_block(p, true);
 }
 
-pub fn parse_extends_list(p: &mut CspParser) {
+fn parse_extends_list(p: &mut Parser) {
     let m = p.mark();
 
     assert!(p.eat_keyword(KeywordKind::Extends));

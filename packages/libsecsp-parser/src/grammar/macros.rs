@@ -1,12 +1,12 @@
 use std::str::FromStr;
 
 use crate::grammar::block;
-use crate::parser::syntax::KeywordKind;
-use crate::parser::syntax::NodeKind;
-use crate::parser::syntax::TokenKind;
-use crate::parser::CspParser;
+use crate::parser::Parser;
+use crate::syntax::KeywordKind;
+use crate::syntax::NodeKind;
+use crate::syntax::TokenKind;
 
-pub fn parse_macro(p: &mut CspParser) {
+pub(crate) fn parse_macro(p: &mut Parser) {
     // pre-test: parser must be at a "macro" keyword.
     assert!(p.eat_keyword(KeywordKind::Macro));
 
@@ -17,7 +17,7 @@ pub fn parse_macro(p: &mut CspParser) {
     block::parse_block(p, true);
 }
 
-pub fn parse_macro_param_list(p: &mut CspParser) {
+fn parse_macro_param_list(p: &mut Parser) {
     let m = p.mark();
 
     p.expect(TokenKind::OpenParenthesis);
@@ -34,7 +34,7 @@ pub fn parse_macro_param_list(p: &mut CspParser) {
     m.complete(p, NodeKind::MacroParamList);
 }
 
-pub fn parse_macro_param_list_item(p: &mut CspParser) -> bool {
+fn parse_macro_param_list_item(p: &mut Parser) -> bool {
     let m = p.mark();
 
     match KeywordKind::from_str(p.current_text()).ok() {

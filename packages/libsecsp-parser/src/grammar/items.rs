@@ -5,22 +5,26 @@ use crate::grammar::block::BlockType;
 use crate::grammar::{
     container::parse_container, macros::parse_macro, stmt::statement, var::parse_var,
 };
-use crate::parser::syntax::KeywordKind;
-use crate::parser::syntax::NodeKind;
-use crate::parser::syntax::TokenKind;
-use crate::parser::CspParser;
+use crate::parser::Parser;
+use crate::syntax::KeywordKind;
+use crate::syntax::NodeKind;
+use crate::syntax::TokenKind;
 
-pub fn parse_item(p: &mut CspParser) -> bool {
-    if !p.at_kw() {
+pub(crate) fn parse_item(p: &mut Parser) -> bool {
+    fn at_kw(p: &Parser) -> bool {
+        p.at(TokenKind::Name) || p.at(TokenKind::IfKw) || p.at(TokenKind::ElseKw)
+    }
+
+    if !at_kw(p) {
         p.error("expected keyword");
         return false;
     }
 
     fn do_parse_item(
-        p: &mut CspParser,
+        p: &mut Parser,
         ty: BlockType,
         kind: NodeKind,
-        parser: fn(&mut CspParser),
+        parser: fn(&mut Parser),
     ) -> Option<(BlockType, NodeKind)> {
         parser(p);
         Some((ty, kind))

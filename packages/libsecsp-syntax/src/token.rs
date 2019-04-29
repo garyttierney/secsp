@@ -1,6 +1,8 @@
 use std::ops::Range;
 
-use crate::parser::syntax::TokenKind;
+use rowan::TextUnit;
+use secsp_parser::syntax::TokenKind;
+use text_unit::TextRange;
 
 /// A single unit of output by the lexer.
 #[derive(Copy, Clone, Debug)]
@@ -15,8 +17,16 @@ impl Token {
         self.0
     }
 
+    pub fn kind(&self) -> rowan::SyntaxKind {
+        rowan::SyntaxKind(self.0 as u16)
+    }
+
     pub fn range(&self) -> Range<usize> {
         self.1..self.2
+    }
+
+    pub fn len(&self) -> TextUnit {
+        TextUnit::from_usize(self.2 - self.1)
     }
 
     pub fn is_trivia(&self) -> bool {

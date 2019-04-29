@@ -8,8 +8,8 @@ use crate::ast::types::WalkEvent;
 use crate::ast::AstNode;
 use crate::ast::SourceFile;
 use crate::parser::parse_file;
-use crate::parser::syntax::NodeKind;
-use crate::parser::syntax::SyntaxKindClass;
+use crate::syntax::NodeKind;
+use crate::syntax::SyntaxKindClass;
 
 #[derive(Debug)]
 struct Assertion {
