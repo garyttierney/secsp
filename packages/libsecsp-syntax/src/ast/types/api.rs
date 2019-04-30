@@ -39,8 +39,9 @@ pub trait NameOwner: AstNode {
 mod tests {
     use rowan::TreeArc;
 
+    use crate::ast::{Container, MacroDecl, SourceFile, Variable};
+
     use super::*;
-    use crate::ast::{Container, MacroDecl, SourceFile};
 
     fn parse_item<T: AstNode>(text: &str) -> TreeArc<T> {
         SourceFile::parse(text)
@@ -50,21 +51,25 @@ mod tests {
             .to_owned()
     }
 
+    fn test_name_owner<T: NameOwner>(text: &str, name: &str) {
+        let m = parse_item::<T>(text);
+        let macro_name = m.name_text().expect("couldn't find name on node");
+
+        assert_eq!(name, macro_name);
+    }
+
+    #[test]
+    fn variable_as_name_owner() {
+        test_name_owner::<Variable>("type t;", "t");
+    }
+
     #[test]
     fn macro_as_name_owner() {
-        let m = parse_item::<MacroDecl>("macro abc() {}");
-        let macro_name = m.name_text().expect("couldn't find name on macro");
-
-        assert_eq!("abc", macro_name);
+        test_name_owner::<MacroDecl>("macro abc() {}", "abc");
     }
 
     #[test]
     fn block_as_name_owner() {
-        let container = parse_item::<Container>("block abc {}");
-        let container_name = container
-            .name_text()
-            .expect("couldn't find name on container");
-
-        assert_eq!("abc", container_name);
+        test_name_owner::<Container>("block abc {}", "abc");
     }
 }

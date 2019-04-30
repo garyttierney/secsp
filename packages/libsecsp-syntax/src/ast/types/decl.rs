@@ -25,21 +25,31 @@ impl ItemOwner for MacroDecl {}
 
 #[repr(transparent)]
 #[derive(AstType)]
-#[kind(Container, Variable, MacroDef)]
+#[kind(Variable)]
+pub struct Variable(rowan::SyntaxNode);
+
+impl NameOwner for Variable {}
+
+#[repr(transparent)]
+#[derive(AstType)]
+#[kind(Container, MacroDef, Variable)]
 pub struct Item(rowan::SyntaxNode);
 
 pub enum ItemKind<'a> {
     Container(&'a Container),
     Macro(&'a MacroDecl),
+    Variable(&'a Variable),
 }
 
 impl Item {
     pub fn kind(&self) -> ItemKind {
-        match NodeKind::from_syntax_kind(self.syntax().kind()).unwrap() {
-            NodeKind::Container => {
-                ItemKind::Container(Container::from_repr(self.syntax().into_repr()))
-            }
-            NodeKind::MacroDef => ItemKind::Macro(MacroDecl::from_repr(self.syntax().into_repr())),
+        let kind = self.syntax().kind();
+        let repr = self.syntax().into_repr();
+
+        match NodeKind::from_syntax_kind(kind).unwrap() {
+            NodeKind::Container => ItemKind::Container(Container::from_repr(repr)),
+            NodeKind::MacroDef => ItemKind::Macro(MacroDecl::from_repr(repr)),
+            NodeKind::Variable => ItemKind::Variable(Variable::from_repr(repr)),
             _ => unimplemented!(),
         }
     }
