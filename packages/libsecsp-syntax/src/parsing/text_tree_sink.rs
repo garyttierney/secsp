@@ -36,6 +36,10 @@ impl<'t> TextTreeSink<'t> {
     }
 
     pub fn finish(mut self) -> (GreenNode, Vec<ParseError>) {
+        match mem::replace(&mut self.state, State::Normal) {
+            State::PendingFinish => self.builder.finish_node(),
+            State::Normal | State::PendingStart => (),
+        };
         (self.builder.finish(), self.errors)
     }
 

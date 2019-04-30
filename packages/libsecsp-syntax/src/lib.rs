@@ -12,7 +12,7 @@ pub mod ast;
 mod parsing;
 mod token;
 
-pub use ast::types::SourceFile;
+pub use ast::SourceFile;
 use rowan::{GreenNode, SyntaxNode, TreeArc};
 use secsp_parser::ParseError;
 

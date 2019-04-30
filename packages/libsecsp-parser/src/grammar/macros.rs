@@ -9,8 +9,6 @@ use crate::syntax::TokenKind;
 pub(crate) fn parse_macro(p: &mut Parser) {
     // pre-test: parser must be at a "macro" keyword.
     assert!(p.eat_keyword(KeywordKind::Macro));
-
-    p.bump_as(KeywordKind::Macro);
     p.expect(TokenKind::Name);
 
     parse_macro_param_list(p);

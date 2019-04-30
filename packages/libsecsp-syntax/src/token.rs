@@ -13,10 +13,6 @@ impl Token {
         Token(ty, range.start, range.end)
     }
 
-    pub fn ty(&self) -> TokenKind {
-        self.0
-    }
-
     pub fn kind(&self) -> rowan::SyntaxKind {
         rowan::SyntaxKind(self.0 as u16)
     }

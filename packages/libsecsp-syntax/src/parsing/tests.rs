@@ -1,7 +1,7 @@
 use std::fmt::Write;
 
 use regex::{Regex, RegexBuilder};
-use rowan::{SyntaxNode, WalkEvent};
+use rowan::{SyntaxElement, SyntaxNode, WalkEvent};
 use text_unit::TextRange;
 use text_unit::TextUnit;
 
@@ -24,10 +24,20 @@ pub fn ast_to_string(source: &SyntaxNode) -> String {
     let mut indent = 0;
     let mut out = String::new();
 
-    for event in source.preorder() {
+    for event in source.preorder_with_tokens() {
         match event {
             WalkEvent::Enter(node) => {
-                writeln!(out, "{:indent$}{:?}", "", node, indent = indent).unwrap();
+                let text = match node {
+                    SyntaxElement::Node(it) => "".to_string(),
+                    SyntaxElement::Token(it) => it.text().to_string(),
+                };
+                out += &format!(
+                    "{:indent$}{:?} {:?}\n",
+                    " ",
+                    text,
+                    node.kind(),
+                    indent = indent
+                );
                 indent += 2;
             }
             WalkEvent::Leave(_) => indent -= 2,

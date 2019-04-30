@@ -1,22 +1,19 @@
 use secsp_parser::syntax::NodeKind;
 use secsp_syntax_derive::AstType;
 
-use crate::ast::{AstChildren, AstNode};
+pub use self::{api::*, decl::*, expr::*, stmt::*};
 
-pub use self::{decl::*, expr::*, stmt::*};
-
+mod api;
 mod decl;
 mod expr;
 mod stmt;
 
 #[derive(AstType, Debug)]
 #[repr(transparent)]
+pub struct Block(rowan::SyntaxNode);
+
+#[derive(AstType, Debug)]
+#[repr(transparent)]
 pub struct SourceFile(rowan::SyntaxNode);
 
-impl BlockOwner for SourceFile {}
-
-pub trait BlockOwner: AstNode {
-    fn items(&self) -> AstChildren<BlockItem> {
-        self.child::<BlockItem>().children()
-    }
-}
+impl ItemOwner for SourceFile {}
