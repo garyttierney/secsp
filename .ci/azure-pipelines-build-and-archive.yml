@@ -51,6 +51,7 @@ steps:
   - script: |
       cargo bench -- --save-baseline benchmark-baseline
     condition: succeeded()
+    continueOnError: true
     displayName: 'Cargo bench'
   - task: CopyFiles@2
     displayName: 'Copy Debug binaries [Windows]'
