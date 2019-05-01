@@ -60,6 +60,8 @@ steps:
       zip -0 ccov.zip `find . \( -name "secsp*.gc*" \) -print`;
       grcov ccov.zip -s . -t lcov --llvm --branch --ignore-not-existing --ignore-dir "/*" -o lcov.info;
       bash <(curl -s https://codecov.io/bash) -f lcov.info -t "${CODECOV_TOKEN}";
+    env:
+      CODECOV_TOKEN: $(CODECOV_TOKEN)
     displayName: Publish Code Coverage
     condition: ne(variables['Agent.OS'],'Windows_NT')
   - script: |
