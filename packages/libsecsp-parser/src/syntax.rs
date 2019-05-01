@@ -9,13 +9,13 @@ const NODE_KIND_START: u16 = 1_000;
 const KW_KIND_START: u16 = 10_000;
 
 pub trait SyntaxKindClass:
-    TryFrom<u16, Error = String> + Into<u16> + std::fmt::Debug + Copy
+    TryFrom<u16, Error = String> + Into<u16> + std::fmt::Debug + Copy + Eq + PartialEq
 {
-    fn into_syntax_kind(self) -> SyntaxKind {
+    fn into_kind(self) -> SyntaxKind {
         SyntaxKind(self.into())
     }
 
-    fn from_syntax_kind(kind: SyntaxKind) -> Option<Self> {
+    fn from_kind(kind: SyntaxKind) -> Option<Self> {
         Self::try_from(kind.0).ok()
     }
 }

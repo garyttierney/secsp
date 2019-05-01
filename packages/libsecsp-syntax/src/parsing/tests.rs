@@ -60,7 +60,7 @@ pub(crate) fn test_parser(text: &str) {
     for assertion in assertions.into_iter() {
         let node = ast.syntax().covering_node(assertion.range);
 
-        let node_kind = NodeKind::from_syntax_kind(node.kind()).expect("not a node type");
+        let node_kind = NodeKind::from_kind(node.kind()).expect("not a node type");
         let raw_kind = format!("{:#?}", node_kind);
         let kind = ws_regex.replace_all(raw_kind.as_str(), "");
         let expected_kind = assertion.ty;

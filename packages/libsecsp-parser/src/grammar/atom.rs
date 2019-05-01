@@ -112,7 +112,7 @@ pub(crate) fn literal_expr(p: &mut Parser) -> CompletedMarker {
 }
 
 pub(crate) fn is_at_path_start(p: &Parser, offset: usize) -> bool {
-    let tok = TokenKind::from_syntax_kind(p.nth(offset));
+    let tok: TokenKind = p.nth(offset);
 
-    tok == Some(TokenKind::Dot) || tok == Some(TokenKind::Name)
+    tok == TokenKind::Dot || tok == TokenKind::Name
 }

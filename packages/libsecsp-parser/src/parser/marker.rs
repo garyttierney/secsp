@@ -37,7 +37,7 @@ impl Marker {
     where
         K: SyntaxKindClass,
     {
-        let rowan_kind = kind.into_syntax_kind();
+        let rowan_kind = kind.into_kind();
         match parser.events[self.pos] {
             ref mut evt @ Event::BeginMarker => *evt = Event::Begin(rowan_kind, None),
             _ => unreachable!(),

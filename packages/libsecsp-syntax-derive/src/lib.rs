@@ -61,7 +61,7 @@ pub fn ast_type(input: TokenStream) -> TokenStream {
                 use rowan::TransparentNewType;
                 use secsp_parser::syntax::SyntaxKindClass;
 
-                match NodeKind::from_syntax_kind(node.kind())? {
+                match NodeKind::from_kind(node.kind())? {
                     #(#kinds_expr)*
                     _ => None
                 }

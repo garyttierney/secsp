@@ -46,7 +46,7 @@ impl Item {
         let kind = self.syntax().kind();
         let repr = self.syntax().into_repr();
 
-        match NodeKind::from_syntax_kind(kind).unwrap() {
+        match NodeKind::from_kind(kind).unwrap() {
             NodeKind::Container => ItemKind::Container(Container::from_repr(repr)),
             NodeKind::MacroDef => ItemKind::Macro(MacroDecl::from_repr(repr)),
             NodeKind::Variable => ItemKind::Variable(Variable::from_repr(repr)),

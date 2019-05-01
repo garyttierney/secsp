@@ -8,12 +8,12 @@ pub(crate) fn recover_from_item(p: &mut Parser) {
     let m = p.mark();
 
     loop {
-        match TokenKind::from_syntax_kind(p.current()) {
-            Some(TokenKind::OpenBrace) => {
+        match p.current() {
+            TokenKind::OpenBrace => {
                 p.bump();
                 brace_depth += 1;
             }
-            Some(TokenKind::CloseBrace) => {
+            TokenKind::CloseBrace => {
                 brace_depth -= 1;
                 if brace_depth == 0 {
                     m.complete(p, NodeKind::ParseError);
@@ -22,12 +22,12 @@ pub(crate) fn recover_from_item(p: &mut Parser) {
 
                 p.bump();
             }
-            Some(TokenKind::Semicolon) => {
+            TokenKind::Semicolon => {
                 p.bump();
                 m.complete(p, NodeKind::ParseError);
                 return;
             }
-            Some(TokenKind::Eof) => {
+            TokenKind::Eof => {
                 m.complete(p, NodeKind::ParseError);
                 return;
             }

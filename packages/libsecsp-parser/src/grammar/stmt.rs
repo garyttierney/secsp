@@ -18,12 +18,12 @@ pub(crate) fn statement(p: &mut Parser) -> bool {
 
     let m = atom::path_expr(p).precede(p);
 
-    let (block_type, kind) = match TokenKind::from_syntax_kind(p.current()) {
-        Some(TokenKind::OpenParenthesis) => {
+    let (block_type, kind) = match p.current() {
+        TokenKind::OpenParenthesis => {
             macro_call(p);
             (BlockType::NotBlockLike, NodeKind::MacroCall)
         }
-        Some(TokenKind::IfKw) => {
+        TokenKind::IfKw => {
             conditional(p);
             m.abandon(p);
             return true;
@@ -45,15 +45,13 @@ pub(crate) fn statement(p: &mut Parser) -> bool {
 }
 
 fn conditional(p: &mut Parser) {
-    assert!(p.at(TokenKind::IfKw));
     let m = p.mark();
-    p.bump();
+    assert!(p.eat(TokenKind::IfKw));
 
     expression(p, ExprRestriction::NoContext);
     parse_block(p, true);
 
-    if p.at(TokenKind::ElseKw) {
-        p.bump();
+    if p.eat(TokenKind::ElseKw) {
         if p.at(TokenKind::IfKw) {
             conditional(p);
         } else {
@@ -65,8 +63,7 @@ fn conditional(p: &mut Parser) {
 }
 
 fn macro_call(p: &mut Parser) {
-    assert!(p.at(TokenKind::OpenParenthesis));
-    p.bump();
+    assert!(p.eat(TokenKind::OpenParenthesis));
 
     while !p.at(TokenKind::CloseParenthesis) {
         if !expression(p, ExprRestriction::None) {

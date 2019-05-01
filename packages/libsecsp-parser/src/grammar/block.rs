@@ -22,9 +22,9 @@ pub(crate) fn parse_block(p: &mut Parser, include_braces: bool) {
     }
 
     while !p.at(TokenKind::Eof) {
-        match TokenKind::from_syntax_kind(p.current()) {
-            Some(TokenKind::Semicolon) => p.bump(),
-            Some(TokenKind::CloseBrace) if include_braces => {
+        match p.current() {
+            TokenKind::Semicolon => p.bump(),
+            TokenKind::CloseBrace if include_braces => {
                 break;
             }
             _ => {

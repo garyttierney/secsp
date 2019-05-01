@@ -33,7 +33,7 @@ impl<'t> Parser<'t> {
     where
         E: SyntaxKindClass,
     {
-        self.current() == expected.into_syntax_kind()
+        self.current::<E>() == expected
     }
 
     pub fn eat_keyword<K>(&mut self, kw: K) -> bool
@@ -60,11 +60,11 @@ impl<'t> Parser<'t> {
     /// Advance the position of the parser within the token stream and produce an event
     /// for the current leaf.
     pub fn bump(&mut self) {
-        if self.current().0 == TokenKind::Eof as u16 {
+        if self.current::<TokenKind>() == TokenKind::Eof {
             return;
         }
 
-        self.events.push(Event::Leaf(self.current()));
+        self.events.push(Event::Leaf(self.nth_kind(0)));
         self.token_pos += 1;
     }
 
@@ -74,12 +74,12 @@ impl<'t> Parser<'t> {
     where
         F: SyntaxKindClass,
     {
-        self.events.push(Event::Leaf(kind.into_syntax_kind()));
+        self.events.push(Event::Leaf(kind.into_kind()));
         self.token_pos += 1;
     }
 
     /// Get the type of token the parser is currently at.
-    pub fn current(&self) -> rowan::SyntaxKind {
+    pub fn current<T: SyntaxKindClass>(&self) -> T {
         self.nth(0)
     }
 
@@ -128,11 +128,8 @@ impl<'t> Parser<'t> {
     where
         E: SyntaxKindClass,
     {
-        let current_kind = self.current();
-        let kinds: Vec<SyntaxKind> = items
-            .into_iter()
-            .map(SyntaxKindClass::into_syntax_kind)
-            .collect();
+        let current_kind = self.nth_kind(0);
+        let kinds: Vec<SyntaxKind> = items.into_iter().map(SyntaxKindClass::into_kind).collect();
 
         if kinds.iter().any(|k| *k == current_kind) {
             self.bump();
@@ -162,7 +159,12 @@ impl<'t> Parser<'t> {
     }
 
     /// Get the `nth` lookahead token type, offset from the parsers current position.
-    pub fn nth(&self, offset: usize) -> rowan::SyntaxKind {
+    pub fn nth<T: SyntaxKindClass>(&self, offset: usize) -> T {
+        T::from_kind(self.token_source.kind(self.token_pos + offset))
+            .expect("current token kind does not match defined types")
+    }
+    /// Get the `nth` lookahead token type, offset from the parsers current position.
+    pub fn nth_kind(&self, offset: usize) -> rowan::SyntaxKind {
         self.token_source.kind(self.token_pos + offset)
     }
 

@@ -28,7 +28,7 @@ impl<'t> TextTokenSource<'t> {
 impl<'t> TokenSource for TextTokenSource<'t> {
     fn kind(&self, idx: usize) -> SyntaxKind {
         if idx >= self.tokens.len() {
-            return TokenKind::Eof.into_syntax_kind();
+            return TokenKind::Eof.into_kind();
         }
 
         self.tokens[idx].kind()

@@ -23,7 +23,7 @@ pub trait NameOwner: AstNode {
         self.syntax()
             .children_with_tokens()
             .find_map(|child| match child {
-                SyntaxElement::Token(tok) if child.kind() == TokenKind::Name.into_syntax_kind() => {
+                SyntaxElement::Token(tok) if child.kind() == TokenKind::Name.into_kind() => {
                     Some(tok.text())
                 }
                 _ => None,

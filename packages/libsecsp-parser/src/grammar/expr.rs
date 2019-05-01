@@ -29,11 +29,10 @@ impl BinaryOperator {
         }
     }
 
-    pub fn from(kind: SyntaxKind) -> Option<Self> {
+    pub fn from(tok: TokenKind) -> Option<Self> {
         use self::BinaryOperator::*;
         use self::TokenKind::*;
 
-        let tok = TokenKind::from_syntax_kind(kind)?;
         let op = match tok {
             Caret => BitwiseXor,
             Pipe => BitwiseOr,
@@ -75,14 +74,14 @@ fn expression_lhs(p: &mut Parser) -> Option<CompletedMarker> {
         return Some(atom::literal_expr(p));
     }
 
-    match TokenKind::from_syntax_kind(p.current()) {
-        Some(TokenKind::Exclamation) | Some(TokenKind::Tilde) => {
+    match p.current() {
+        TokenKind::Exclamation | TokenKind::Tilde => {
             let m = p.mark();
             p.bump();
             expression_prec(p, 255, ExprRestriction::None);
             Some(m.complete(p, NodeKind::PrefixExpr))
         }
-        Some(TokenKind::OpenParenthesis) => Some(atom::list_or_paren_expr(p)),
+        TokenKind::OpenParenthesis => Some(atom::list_or_paren_expr(p)),
         _ => {
             error_recovery::recover_from_expr(p);
             None
@@ -96,14 +95,14 @@ fn expression_prec(p: &mut Parser, precedence: u8, restriction: ExprRestriction)
         None => return false,
     };
 
-    match TokenKind::from_syntax_kind(p.current()) {
-        Some(TokenKind::Colon) if restriction.allows_context() => {
+    match p.current() {
+        TokenKind::Colon if restriction.allows_context() => {
             return atom::context_expr(p, lhs);
         }
-        Some(TokenKind::DotDot) => {
+        TokenKind::DotDot => {
             return atom::range_expr(p, lhs, NodeKind::CategoryRangeExpr);
         }
-        Some(TokenKind::Hyphen) if restriction.allows_range() => {
+        TokenKind::Hyphen if restriction.allows_range() => {
             return atom::range_expr(p, lhs, NodeKind::LevelRangeExpr);
         }
         _ => {}
