@@ -13,6 +13,7 @@ use crate::SourceFile;
 
 mod expr;
 mod macros;
+mod stmt;
 
 #[derive(Debug)]
 struct Assertion {
