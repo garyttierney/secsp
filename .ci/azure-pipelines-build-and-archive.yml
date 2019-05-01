@@ -22,6 +22,9 @@ steps:
       cargo install cargo2junit
     displayName: Install cargo2junit
   - script: |
+      cargo install grcov
+    displayName: Install grcov
+  - script: |
       cargo build
     displayName: build
   - script: |
@@ -48,6 +51,16 @@ steps:
       testRunTitle: $(System.JobDisplayName)
       buildPlatform: $(System.JobDisplayName)
     condition: succeededOrFailed()
+  - script: |
+      export CARGO_INCREMENTAL=0
+      export RUSTFLAGS="-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Zno-landing-pads"
+      cargo +nightly build --verbose $CARGO_OPTIONS
+      cargo +nightly test --verbose $CARGO_OPTIONS
+      zip -0 ccov.zip `find . \( -name "secsp*.gc*" \) -print`;
+      ./grcov ccov.zip -s . -t lcov --llvm --branch --ignore-not-existing --ignore-dir "/*" -o lcov.info;
+      bash <(curl -s https://codecov.io/bash) -f lcov.info -t "${CODECOV_TOKEN}";
+    displayName: Publish Code Coverage
+    condition: ne(variables['Agent.OS'],'Windows_NT')
   - script: |
       cargo bench -- --save-baseline benchmark-baseline
     condition: succeeded()
