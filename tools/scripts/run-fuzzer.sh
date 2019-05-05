@@ -12,6 +12,7 @@ fi
 
 fuzz() {
     mkdir -p "$OUTPUT_PATH"
+    cargo +nightly clean
     cargo +nightly afl build --manifest-path="$FUZZ_PKG_PATH/Cargo.toml"
     cargo +nightly afl fuzz -i "$EXAMPLES_PATH" -o "$OUTPUT_PATH" \
         "$FUZZ_PKG_PATH/target/debug/secsp-fuzzer" > /dev/null &
