@@ -13,7 +13,6 @@ steps:
       curl https://sh.rustup.rs -sSf | sh -s -- -y --default-host $TARGET --default-toolchain $CHANNEL
       export PATH=$PATH:~/.cargo/bin
       echo "##vso[task.setvariable variable=PATH;]$PATH"
-      rustup toolchain install nightly
       rustc -V
       cargo -V
     condition: and(succeeded(), ne(variables['Agent.OS'],'Windows_NT'))
@@ -22,18 +21,17 @@ steps:
       cargo install cargo2junit
     displayName: Install stable tooling
   - script: |
+      rustup toolchain install nightly
       cargo +nightly install grcov afl --force
     displayName: Install nightly tooling
+    condition: ne(variables['Agent.OS'],'Windows_NT')
   - script: |
       ./tools/scripts/run-tests-with-coverage.sh
     continueOnError: true
+    env:
+      CODECOV_TOKEN: $(CODECOV_TOKEN)
     displayName: "Run tests with coverage"
     condition: ne(variables['Agent.OS'],'Windows_NT')
-  - task: PublishCodeCoverageResults@1
-    inputs:
-      codeCoverageTool: 'Cobertura'
-      summaryFileLocation: 'coverage.xml'
-    displayName: "Publish test coverage"
   - script: |
       cargo build
       cargo test --all -- -Z unstable-options --format json > test_results.json
@@ -48,10 +46,10 @@ steps:
     displayName: Convert Cargo test results to junit XML [Linux & OSX]
   - task: PublishTestResults@2
     inputs:
-     testResultsFormat: 'JUnit'
-     testResultsFiles: 'test_results_lkg.xml'
-     testRunTitle: $(System.JobDisplayName)
-     buildPlatform: $(System.JobDisplayName)
+      testResultsFormat: 'JUnit'
+      testResultsFiles: 'test_results_lkg.xml'
+      testRunTitle: $(System.JobDisplayName)
+      buildPlatform: $(System.JobDisplayName)
     condition: succeededOrFailed()
     displayName: "Publish test results"
   - script: |
