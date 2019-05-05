@@ -1,14 +1,14 @@
 steps:
   - powershell: Invoke-WebRequest -Uri https://win.rustup.rs/ -OutFile rustup-init.exe
     condition: and(succeeded(), eq(variables['Agent.OS'],'Windows_NT'))
-    displayName: Install rustup [Windows]
+    displayName: "Install rustup [Windows]"
   - script: |
       rustup-init.exe -y --default-host %TARGET% --default-toolchain %CHANNEL%
       set PATH=%PATH%;%USERPROFILE%\.cargo\bin
       echo "##vso[task.setvariable variable=PATH;]%PATH%"
       rustup toolchain install nightly
     condition: and(succeeded(), eq(variables['Agent.OS'],'Windows_NT'))
-    displayName: Install toolchain [Windows]
+    displayName: "Install toolchain [Windows]"
   - script: |
       curl https://sh.rustup.rs -sSf | sh -s -- -y --default-host $TARGET --default-toolchain $CHANNEL
       export PATH=$PATH:~/.cargo/bin
@@ -16,26 +16,26 @@ steps:
       rustc -V
       cargo -V
     condition: and(succeeded(), ne(variables['Agent.OS'],'Windows_NT'))
-    displayName: Install rustup and toolchain [Linux & OSX]
+    displayName: "Install rustup and toolchain [Linux & OSX]"
   - script: |
       cargo install cargo2junit
-    displayName: Install stable tooling
+    displayName: "Install stable tooling"
   - script: |
       rustup toolchain install nightly
       cargo +nightly install grcov afl --force
-    displayName: Install nightly tooling
+    displayName: "Install nightly tooling [Linux & OSX]"
     condition: ne(variables['Agent.OS'],'Windows_NT')
   - script: |
       ./tools/scripts/run-tests-with-coverage.sh
     continueOnError: true
     env:
       CODECOV_TOKEN: $(CODECOV_TOKEN)
-    displayName: "Run tests with coverage"
+    displayName: "Build and run tests with coverage [Linux & OSX]"
     condition: ne(variables['Agent.OS'],'Windows_NT')
   - script: |
       cargo build
       cargo test --all -- -Z unstable-options --format json > test_results.json
-    displayName: Build and test
+    displayName: "Build and test"
     condition: |
       or(
         and(failed(), ne(variables['Agent.OS'],'Windows_NT')),
@@ -44,11 +44,11 @@ steps:
   - script: |
       type test_results.json | cargo2junit > test_results_lkg.xml
     condition: and(succeededOrFailed(), eq(variables['Agent.OS'],'Windows_NT'))
-    displayName: Convert Cargo test results to junit XML [Windows]
+    displayName: "Convert Cargo test results to junit XML [Windows]"
   - script: |
       cat test_results.json | cargo2junit > test_results_lkg.xml
     condition: and(succeededOrFailed(), ne(variables['Agent.OS'],'Windows_NT'))
-    displayName: Convert Cargo test results to junit XML [Linux & OSX]
+    displayName: "Convert Cargo test results to junit XML [Linux & OSX]"
   - task: PublishTestResults@2
     inputs:
       testResultsFormat: 'JUnit'
@@ -61,7 +61,7 @@ steps:
       cargo bench -- --save-baseline benchmark-baseline
     condition: succeeded()
     continueOnError: true
-    displayName: "Run benchmarks"
+    displayName: "Run benchmarks [Linux & OS X]"
   - script: |
       ./tools/scripts/run-fuzzer.sh
     env:
@@ -90,3 +90,4 @@ steps:
     inputs:
       pathtoPublish: $(Build.ArtifactStagingDirectory)
       artifactName: 'secsp-debug-binaries-$(HOST_IMAGE)'
+    displayName: "Publish Debug binaries"
