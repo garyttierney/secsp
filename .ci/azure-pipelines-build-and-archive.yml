@@ -24,13 +24,11 @@ steps:
   - script: |
       cargo +nightly install grcov afl --force
     displayName: Install nightly tooling
-  - task: Bash@3
-    inputs:
-      filePath: "./tools/scripts/run-tests-with-coverage.sh"
-      failOnStderr: true
-    env:
-      FUZZER_DURATION: "60s"
+  - script: |
+      ./tools/scripts/run-tests-with-coverage.sh
+    continueOnError: true
     displayName: "Run tests with coverage"
+    condition: ne(variables['Agent.OS'],'Windows_NT')
   - task: PublishCodeCoverageResults@1
     inputs:
       codeCoverageTool: 'Cobertura'
@@ -61,13 +59,12 @@ steps:
     condition: succeeded()
     continueOnError: true
     displayName: "Run benchmarks"
-  - task: Bash@3
-    inputs:
-      filePath: "./tools/scripts/run-fuzzer.sh"
-      failOnStderr: true
+  - script: |
+      ./tools/scripts/run-fuzzer.sh
     env:
       FUZZER_DURATION: "60s"
     displayName: "Run syntax fuzzer"
+    condition: ne(variables['Agent.OS'],'Windows_NT')
   - task: CopyFiles@2
     displayName: 'Copy Debug binaries [Windows]'
     inputs:
