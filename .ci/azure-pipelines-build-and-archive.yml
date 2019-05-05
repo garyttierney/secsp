@@ -43,6 +43,12 @@ steps:
       cat test_results.json | cargo2junit > test_results_lkg.xml
     condition: and(succeededOrFailed(), ne(variables['Agent.OS'],'Windows_NT'))
     displayName: Convert Cargo test results to junit XML [Linux & OSX]
+  - task: Bash@3
+    inputs:
+      filePath: './packages/secsp-fuzzer/tools/run-fuzzer.sh'
+      failOnStderr: true
+    env:
+      FUZZER_DURATION: "60s"
   - task: PublishTestResults@2
     inputs:
       testResultsFormat: 'JUnit'
