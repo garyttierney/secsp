@@ -2,8 +2,8 @@
 
 SCRIPT=$(readlink -f "$0")
 SCRIPT_PATH=$(dirname "$SCRIPT")
-FUZZ_PKG_PATH="$SCRIPT_PATH/.."
-ROOT_PATH="$FUZZ_PKG_PATH/../.."
+ROOT_PATH="$SCRIPT_PATH/../.."
+FUZZ_PKG_PATH="$ROOT_PATH/packages/secsp-fuzzer"
 EXAMPLES_PATH="$ROOT_PATH/documentation/examples"
 OUTPUT_PATH="$ROOT_PATH/fuzzer-output"
 

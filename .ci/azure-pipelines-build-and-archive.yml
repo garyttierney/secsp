@@ -14,27 +14,20 @@ steps:
       export PATH=$PATH:~/.cargo/bin
       echo "##vso[task.setvariable variable=PATH;]$PATH"
       rustup toolchain install nightly
+      rustc -V
+      cargo -V
     condition: and(succeeded(), ne(variables['Agent.OS'],'Windows_NT'))
     displayName: Install rustup and toolchain [Linux & OSX]
   - script: |
-      rustc -V
-      cargo -V
-    displayName: Check rustc and cargo versions
+      cargo install cargo2junit
+    displayName: Install stable toolin
   - script: |
-      cargo install cargo2junit grcov
-    displayName: Install cargo2junit and grcov
+      cargo +nightly install grcov afl --force
+    displayName: Install nightly tooling
   - script: |
       cargo build
-    displayName: build
-  - script: |
       cargo test --all -- -Z unstable-options --format json > test_results.json
-      type test_results.json
-    condition: and(succeeded(), eq(variables['Agent.OS'],'Windows_NT'))
-    displayName: Cargo test [Windows]
-  - script: |
-      cargo test --all -- -Z unstable-options --format json | tee test_results.json
-    condition: and(succeeded(), ne(variables['Agent.OS'],'Windows_NT'))
-    displayName: Cargo test [Linux & OSX]
+    displayName: Build and test
   - script: |
       type test_results.json | cargo2junit > test_results_lkg.xml
     condition: and(succeededOrFailed(), eq(variables['Agent.OS'],'Windows_NT'))
@@ -45,7 +38,13 @@ steps:
     displayName: Convert Cargo test results to junit XML [Linux & OSX]
   - task: Bash@3
     inputs:
-      filePath: './packages/secsp-fuzzer/tools/run-fuzzer.sh'
+      filePath: "./tools/scripts/run-fuzzer.sh"
+      failOnStderr: true
+    env:
+      FUZZER_DURATION: "60s"
+  - task: Bash@3
+    inputs:
+      filePath: "./tools/scripts/run-test-with-coverage.sh"
       failOnStderr: true
     env:
       FUZZER_DURATION: "60s"
@@ -56,18 +55,6 @@ steps:
       testRunTitle: $(System.JobDisplayName)
       buildPlatform: $(System.JobDisplayName)
     condition: succeededOrFailed()
-  - script: |
-      export CARGO_INCREMENTAL=0
-      export RUSTFLAGS="-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Zno-landing-pads"
-      cargo +nightly build --verbose $CARGO_OPTIONS
-      cargo +nightly test --verbose $CARGO_OPTIONS
-      zip -0 ccov.zip `find . \( -name "secsp*.gc*" \) -print`;
-      grcov ccov.zip -s . -t lcov --llvm --branch --ignore-not-existing --ignore-dir "/*" -o lcov.info;
-      bash <(curl -s https://codecov.io/bash) -f lcov.info -t "${CODECOV_TOKEN}";
-    env:
-      CODECOV_TOKEN: $(CODECOV_TOKEN)
-    displayName: Publish Code Coverage
-    condition: ne(variables['Agent.OS'],'Windows_NT')
   - script: |
       cargo bench -- --save-baseline benchmark-baseline
     condition: succeeded()
