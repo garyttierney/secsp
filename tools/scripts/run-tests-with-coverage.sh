@@ -10,7 +10,7 @@ export RUSTFLAGS="-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-c
 set -x
 cargo +nightly clean
 cargo +nightly build --verbose
-cargo +nightly test --verbose --format json > test_results.json
+cargo +nightly test --verbose -- -Z unstable-options --format json > test_results.json
 
 
 zip -0 ccov.zip `find . \( -name "secsp*.gc*" \) -print`;
