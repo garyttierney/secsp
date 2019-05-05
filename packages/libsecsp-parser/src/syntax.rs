@@ -149,7 +149,7 @@ pub enum NodeKind {
     Block = NODE_KIND_START,
 
     /// Syntax-tree marker for a named container.
-    Container,
+    ContainerDef,
 
     /// Syntax-tree marker for a list of parent-containers in a container declaration.
     ExtendsList,
@@ -173,7 +173,7 @@ pub enum NodeKind {
     MacroParamListItem,
 
     /// Syntax-tree marker for a variable declaration.
-    Variable,
+    VariableDef,
 
     // region NodeKind::Expr(...)
     BinaryExpr,
@@ -187,6 +187,9 @@ pub enum NodeKind {
     ContextExpr,
 
     LiteralExpr,
+
+    /// Syntax-tree marker for a type enforcement rule.
+    TeRule,
 
     /// Syntax-tree marker for a sub-list expression that takes a subset of children from a named list.
     ListExpr,

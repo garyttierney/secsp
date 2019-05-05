@@ -39,14 +39,14 @@ pub(crate) fn parse_item(p: &mut Parser) -> bool {
         | Some(KeywordKind::In) => do_parse_item(
             p,
             BlockType::BlockLike,
-            NodeKind::Container,
+            NodeKind::ContainerDef,
             parse_container,
         ),
         Some(KeywordKind::Macro) => {
             do_parse_item(p, BlockType::BlockLike, NodeKind::MacroDef, parse_macro)
         }
         Some(kw) if kw.is_var_type() && atom::is_at_path_start(p, 1) => {
-            do_parse_item(p, BlockType::NotBlockLike, NodeKind::Variable, parse_var)
+            do_parse_item(p, BlockType::NotBlockLike, NodeKind::VariableDef, parse_var)
         }
         _ => {
             m.abandon(p);

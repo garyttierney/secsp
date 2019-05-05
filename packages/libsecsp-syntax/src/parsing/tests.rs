@@ -11,8 +11,8 @@ use secsp_parser::syntax::SyntaxKindClass;
 use crate::ast::AstNode;
 use crate::SourceFile;
 
+mod def;
 mod expr;
-mod macros;
 mod stmt;
 
 #[derive(Debug)]

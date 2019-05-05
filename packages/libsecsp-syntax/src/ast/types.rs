@@ -1,10 +1,10 @@
 use secsp_parser::syntax::NodeKind;
 use secsp_syntax_derive::AstType;
 
-pub use self::{api::*, decl::*, expr::*, stmt::*};
+pub use self::{api::*, def::*, expr::*, stmt::*};
 
 mod api;
-mod decl;
+mod def;
 mod expr;
 mod stmt;
 

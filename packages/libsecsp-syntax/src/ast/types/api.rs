@@ -5,11 +5,11 @@ use rowan::SyntaxElement;
 
 use secsp_parser::syntax::{NodeKind, SyntaxKindClass, TokenKind};
 
-use crate::ast::types::{Block, Item};
+use crate::ast::types::{Block, Definition};
 use crate::ast::{AstChildren, AstNode};
 
 pub trait ItemOwner: AstNode {
-    fn items(&self) -> AstChildren<Item> {
+    fn items(&self) -> AstChildren<Definition> {
         self.child::<Block>().children()
     }
 
@@ -39,7 +39,7 @@ pub trait NameOwner: AstNode {
 mod tests {
     use rowan::TreeArc;
 
-    use crate::ast::{Container, MacroDecl, SourceFile, Variable};
+    use crate::ast::{ContainerDef, MacroDef, SourceFile, VariableDef};
 
     use super::*;
 
@@ -60,16 +60,21 @@ mod tests {
 
     #[test]
     fn variable_as_name_owner() {
-        test_name_owner::<Variable>("type t;", "t");
+        test_name_owner::<VariableDef>("type t;", "t");
+    }
+
+    #[test]
+    fn variable_with_initializer_as_name_owner() {
+        test_name_owner::<VariableDef>("type_attribute t = v;", "t");
     }
 
     #[test]
     fn macro_as_name_owner() {
-        test_name_owner::<MacroDecl>("macro abc() {}", "abc");
+        test_name_owner::<MacroDef>("macro abc() {}", "abc");
     }
 
     #[test]
     fn block_as_name_owner() {
-        test_name_owner::<Container>("block abc {}", "abc");
+        test_name_owner::<ContainerDef>("block abc {}", "abc");
     }
 }

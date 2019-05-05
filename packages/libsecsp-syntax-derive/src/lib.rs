@@ -4,8 +4,7 @@ extern crate proc_macro;
 use proc_macro::TokenStream;
 
 use quote::quote;
-use quote::ToTokens;
-use syn::{parse_macro_input, DeriveInput, Path};
+use syn::{parse_macro_input, Attribute, DeriveInput, Ident, Path};
 use syn::{Meta, NestedMeta};
 
 //
@@ -14,7 +13,6 @@ use syn::{Meta, NestedMeta};
 
 #[proc_macro_derive(AstType, attributes(kind))]
 pub fn ast_type(input: TokenStream) -> TokenStream {
-    // Parse the input tokens into a syntax tree
     let input: DeriveInput = parse_macro_input!(input as DeriveInput);
     let name = input.ident;
     let kinds = input
