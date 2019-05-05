@@ -1,7 +1,6 @@
 #!/bin/sh
 
-SCRIPT=$(readlink -f "$0")
-SCRIPT_PATH=$(dirname "$SCRIPT")
+SCRIPT_PATH="$(cd "$(dirname "$0")" && pwd)"
 ROOT_PATH="$SCRIPT_PATH/../.."
 FUZZ_PKG_PATH="$ROOT_PATH/packages/secsp-fuzzer"
 EXAMPLES_PATH="$ROOT_PATH/documentation/examples"

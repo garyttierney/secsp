@@ -20,10 +20,22 @@ steps:
     displayName: Install rustup and toolchain [Linux & OSX]
   - script: |
       cargo install cargo2junit
-    displayName: Install stable toolin
+    displayName: Install stable tooling
   - script: |
       cargo +nightly install grcov afl --force
     displayName: Install nightly tooling
+  - task: Bash@3
+    inputs:
+      filePath: "./tools/scripts/run-tests-with-coverage.sh"
+      failOnStderr: true
+    env:
+      FUZZER_DURATION: "60s"
+    displayName: "Run tests with coverage"
+  - task: PublishCodeCoverageResults@1
+    inputs:
+      codeCoverageTool: 'Cobertura'
+      summaryFileLocation: 'coverage.xml'
+    displayName: "Publish test coverage"
   - script: |
       cargo build
       cargo test --all -- -Z unstable-options --format json > test_results.json
@@ -36,30 +48,26 @@ steps:
       cat test_results.json | cargo2junit > test_results_lkg.xml
     condition: and(succeededOrFailed(), ne(variables['Agent.OS'],'Windows_NT'))
     displayName: Convert Cargo test results to junit XML [Linux & OSX]
+  - task: PublishTestResults@2
+    inputs:
+     testResultsFormat: 'JUnit'
+     testResultsFiles: 'test_results_lkg.xml'
+     testRunTitle: $(System.JobDisplayName)
+     buildPlatform: $(System.JobDisplayName)
+    condition: succeededOrFailed()
+    displayName: "Publish test results"
+  - script: |
+      cargo bench -- --save-baseline benchmark-baseline
+    condition: succeeded()
+    continueOnError: true
+    displayName: "Run benchmarks"
   - task: Bash@3
     inputs:
       filePath: "./tools/scripts/run-fuzzer.sh"
       failOnStderr: true
     env:
       FUZZER_DURATION: "60s"
-  - task: Bash@3
-    inputs:
-      filePath: "./tools/scripts/run-test-with-coverage.sh"
-      failOnStderr: true
-    env:
-      FUZZER_DURATION: "60s"
-  - task: PublishTestResults@2
-    inputs:
-      testResultsFormat: 'JUnit'
-      testResultsFiles: 'test_results_lkg.xml'
-      testRunTitle: $(System.JobDisplayName)
-      buildPlatform: $(System.JobDisplayName)
-    condition: succeededOrFailed()
-  - script: |
-      cargo bench -- --save-baseline benchmark-baseline
-    condition: succeeded()
-    continueOnError: true
-    displayName: 'Cargo bench'
+    displayName: "Run syntax fuzzer"
   - task: CopyFiles@2
     displayName: 'Copy Debug binaries [Windows]'
     inputs:

@@ -1,7 +1,6 @@
 #!/bin/sh
 
-SCRIPT=$(readlink -f "$0")
-SCRIPT_PATH=$(dirname "$SCRIPT")
+SCRIPT_PATH="$(cd "$(dirname "$0")" && pwd)"
 ROOT_PATH="$SCRIPT_PATH/../.."
 CONVERTER_PATH="$ROOT_PATH/tools/coverage-converter/lcov_cobertura.py"
 
