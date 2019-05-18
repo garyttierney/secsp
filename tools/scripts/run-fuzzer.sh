@@ -12,6 +12,7 @@ fi
 
 fuzz() {
     mkdir -p "$OUTPUT_PATH"
+    export RUSTFLAGS='-C codegen-units=1'
     cargo +nightly clean
     cargo +nightly afl build --manifest-path="$FUZZ_PKG_PATH/Cargo.toml"
     cargo +nightly afl fuzz -i "$EXAMPLES_PATH" -o "$OUTPUT_PATH" \

@@ -25,3 +25,4 @@ bench = false
 
 [lib]
 path = "src/lib.rs"
+bench = false
