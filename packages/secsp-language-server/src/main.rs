@@ -1,7 +1,7 @@
 extern crate crossbeam_channel;
 extern crate env_logger;
 extern crate failure;
-extern crate gen_lsp_server;
+extern crate lsp_server;
 extern crate log;
 extern crate lsp_types;
 extern crate secsp_analysis;
@@ -9,7 +9,7 @@ extern crate secsp_language_server;
 
 use crossbeam_channel::{Receiver, Sender};
 use env_logger::Target;
-use gen_lsp_server::{stdio_transport, RawMessage};
+use lsp_server::{Message, Connection};
 use lsp_types::{InitializeParams, ServerCapabilities};
 
 use secsp_language_server::server::Server;
@@ -18,19 +18,21 @@ pub mod query;
 
 fn main() -> Result<(), failure::Error> {
     env_logger::builder().target(Target::Stderr).init();
-    let (receiver, sender, io_threads) = stdio_transport();
-    let mut capabilities = ServerCapabilities::default();
-    capabilities.hover_provider = Some(true);
-    gen_lsp_server::run_server(capabilities, receiver, sender, main_loop)?;
+    let (connection, io_threads) = Connection::stdio();
+
+    // Run the server and wait for the two threads to end (typically by trigger LSP Exit event).
+    let server_capabilities = serde_json::to_value(&ServerCapabilities::default()).unwrap();
+    let initialization_params = connection.initialize(server_capabilities)?;
+
+    main_loop(serde_json::from_value(initialization_params).unwrap(), &connection)?;
     io_threads.join()?;
     Ok(())
 }
 
 fn main_loop(
     params: InitializeParams,
-    receiver: &Receiver<RawMessage>,
-    sender: &Sender<RawMessage>,
+    connection: &Connection
 ) -> Result<(), failure::Error> {
     let server = Server::new(params);
-    server.run(&receiver, &sender)
+    server.run(connection)
 }
