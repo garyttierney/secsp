@@ -17,7 +17,8 @@ secsp-parser = {path="../libsecsp-parser"}
 secsp-syntax-derive = {path="../libsecsp-syntax-derive"}
 
 [dev-dependencies]
-criterion = "0.2"
+criterion = "0.3"
+criterion_bencher_compat = "0.3"
 
 [[bench]]
 name = "parse_file"
