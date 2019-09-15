@@ -1,8 +1,8 @@
 use std::fmt::Write;
 
-use secsp_syntax::ast::WalkEvent;
 use secsp_syntax::ast::AstNode;
 use secsp_syntax::ast::SourceFile;
+use secsp_syntax::ast::WalkEvent;
 
 pub fn ast_to_string(source: &SourceFile) -> String {
     let mut indent = 0;

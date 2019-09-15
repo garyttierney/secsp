@@ -13,22 +13,19 @@ mod parsing;
 mod token;
 
 pub use ast::SourceFile;
-use rowan::{GreenNode, SyntaxNode, TreeArc};
+pub use parsing::Parse;
+
+use ast::AstNode;
+use rowan::{GreenNode, SyntaxNode};
 use secsp_parser::ParseError;
 
 impl SourceFile {
-    fn new(green: GreenNode, errors: Vec<ParseError>) -> TreeArc<SourceFile> {
-        let root = SyntaxNode::new(green, Some(Box::new(errors)));
-        TreeArc::cast(root)
-    }
-
-    pub fn parse<T: AsRef<str>>(text: T) -> TreeArc<SourceFile> {
-        let (green, errors) = parsing::parse_text(text);
-        SourceFile::new(green, errors)
+    pub fn parse<T: AsRef<str>>(text: T) -> Parse<SourceFile> {
+        parsing::parse_text(text)
     }
 }
 
 #[test]
 fn parse_source_file() {
-    let _ = SourceFile::parse("block abc { type t; }");
+    let sf = SourceFile::parse("block abc { type t; }");
 }

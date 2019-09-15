@@ -1,4 +1,4 @@
-use secsp_parser::syntax::NodeKind;
+use secsp_parser::syntax::{NodeKind, SyntaxNode};
 use secsp_syntax_derive::AstType;
 
 #[derive(AstType)]
@@ -15,4 +15,4 @@ use secsp_syntax_derive::AstType;
     PrefixExpr
 )]
 #[repr(transparent)]
-pub struct Expr(rowan::SyntaxNode);
+pub struct Expr(SyntaxNode);

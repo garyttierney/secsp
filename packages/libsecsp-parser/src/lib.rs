@@ -1,9 +1,8 @@
 extern crate rowan;
 
-use rowan::SyntaxKind;
-
 use crate::parser::event;
 use crate::parser::Parser;
+use crate::syntax::SyntaxKind;
 
 mod grammar;
 mod parser;

@@ -1,38 +1,36 @@
 use std::marker::PhantomData;
 
-pub use rowan::{SyntaxNode, SyntaxNodeChildren, TreeArc, WalkEvent};
-
 pub use self::types::*;
+pub use rowan::WalkEvent;
+use secsp_parser::syntax::{SyntaxNode, SyntaxNodeChildren};
 
 mod types;
 pub mod visitor;
 
-pub trait AstNode:
-    rowan::TransparentNewType<Repr = SyntaxNode> + ToOwned<Owned = TreeArc<Self>>
-{
-    fn cast(syntax: &SyntaxNode) -> Option<&Self>
+pub trait AstNode {
+    fn cast(syntax: SyntaxNode) -> Option<Self>
     where
         Self: Sized;
 
     fn syntax(&self) -> &SyntaxNode;
 
-    fn child<C: AstNode>(&self) -> &C {
+    fn child<C: AstNode>(&self) -> C {
         self.children().next().unwrap()
     }
 
     fn children<C: AstNode>(&self) -> AstChildren<C> {
-        AstChildren::new(self.syntax())
+        AstChildren::new(self.syntax().clone())
     }
 }
 
 #[derive(Debug)]
-pub struct AstChildren<'a, N> {
-    inner: SyntaxNodeChildren<'a>,
+pub struct AstChildren<N> {
+    inner: SyntaxNodeChildren,
     ph: PhantomData<N>,
 }
 
-impl<'a, N> AstChildren<'a, N> {
-    fn new(parent: &'a SyntaxNode) -> Self {
+impl<N> AstChildren<N> {
+    fn new(parent: SyntaxNode) -> Self {
         AstChildren {
             inner: parent.children(),
             ph: PhantomData,
@@ -40,18 +38,14 @@ impl<'a, N> AstChildren<'a, N> {
     }
 }
 
-impl<'a, N: AstNode + 'a> Iterator for AstChildren<'a, N> {
-    type Item = &'a N;
-    fn next(&mut self) -> Option<&'a N> {
-        loop {
-            if let Some(n) = N::cast(self.inner.next()?) {
-                return Some(n);
-            }
-        }
+impl<N: AstNode> Iterator for AstChildren<N> {
+    type Item = N;
+    fn next(&mut self) -> Option<N> {
+        self.inner.by_ref().find_map(N::cast)
     }
 }
 
-pub fn descendants(tree: &SyntaxNode) -> impl Iterator<Item = &SyntaxNode> {
+pub fn descendants(tree: &SyntaxNode) -> impl Iterator<Item = SyntaxNode> {
     tree.preorder().filter_map(|event| match event {
         WalkEvent::Enter(node) => Some(node),
         WalkEvent::Leave(_) => None,

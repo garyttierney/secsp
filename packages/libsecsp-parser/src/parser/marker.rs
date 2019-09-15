@@ -1,9 +1,8 @@
 use drop_bomb::DropBomb;
-use rowan::SyntaxKind;
 
 use crate::parser::event::Event;
 use crate::parser::Parser;
-use crate::syntax::SyntaxKindClass;
+use crate::syntax::SyntaxKind;
 
 pub(crate) struct Marker {
     pos: usize,
@@ -33,25 +32,21 @@ impl Marker {
         self.bomb.defuse()
     }
 
-    pub fn complete<K>(mut self, parser: &mut Parser, kind: K) -> CompletedMarker
-    where
-        K: SyntaxKindClass,
-    {
-        let rowan_kind = kind.into_kind();
+    pub fn complete(mut self, parser: &mut Parser, kind: SyntaxKind) -> CompletedMarker {
         match parser.events[self.pos] {
-            ref mut evt @ Event::BeginMarker => *evt = Event::Begin(rowan_kind, None),
+            ref mut evt @ Event::BeginMarker => *evt = Event::Begin(kind, None),
             _ => unreachable!(),
         };
 
         parser.events.push(Event::End);
         self.bomb.defuse();
 
-        CompletedMarker::new(rowan_kind, self.pos)
+        CompletedMarker::new(kind, self.pos)
     }
 }
 
 pub(crate) struct CompletedMarker {
-    kind: rowan::SyntaxKind,
+    kind: SyntaxKind,
     pos: usize,
 }
 
@@ -73,7 +68,7 @@ impl CompletedMarker {
         m
     }
 
-    pub fn kind(&self) -> rowan::SyntaxKind {
+    pub fn kind(&self) -> SyntaxKind {
         self.kind
     }
 }

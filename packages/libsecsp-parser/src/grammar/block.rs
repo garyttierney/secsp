@@ -1,8 +1,7 @@
 use crate::grammar::error_recovery;
 use crate::grammar::items;
 use crate::parser::Parser;
-use crate::syntax::NodeKind;
-use crate::syntax::SyntaxKindClass;
+use crate::syntax::SyntaxKind;
 use crate::syntax::TokenKind;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
@@ -23,8 +22,8 @@ pub(crate) fn parse_block(p: &mut Parser, include_braces: bool) {
 
     while !p.at(TokenKind::Eof) {
         match p.current() {
-            TokenKind::Semicolon => p.bump(),
-            TokenKind::CloseBrace if include_braces => {
+            SyntaxKind::TOK_SEMICOLON => p.bump(),
+            SyntaxKind::TOK_CLOSE_BRACE if include_braces => {
                 break;
             }
             _ => {
@@ -43,5 +42,5 @@ pub(crate) fn parse_block(p: &mut Parser, include_braces: bool) {
         p.error("expected closing brace");
     }
 
-    m.complete(p, NodeKind::Block);
+    m.complete(p, SyntaxKind::NODE_BLOCK);
 }

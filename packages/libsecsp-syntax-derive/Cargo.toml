@@ -9,6 +9,7 @@ autobenches = false
 syn = "0.15"
 quote = "0.6"
 proc-macro2="0.4"
+Inflector = "0.11"
 
 [lib]
 proc-macro = true

@@ -1,5 +1,5 @@
 use crate::parser::Parser;
-use crate::syntax::NodeKind;
+use crate::syntax::SyntaxKind;
 
 pub(crate) mod atom;
 pub(crate) mod block;
@@ -14,5 +14,5 @@ pub(crate) mod var;
 pub(super) fn root(p: &mut Parser) {
     let m = p.mark();
     self::block::parse_block(p, false);
-    m.complete(p, NodeKind::SourceFile);
+    m.complete(p, SyntaxKind::NODE_SOURCE_FILE);
 }

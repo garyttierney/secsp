@@ -3,7 +3,7 @@ use std::str::FromStr;
 use crate::grammar::block;
 use crate::parser::Parser;
 use crate::syntax::KeywordKind;
-use crate::syntax::NodeKind;
+use crate::syntax::SyntaxKind;
 use crate::syntax::TokenKind;
 
 pub(crate) fn parse_macro(p: &mut Parser) {
@@ -29,7 +29,7 @@ fn parse_macro_param_list(p: &mut Parser) {
     }
 
     p.expect(TokenKind::CloseParenthesis);
-    m.complete(p, NodeKind::MacroParamList);
+    m.complete(p, SyntaxKind::NODE_MACRO_PARAM_LIST);
 }
 
 fn parse_macro_param_list_item(p: &mut Parser) -> bool {
@@ -48,7 +48,7 @@ fn parse_macro_param_list_item(p: &mut Parser) -> bool {
     }
 
     p.expect(TokenKind::Name);
-    m.complete(p, NodeKind::MacroParamListItem);
+    m.complete(p, SyntaxKind::NODE_MACRO_PARAM_LIST_ITEM);
 
     p.eat(TokenKind::Comma)
 }

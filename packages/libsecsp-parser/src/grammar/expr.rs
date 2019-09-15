@@ -1,11 +1,9 @@
-use rowan::SyntaxKind;
-
 use crate::grammar::atom;
 use crate::grammar::error_recovery;
 use crate::parser::CompletedMarker;
+use crate::parser::Marker;
 use crate::parser::Parser;
-use crate::syntax::NodeKind;
-use crate::syntax::SyntaxKindClass;
+use crate::syntax::SyntaxKind;
 use crate::syntax::TokenKind;
 
 pub enum BinaryOperator {
@@ -29,16 +27,16 @@ impl BinaryOperator {
         }
     }
 
-    pub fn from(tok: TokenKind) -> Option<Self> {
+    pub fn from(tok: SyntaxKind) -> Option<Self> {
         use self::BinaryOperator::*;
-        use self::TokenKind::*;
+        use self::SyntaxKind::*;
 
         let op = match tok {
-            Caret => BitwiseXor,
-            Pipe => BitwiseOr,
-            Ampersand => BitwiseAnd,
-            DoubleAmpersand => LogicalAnd,
-            DoublePipe => LogicalOr,
+            TOK_CARET => BitwiseXor,
+            TOK_PIPE => BitwiseOr,
+            TOK_AMPERSAND => BitwiseAnd,
+            TOK_DOUBLE_AMPERSAND => LogicalAnd,
+            TOK_DOUBLE_PIPE => LogicalOr,
             _ => return None,
         };
 
@@ -48,6 +46,7 @@ impl BinaryOperator {
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum ExprRestriction {
+    AccessVector,
     NoContext,
     NoRange,
     None,
@@ -67,6 +66,19 @@ pub(crate) fn expression(p: &mut Parser, restriction: ExprRestriction) -> bool {
     expression_prec(p, 1, restriction)
 }
 
+pub(crate) fn try_expression(
+    p: &mut Parser,
+    restriction: ExprRestriction,
+    msg: &'static str,
+) -> bool {
+    if !expression(p, restriction) {
+        p.error(msg);
+        false
+    } else {
+        true
+    }
+}
+
 fn expression_lhs(p: &mut Parser) -> Option<CompletedMarker> {
     if atom::is_at_path_start(p, 0) {
         return Some(atom::path_expr(p));
@@ -75,13 +87,13 @@ fn expression_lhs(p: &mut Parser) -> Option<CompletedMarker> {
     }
 
     match p.current() {
-        TokenKind::Exclamation | TokenKind::Tilde => {
+        SyntaxKind::TOK_EXCLAMATION | SyntaxKind::TOK_TILDE => {
             let m = p.mark();
             p.bump();
             expression_prec(p, 255, ExprRestriction::None);
-            Some(m.complete(p, NodeKind::PrefixExpr))
+            Some(m.complete(p, SyntaxKind::NODE_PREFIX_EXPR))
         }
-        TokenKind::OpenParenthesis => Some(atom::list_or_paren_expr(p)),
+        SyntaxKind::TOK_OPEN_PARENTHESIS => Some(atom::list_or_paren_expr(p)),
         _ => {
             error_recovery::recover_from_expr(p);
             None
@@ -96,14 +108,14 @@ fn expression_prec(p: &mut Parser, precedence: u8, restriction: ExprRestriction)
     };
 
     match p.current() {
-        TokenKind::Colon if restriction.allows_context() => {
+        SyntaxKind::TOK_COLON if restriction.allows_context() => {
             return atom::context_expr(p, lhs);
         }
-        TokenKind::DotDot => {
-            return atom::range_expr(p, lhs, NodeKind::CategoryRangeExpr);
+        SyntaxKind::TOK_DOT_DOT => {
+            return atom::range_expr(p, lhs, SyntaxKind::NODE_CATEGORY_RANGE_EXPR);
         }
-        TokenKind::Hyphen if restriction.allows_range() => {
-            return atom::range_expr(p, lhs, NodeKind::LevelRangeExpr);
+        SyntaxKind::TOK_HYPHEN if restriction.allows_range() => {
+            return atom::range_expr(p, lhs, SyntaxKind::NODE_LEVEL_RANGE_EXPR);
         }
         _ => {}
     };
@@ -121,7 +133,7 @@ fn expression_prec(p: &mut Parser, precedence: u8, restriction: ExprRestriction)
         p.bump();
 
         expression_prec(p, precedence + 1, ExprRestriction::None);
-        lhs = m.complete(p, NodeKind::BinaryExpr);
+        lhs = m.complete(p, SyntaxKind::NODE_BINARY_EXPR);
     }
 
     true

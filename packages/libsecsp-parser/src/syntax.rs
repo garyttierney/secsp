@@ -3,50 +3,135 @@ use std::str::FromStr;
 
 use logos::Logos;
 use num_enum::{IntoPrimitive, TryFromPrimitive};
-use rowan::SyntaxKind;
 
-const NODE_KIND_START: u16 = 1_000;
-const KW_KIND_START: u16 = 10_000;
+#[repr(u16)]
+#[allow(non_camel_case_types)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum SyntaxKind {
+    KW_ABSTRACT,
+    KW_ALLOW,
+    KW_AUDIT_ALLOW,
+    KW_BLOCK,
+    KW_CATEGORY,
+    KW_DONT_AUDIT,
+    KW_EXTENDS,
+    KW_IN,
+    KW_LEVEL_RANGE,
+    KW_MACRO,
+    KW_NEVER_ALLOW,
+    KW_OPTIONAL,
+    KW_ROLE,
+    KW_ROLE_ATTRIBUTE,
+    KW_SENSITIVITY,
+    KW_TYPE,
+    KW_TYPE_ATTRIBUTE,
+    KW_USER,
+    KW_USER_ATTRIBUTE,
+    NODE_BINARY_EXPR,
+    NODE_BLOCK,
+    NODE_CATEGORY_RANGE_EXPR,
+    NODE_CONDITIONAL_STMT,
+    NODE_CONTAINER_DEF,
+    NODE_CONTEXT_EXPR,
+    NODE_EXTENDS_LIST,
+    NODE_LEVEL_EXPR,
+    NODE_LEVEL_RANGE_EXPR,
+    NODE_LIST_EXPR,
+    NODE_LITERAL_EXPR,
+    NODE_MACRO_ARGUMENT_LIST,
+    NODE_MACRO_ARGUMENT_LIST_ITEM,
+    NODE_MACRO_CALL,
+    NODE_MACRO_DEF,
+    NODE_MACRO_PARAM_LIST,
+    NODE_MACRO_PARAM_LIST_ITEM,
+    NODE_PAREN_EXPR,
+    NODE_PARSE_ERROR,
+    NODE_PATH_EXPR,
+    NODE_PREFIX_EXPR,
+    NODE_SOURCE_FILE,
+    NODE_TE_RULE,
+    NODE_VARIABLE_DEF,
+    TOK_AMPERSAND,
+    TOK_CARET,
+    TOK_CLOSE_BRACE,
+    TOK_CLOSE_PARENTHESIS,
+    TOK_COLON,
+    TOK_COMMA,
+    TOK_DOT,
+    TOK_DOT_DOT,
+    TOK_DOUBLE_AMPERSAND,
+    TOK_DOUBLE_PIPE,
+    TOK_ELSE_KW,
+    TOK_EOF,
+    TOK_EQUALS,
+    TOK_EXCLAMATION,
+    TOK_FALSE,
+    TOK_HYPHEN,
+    TOK_IF_KW,
+    TOK_ILLEGAL,
+    TOK_INTEGER,
+    TOK_LINE_COMMENT,
+    TOK_NAME,
+    TOK_OPEN_BRACE,
+    TOK_OPEN_PARENTHESIS,
+    TOK_PIPE,
+    TOK_PIPE_EQUALS,
+    TOK_SEMICOLON,
+    TOK_STRING,
+    TOK_TILDE,
+    TOK_TOMBSTONE,
+    TOK_TRUE,
+    TOK_WHITESPACE,
+}
 
-pub trait SyntaxKindClass:
-    TryFrom<u16, Error = String> + Into<u16> + std::fmt::Debug + Copy + Eq + PartialEq
-{
-    fn into_kind(self) -> SyntaxKind {
-        SyntaxKind(self.into())
-    }
-
-    fn from_kind(kind: SyntaxKind) -> Option<Self> {
-        Self::try_from(kind.0).ok()
+impl From<SyntaxKind> for rowan::cursor::SyntaxKind {
+    fn from(kind: SyntaxKind) -> Self {
+        rowan::cursor::SyntaxKind(kind as u16)
     }
 }
 
-#[derive(IntoPrimitive, TryFromPrimitive, Logos, Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum CspLang {}
+impl rowan::Language for CspLang {
+    type Kind = SyntaxKind;
+
+    fn kind_from_raw(raw: rowan::cursor::SyntaxKind) -> Self::Kind {
+        unsafe { std::mem::transmute::<u16, SyntaxKind>(raw.0) }
+    }
+
+    fn kind_to_raw(kind: Self::Kind) -> rowan::cursor::SyntaxKind {
+        kind.into()
+    }
+}
+
+pub type SyntaxNode = rowan::SyntaxNode<CspLang>;
+pub type SyntaxNodeChildren = rowan::SyntaxNodeChildren<CspLang>;
+pub type SyntaxToken = rowan::SyntaxToken<CspLang>;
+pub type SyntaxElement = rowan::NodeOrToken<SyntaxNode, SyntaxToken>;
+
+#[derive(
+    IntoPrimitive, TryFromPrimitive, Logos, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash,
+)]
 #[repr(u16)]
 pub enum TokenKind {
     /// A name identifier token, containing a reference to the original source data.
     #[regex = "[a-zA-Z_][a-zA-Z0-9_]*"]
     Name,
-
     /// A string literal token, containing a reference to the original source data.
     #[regex = "\"([^\"\\\\]|\\\\.)*\""]
     String,
-
     #[token = "if"]
     IfKw,
-
     #[token = "else"]
     ElseKw,
-
     #[token = "true"]
     True,
 
     #[token = "false"]
     False,
-
     #[regex = "0[xX][0-9a-fA-F]+"]
     #[regex = "[0-9]+"]
     Integer,
-
     /// An opening delimiter token of the given `DelimiterType`.
     #[token = "("]
     OpenParenthesis,
@@ -54,17 +139,13 @@ pub enum TokenKind {
     /// A closing delimiter token of the given `DelimiterType`.
     #[token = ")"]
     CloseParenthesis,
-
     #[token = "{"]
     OpenBrace,
-
     #[token = "}"]
     CloseBrace,
-
     /// The semicolon token. Used to terminate statements.
     #[token = ";"]
     Semicolon,
-
     /// The period token.  Used to separate fully qualified names.
     #[token = "."]
     Dot,
@@ -72,19 +153,15 @@ pub enum TokenKind {
     /// The double period token.  Used as the range operator.
     #[token = ".."]
     DotDot,
-
     /// The colon token.  Used as a security attribute delimiter.
     #[token = ":"]
     Colon,
-
     /// The hyphen token.  Used as a
     #[token = "-"]
     Hyphen,
-
     /// The comma token.  Used as a delimiter.
     #[token = ","]
     Comma,
-
     /// The equals token.  Used as an initializer and assignment token.
     #[token = "="]
     Equals,
@@ -92,19 +169,15 @@ pub enum TokenKind {
     /// The bitwise binary AND operator: `&`.
     #[token = "&"]
     Ampersand,
-
     /// The bitwise binary OR operator: `|`.
     #[token = "|"]
     Pipe,
-
     /// The bitwise binary XOR operator: `^`.
     #[token = "^"]
     Caret,
-
     /// The bitwise unary NOT operator: `~`.
     #[token = "~"]
     Tilde,
-
     /// The logical AND operator: `&&`.
     #[token = "&&"]
     DoubleAmpersand,
@@ -112,19 +185,15 @@ pub enum TokenKind {
     /// The logical OR operator: `||`.
     #[token = "||"]
     DoublePipe,
-
     /// The logical unary NOT operator: `!`.
     #[token = "!"]
     Exclamation,
-
     /// The pipe-equals operator, used for flipping on bits in bitsets.
     #[token = "|="]
     PipeEquals,
-
     /// A C-style line comment.
     #[regex = "//[^\n]*"]
     LineComment,
-
     /// Any whitespace token.
     #[regex = "\\s"]
     Whitespace,
@@ -132,123 +201,140 @@ pub enum TokenKind {
     /// An unmatched token that produced an error.
     #[error]
     Illegal,
-
     /// A token indicating the end of file has been reached.
     #[end]
     Eof,
-
     Tombstone,
 }
 
-impl SyntaxKindClass for TokenKind {}
+impl TokenKind {
+    pub fn syntax_kind(self) -> SyntaxKind {
+        use self::{SyntaxKind::*, TokenKind::*};
+
+        match self {
+            Ampersand => TOK_AMPERSAND,
+            Caret => TOK_CARET,
+            CloseBrace => TOK_CLOSE_BRACE,
+            CloseParenthesis => TOK_CLOSE_PARENTHESIS,
+            Colon => TOK_COLON,
+            Comma => TOK_COMMA,
+            Dot => TOK_DOT,
+            DotDot => TOK_DOT_DOT,
+            DoubleAmpersand => TOK_DOUBLE_AMPERSAND,
+            DoublePipe => TOK_DOUBLE_PIPE,
+            ElseKw => TOK_ELSE_KW,
+            Eof => TOK_EOF,
+            Equals => TOK_EQUALS,
+            Exclamation => TOK_EXCLAMATION,
+            False => TOK_FALSE,
+            Hyphen => TOK_HYPHEN,
+            IfKw => TOK_IF_KW,
+            Illegal => TOK_ILLEGAL,
+            Integer => TOK_INTEGER,
+            LineComment => TOK_LINE_COMMENT,
+            Name => TOK_NAME,
+            OpenBrace => TOK_OPEN_BRACE,
+            OpenParenthesis => TOK_OPEN_PARENTHESIS,
+            Pipe => TOK_PIPE,
+            PipeEquals => TOK_PIPE_EQUALS,
+            Semicolon => TOK_SEMICOLON,
+            String => TOK_STRING,
+            Tilde => TOK_TILDE,
+            Tombstone => TOK_TOMBSTONE,
+            True => TOK_TRUE,
+            Whitespace => TOK_WHITESPACE,
+        }
+    }
+}
 
 #[repr(u16)]
-#[derive(IntoPrimitive, TryFromPrimitive, Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(
+    IntoPrimitive, TryFromPrimitive, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash,
+)]
+#[allow(non_camel_case_types)]
 pub enum NodeKind {
     /// Syntax-tree marker for the a list of statements within `{ ... }`.
-    Block = NODE_KIND_START,
-
+    BLOCK,
     /// Syntax-tree marker for a named container.
-    ContainerDef,
-
+    CONTAINER_DEF,
     /// Syntax-tree marker for a list of parent-containers in a container declaration.
-    ExtendsList,
-
+    EXTENDS_LIST,
     /// Syntax-tree marker for a macro definition and its body.
-    MacroDef,
-
+    MACRO_DEF,
     /// Syntax-tree marker for a macro call statement.
-    MacroCall,
-
+    MACRO_CALL,
     /// Syntax-tree marker for the argument list of a macro call.
-    MacroArgumentList,
-
+    MACRO_ARGUMENT_LIST,
     /// Syntax-tree marker for individual arguments within an argument list.
-    MacroArgumentListItem,
-
+    MACRO_ARGUMENT_LIST_ITEM,
     /// Syntax-tree marker for the parameter list of within the parenthesis of a macro definition.
-    MacroParamList,
-
+    MACRO_PARAM_LIST,
     /// Syntax-tree marker for an individual item in a macro definition's parameter list.
-    MacroParamListItem,
-
+    MACRO_PARAM_LIST_ITEM,
     /// Syntax-tree marker for a variable declaration.
-    VariableDef,
+    VARIABLE_DEF,
 
-    // region NodeKind::Expr(...)
-    BinaryExpr,
-
-    CategoryRangeExpr,
-
-    LevelExpr,
-
-    LevelRangeExpr,
-
-    ContextExpr,
-
-    LiteralExpr,
-
+    // region SyntaxKind::NODE_Expr(...)
+    BINARY_EXPR,
+    CATEGORY_RANGE_EXPR,
+    LEVEL_EXPR,
+    LEVEL_RANGE_EXPR,
+    CONTEXT_EXPR,
+    LITERAL_EXPR,
     /// Syntax-tree marker for a type enforcement rule.
-    TeRule,
-
+    TE_RULE,
     /// Syntax-tree marker for a sub-list expression that takes a subset of children from a named list.
-    ListExpr,
-
+    LIST_EXPR,
     /// Syntax-tree marker for a reference expression that points to a path.
-    PathExpr,
-
-    ParenExpr,
-
+    PATH_EXPR,
+    PAREN_EXPR,
     /// Syntax-tree marker for a unary expression with a token preceding another expression.
-    PrefixExpr,
+    PREFIX_EXPR,
 
     // endregion
-    // region NodeKind::Stmt(...)
+    // region SyntaxKind::NODE_Stmt(...)
     /// Syntax-tree marker for a conditional (if, else-if, else) statement.
-    ConditionalStmt,
+    CONDITIONAL_STMT,
 
     // endregion
     /// Syntax-tree marker for the top level node in a files AST.
-    SourceFile,
-
-    ParseError,
+    SOURCE_FILE,
+    PARSE_ERROR,
 }
 
-impl SyntaxKindClass for NodeKind {}
-
 macro_rules! enum_string_mapping {
-    (enum $name:ident {
-        $($variant:ident = $val:expr),*,
-    }) => {
-        impl FromStr for $name {
-            type Err = ();
+( enum $ name: ident {
+$ ( $ variant: ident = $ val:expr), *,
+}) => {
+impl FromStr for $ name {
+type Err = ();
 
-            fn from_str(input: &str) -> Result<Self, Self::Err> {
-                let kind = match input {
-                    $($val => $name::$variant,)*
-                    _ => return Err(())
-                };
+fn from_str(input: & str) -> Result < Self, Self::Err > {
+let kind = match input {
+$ ( $ val => $ name::$ variant, ) *
+_ => return Err(())
+};
 
-                Ok(kind)
-            }
-        }
+Ok(kind)
+}
+}
 
-        impl AsRef<str> for $name {
-            fn as_ref(&self) -> &str {
-                match self {
-                    $($name::$variant => $val),*
-                }
-            }
-        }
-    };
+impl AsRef < str > for $ name {
+fn as_ref( & self ) -> & str {
+match self {
+$ ( $ name::$ variant => $ val), *
+}
+}
+}
+};
 }
 
 #[repr(u16)]
-#[derive(IntoPrimitive, TryFromPrimitive, Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(
+    IntoPrimitive, TryFromPrimitive, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash,
+)]
 pub enum KeywordKind {
-    /// The `type` statement keyword, which declares a new named security type.
-    Type = KW_KIND_START,
-    /// The `type_attribute` statement keyword, which declares a new bitset of types.
+    Type,
     TypeAttribute,
     /// The `role` statement keyword, which declares a new role for role-based access control.
     Role,
@@ -286,6 +372,34 @@ pub enum KeywordKind {
     Macro,
 }
 
+impl Into<SyntaxKind> for KeywordKind {
+    fn into(self) -> SyntaxKind {
+        use self::{KeywordKind::*, SyntaxKind::*};
+
+        match self {
+            Type => KW_TYPE,
+            TypeAttribute => KW_TYPE_ATTRIBUTE,
+            Role => KW_ROLE,
+            RoleAttribute => KW_ROLE_ATTRIBUTE,
+            User => KW_USER,
+            UserAttribute => KW_USER_ATTRIBUTE,
+            Optional => KW_OPTIONAL,
+            Sensitivity => KW_SENSITIVITY,
+            Category => KW_CATEGORY,
+            LevelRange => KW_LEVEL_RANGE,
+            Block => KW_BLOCK,
+            In => KW_IN,
+            Abstract => KW_ABSTRACT,
+            Extends => KW_EXTENDS,
+            Allow => KW_ALLOW,
+            AuditAllow => KW_AUDIT_ALLOW,
+            NeverAllow => KW_NEVER_ALLOW,
+            DontAudit => KW_DONT_AUDIT,
+            Macro => KW_MACRO,
+        }
+    }
+}
+
 enum_string_mapping!(
     enum KeywordKind {
         Type = "type",
@@ -309,8 +423,6 @@ enum_string_mapping!(
         Macro = "macro",
     }
 );
-
-impl SyntaxKindClass for KeywordKind {}
 
 impl KeywordKind {
     pub fn is_var_type(self) -> bool {

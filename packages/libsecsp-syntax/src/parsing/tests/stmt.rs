@@ -38,3 +38,12 @@ fn parse_conditional_with_else_if() {
         "#,
     )
 }
+
+#[test]
+fn parse_allow_rule() {
+    super::test_parser(
+        r#"
+         <marker type="terule">allow a b : file (read);</marker>
+        "#,
+    )
+}

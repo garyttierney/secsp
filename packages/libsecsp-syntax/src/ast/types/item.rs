@@ -1,1 +1,1 @@
-pub struct Item(rowan::SyntaxNode);
+pub struct Item(SyntaxNode);

@@ -3,11 +3,14 @@ use std::str::FromStr;
 use crate::grammar::atom;
 use crate::grammar::block::BlockType;
 use crate::grammar::{
-    container::parse_container, macros::parse_macro, stmt::statement, var::parse_var,
+    container::parse_container,
+    macros::parse_macro,
+    stmt::{kw_statement, statement},
+    var::parse_var,
 };
 use crate::parser::Parser;
 use crate::syntax::KeywordKind;
-use crate::syntax::NodeKind;
+use crate::syntax::SyntaxKind;
 use crate::syntax::TokenKind;
 
 pub(crate) fn parse_item(p: &mut Parser) -> bool {
@@ -23,30 +26,40 @@ pub(crate) fn parse_item(p: &mut Parser) -> bool {
     fn do_parse_item(
         p: &mut Parser,
         ty: BlockType,
-        kind: NodeKind,
+        kind: SyntaxKind,
         parser: fn(&mut Parser),
-    ) -> Option<(BlockType, NodeKind)> {
+    ) -> Option<(BlockType, SyntaxKind)> {
         parser(p);
         Some((ty, kind))
     }
 
     let m = p.mark();
 
-    let item = match KeywordKind::from_str(p.current_text()).ok() {
-        Some(KeywordKind::Abstract)
-        | Some(KeywordKind::Block)
-        | Some(KeywordKind::Optional)
-        | Some(KeywordKind::In) => do_parse_item(
+    let item = match KeywordKind::from_str(p.current_text()) {
+        Ok(KeywordKind::Abstract)
+        | Ok(KeywordKind::Block)
+        | Ok(KeywordKind::Optional)
+        | Ok(KeywordKind::In) => do_parse_item(
             p,
             BlockType::BlockLike,
-            NodeKind::ContainerDef,
+            SyntaxKind::NODE_CONTAINER_DEF,
             parse_container,
         ),
-        Some(KeywordKind::Macro) => {
-            do_parse_item(p, BlockType::BlockLike, NodeKind::MacroDef, parse_macro)
-        }
-        Some(kw) if kw.is_var_type() && atom::is_at_path_start(p, 1) => {
-            do_parse_item(p, BlockType::NotBlockLike, NodeKind::VariableDef, parse_var)
+        Ok(KeywordKind::Macro) => do_parse_item(
+            p,
+            BlockType::BlockLike,
+            SyntaxKind::NODE_MACRO_DEF,
+            parse_macro,
+        ),
+        Ok(kw) if kw.is_var_type() && atom::is_at_path_start(p, 1) => do_parse_item(
+            p,
+            BlockType::NotBlockLike,
+            SyntaxKind::NODE_VARIABLE_DEF,
+            parse_var,
+        ),
+        Ok(kw) => {
+            m.abandon(p);
+            return kw_statement(p, kw);
         }
         _ => {
             m.abandon(p);

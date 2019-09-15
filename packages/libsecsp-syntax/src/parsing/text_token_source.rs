@@ -1,6 +1,4 @@
-use rowan::SyntaxKind;
-
-use secsp_parser::syntax::{SyntaxKindClass, TokenKind};
+use secsp_parser::syntax::{SyntaxKind, TokenKind};
 use secsp_parser::TokenSource;
 
 use crate::token::Token;
@@ -28,7 +26,7 @@ impl<'t> TextTokenSource<'t> {
 impl<'t> TokenSource for TextTokenSource<'t> {
     fn kind(&self, idx: usize) -> SyntaxKind {
         if idx >= self.tokens.len() {
-            return TokenKind::Eof.into_kind();
+            return SyntaxKind::TOK_EOF;
         }
 
         self.tokens[idx].kind()

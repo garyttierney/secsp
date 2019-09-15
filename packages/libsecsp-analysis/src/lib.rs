@@ -10,7 +10,7 @@ use std::sync::Arc;
 
 use salsa::Database;
 
-use secsp_syntax::ast;
+use secsp_syntax::{ast, Parse};
 
 use crate::input::FilesDatabase;
 use crate::input::SourceRoot;
@@ -105,7 +105,7 @@ impl AnalysisHost {
         AnalysisHost { db }
     }
 
-    pub fn source_file(&self, file_id: input::FileId) -> ast::TreeArc<ast::SourceFile> {
+    pub fn source_file(&self, file_id: input::FileId) -> Parse<ast::SourceFile> {
         self.db.query(syntax::SourceFileQuery).get(file_id).clone()
     }
 

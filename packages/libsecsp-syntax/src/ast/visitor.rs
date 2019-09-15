@@ -3,8 +3,9 @@
 
 use std::marker::PhantomData;
 
+use secsp_parser::syntax::SyntaxNode;
+
 use crate::ast::AstNode;
-use rowan::SyntaxNode;
 
 pub fn visitor<'a, T>() -> impl Visitor<'a, Output = T> {
     EmptyVisitor { ph: PhantomData }
@@ -50,12 +51,12 @@ impl<'a, V, N, F> Visitor<'a> for Vis<V, N, F>
 where
     V: Visitor<'a>,
     N: AstNode + 'a,
-    F: FnOnce(&'a N) -> <V as Visitor<'a>>::Output,
+    F: FnOnce(N) -> <V as Visitor<'a>>::Output,
 {
     type Output = <V as Visitor<'a>>::Output;
 
     fn accept(self, node: &'a SyntaxNode) -> Option<Self::Output> {
         let Vis { inner, f, .. } = self;
-        inner.accept(node).or_else(|| N::cast(node).map(f))
+        inner.accept(node).or_else(|| N::cast(node.clone()).map(f))
     }
 }

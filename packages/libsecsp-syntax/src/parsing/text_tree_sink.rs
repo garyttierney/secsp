@@ -1,10 +1,12 @@
-use rowan::{GreenNode, GreenNodeBuilder, SmolStr, SyntaxKind};
+use std::mem;
+
+use rowan::{GreenNode, GreenNodeBuilder, SmolStr};
 use text_unit::{TextRange, TextUnit};
 
+use secsp_parser::syntax::SyntaxKind;
 use secsp_parser::{ParseError, TreeSink};
 
 use crate::token::Token;
-use std::mem;
 
 enum State {
     PendingStart,
@@ -65,7 +67,7 @@ impl<'t> TextTreeSink<'t> {
         let text: SmolStr = self.text[range].into();
         self.text_pos += len;
         self.token_pos += 1;
-        self.builder.token(kind, text);
+        self.builder.token(kind.into(), text);
     }
 }
 
@@ -77,7 +79,7 @@ impl<'t> TreeSink for TextTreeSink<'t> {
     fn start_node(&mut self, kind: SyntaxKind) {
         match mem::replace(&mut self.state, State::Normal) {
             State::PendingStart => {
-                self.builder.start_node(kind);
+                self.builder.start_node(kind.into());
                 // No need to attach trivias to previous node: there is no
                 // previous node.
                 return;
@@ -108,7 +110,7 @@ impl<'t> TreeSink for TextTreeSink<'t> {
             leading_trivias
         };
         self.eat_n_trivias(n_trivias - n_attached_trivias);
-        self.builder.start_node(kind);
+        self.builder.start_node(kind.into());
         self.eat_n_trivias(n_attached_trivias);
     }
 

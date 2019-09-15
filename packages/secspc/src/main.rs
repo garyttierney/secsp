@@ -78,6 +78,7 @@ fn main() {
 
     for id in source_root.file_ids() {
         let source_file = analysis_host.source_file(*id);
-        println!("{}", utils::ast_to_string(&source_file));
+
+        println!("{}", utils::ast_to_string(&source_file.tree()));
     }
 }

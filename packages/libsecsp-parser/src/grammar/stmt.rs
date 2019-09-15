@@ -3,11 +3,14 @@ use crate::grammar::block::parse_block;
 use crate::grammar::block::BlockType;
 use crate::grammar::expr::{expression, ExprRestriction};
 use crate::parser::Parser;
-use crate::syntax::NodeKind;
-use crate::syntax::SyntaxKindClass;
+use crate::syntax::KeywordKind;
+use crate::syntax::SyntaxKind;
 use crate::syntax::TokenKind;
 
+mod type_enforcement;
+
 pub(crate) fn statement(p: &mut Parser) -> bool {
+    // A statement may only start with a name token  or fully qualified path (or special-cased non-contextual if keyword).
     if p.at(TokenKind::IfKw) {
         conditional(p);
         return true;
@@ -16,32 +19,45 @@ pub(crate) fn statement(p: &mut Parser) -> bool {
         return false;
     }
 
+    // Create a syntax marker beginning before the identifier of this potential statement.
     let m = atom::path_expr(p).precede(p);
 
+    // We didn't find a keyword statement, so determine if the current
+    // token stream represents a statement that begins with an identifier.
+    // e.g.,
+    // `macro_call(a);`
+    // `my_ident |= val;`
     let (block_type, kind) = match p.current() {
-        TokenKind::OpenParenthesis => {
+        SyntaxKind::TOK_OPEN_PARENTHESIS => {
             macro_call(p);
-            (BlockType::NotBlockLike, NodeKind::MacroCall)
-        }
-        TokenKind::IfKw => {
-            conditional(p);
-            m.abandon(p);
-            return true;
+            (BlockType::NotBlockLike, SyntaxKind::NODE_MACRO_CALL)
         }
         _ => {
-            m.complete(p, NodeKind::ParseError);
+            m.complete(p, SyntaxKind::NODE_PARSE_ERROR);
             return false;
         }
     };
 
+    finish_stmt(p, block_type);
+    m.complete(p, kind);
+    true
+}
+
+pub(crate) fn kw_statement(p: &mut Parser, kind: KeywordKind) -> bool {
+    use self::KeywordKind::*;
+
+    match &kind {
+        AuditAllow | DontAudit | NeverAllow | Allow => type_enforcement::te_rule(p, kind),
+        _ => unimplemented!(),
+    }
+}
+
+fn finish_stmt(p: &mut Parser, block_type: BlockType) {
     if block_type == BlockType::NotBlockLike {
         p.expect(TokenKind::Semicolon);
     } else {
         p.eat(TokenKind::Semicolon);
     }
-
-    m.complete(p, kind);
-    true
 }
 
 fn conditional(p: &mut Parser) {
@@ -59,7 +75,7 @@ fn conditional(p: &mut Parser) {
         }
     }
 
-    m.complete(p, NodeKind::ConditionalStmt);
+    m.complete(p, SyntaxKind::NODE_CONDITIONAL_STMT);
 }
 
 fn macro_call(p: &mut Parser) {

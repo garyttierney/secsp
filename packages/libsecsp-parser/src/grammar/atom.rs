@@ -1,8 +1,7 @@
 use crate::grammar::expr::{expression, ExprRestriction};
 use crate::parser::CompletedMarker;
 use crate::parser::Parser;
-use crate::syntax::SyntaxKindClass;
-use crate::syntax::{NodeKind, TokenKind};
+use crate::syntax::{NodeKind, SyntaxKind, TokenKind};
 
 pub(crate) fn path_expr(p: &mut Parser) -> CompletedMarker {
     let m = p.mark();
@@ -18,7 +17,7 @@ pub(crate) fn path_expr(p: &mut Parser) -> CompletedMarker {
         p.expect(TokenKind::Name);
     }
 
-    m.complete(p, NodeKind::PathExpr)
+    m.complete(p, SyntaxKind::NODE_PATH_EXPR)
 }
 
 pub(crate) fn list_or_paren_expr(p: &mut Parser) -> CompletedMarker {
@@ -45,9 +44,9 @@ pub(crate) fn list_or_paren_expr(p: &mut Parser) -> CompletedMarker {
     m.complete(
         p,
         if non_empty && !has_comma {
-            NodeKind::ParenExpr
+            SyntaxKind::NODE_PAREN_EXPR
         } else {
-            NodeKind::ListExpr
+            SyntaxKind::NODE_LIST_EXPR
         },
     )
 }
@@ -77,24 +76,24 @@ pub(crate) fn context_expr(p: &mut Parser, lhs: CompletedMarker) -> bool {
             true
         };
 
-        m.complete(p, NodeKind::ContextExpr);
+        m.complete(p, SyntaxKind::NODE_CONTEXT_EXPR);
         successful
     } else if p.at(TokenKind::Hyphen) {
         // Just parsed a sensitivity:category literal and are at a hyphen,
         // so we must be at the start of a level-range expression.
-        range_expr(p, lhs, NodeKind::LevelRangeExpr)
+        range_expr(p, lhs, SyntaxKind::NODE_LEVEL_RANGE_EXPR)
     } else {
         let m = lhs.precede(p);
-        m.complete(p, NodeKind::LevelExpr);
+        m.complete(p, SyntaxKind::NODE_LEVEL_EXPR);
         true
     }
 }
 
-pub(crate) fn range_expr(p: &mut Parser, lhs: CompletedMarker, kind: NodeKind) -> bool {
+pub(crate) fn range_expr(p: &mut Parser, lhs: CompletedMarker, kind: SyntaxKind) -> bool {
     let m = lhs.precede(p);
     let expected = match kind {
-        NodeKind::LevelRangeExpr => TokenKind::Hyphen,
-        NodeKind::CategoryRangeExpr => TokenKind::DotDot,
+        SyntaxKind::NODE_LEVEL_RANGE_EXPR => TokenKind::Hyphen,
+        SyntaxKind::NODE_CATEGORY_RANGE_EXPR => TokenKind::DotDot,
         _ => unreachable!(),
     };
 
@@ -107,12 +106,12 @@ pub(crate) fn range_expr(p: &mut Parser, lhs: CompletedMarker, kind: NodeKind) -
 
 pub(crate) fn literal_expr(p: &mut Parser) -> CompletedMarker {
     let m = p.mark();
-    p.expect_one_of(vec![TokenKind::String, TokenKind::Integer]);
-    m.complete(p, NodeKind::LiteralExpr)
+    p.expect_one_of(vec![SyntaxKind::TOK_STRING, SyntaxKind::TOK_INTEGER]);
+    m.complete(p, SyntaxKind::NODE_LITERAL_EXPR)
 }
 
 pub(crate) fn is_at_path_start(p: &Parser, offset: usize) -> bool {
-    let tok: TokenKind = p.nth(offset);
+    let tok: SyntaxKind = p.nth(offset);
 
-    tok == TokenKind::Dot || tok == TokenKind::Name
+    tok == SyntaxKind::TOK_DOT || tok == SyntaxKind::TOK_NAME
 }

@@ -1,6 +1,7 @@
 use std::ops::Range;
 
 use rowan::TextUnit;
+use secsp_parser::syntax::SyntaxKind;
 use secsp_parser::syntax::TokenKind;
 use text_unit::TextRange;
 
@@ -13,8 +14,8 @@ impl Token {
         Token(ty, range.start, range.end)
     }
 
-    pub fn kind(&self) -> rowan::SyntaxKind {
-        rowan::SyntaxKind(self.0 as u16)
+    pub fn kind(&self) -> SyntaxKind {
+        self.0.syntax_kind()
     }
 
     pub fn range(&self) -> Range<usize> {

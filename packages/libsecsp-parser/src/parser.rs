@@ -1,10 +1,11 @@
-use rowan::SyntaxKind;
-
 pub(crate) use marker::{CompletedMarker, Marker};
 
 use crate::parser::event::Event;
-use crate::syntax::{SyntaxKindClass, TokenKind};
-use crate::TokenSource;
+use crate::syntax::{SyntaxKind, TokenKind};
+use crate::{ParseError, TokenSource};
+use rowan::GreenNode;
+use std::marker::PhantomData;
+use std::sync::Arc;
 
 pub(crate) mod event;
 mod marker;
@@ -29,20 +30,17 @@ impl<'t> Parser<'t> {
     }
 
     /// Check if the parser is currently positioned at the [expected] type.
-    pub fn at<E>(&self, expected: E) -> bool
-    where
-        E: SyntaxKindClass,
-    {
-        self.current::<E>() == expected
+    pub fn at(&self, expected: TokenKind) -> bool {
+        self.current() == expected.syntax_kind()
     }
 
     pub fn eat_keyword<K>(&mut self, kw: K) -> bool
     where
-        K: AsRef<str> + SyntaxKindClass,
+        K: AsRef<str> + Into<SyntaxKind>,
     {
         let at_kw = self.at_text(&kw);
         if at_kw {
-            self.bump_as(kw);
+            self.bump_as(kw.into());
         }
 
         at_kw
@@ -60,7 +58,7 @@ impl<'t> Parser<'t> {
     /// Advance the position of the parser within the token stream and produce an event
     /// for the current leaf.
     pub fn bump(&mut self) {
-        if self.current::<TokenKind>() == TokenKind::Eof {
+        if self.current() == SyntaxKind::TOK_EOF {
             return;
         }
 
@@ -70,16 +68,13 @@ impl<'t> Parser<'t> {
 
     /// Advance the position of the parser within the token stream and produce and event
     /// for the current leaf, but remap it to the given [kind].
-    pub fn bump_as<F>(&mut self, kind: F)
-    where
-        F: SyntaxKindClass,
-    {
-        self.events.push(Event::Leaf(kind.into_kind()));
+    pub fn bump_as<K: Into<SyntaxKind>>(&mut self, kind: K) {
+        self.events.push(Event::Leaf(kind.into()));
         self.token_pos += 1;
     }
 
     /// Get the type of token the parser is currently at.
-    pub fn current<T: SyntaxKindClass>(&self) -> T {
+    pub fn current(&self) -> SyntaxKind {
         self.nth(0)
     }
 
@@ -90,10 +85,7 @@ impl<'t> Parser<'t> {
 
     /// Check if the parser is currently positioned at the [expected] type and consume the token,
     /// advancing the parsers position.
-    pub fn eat<E>(&mut self, expected: E) -> bool
-    where
-        E: SyntaxKindClass,
-    {
+    pub fn eat(&mut self, expected: TokenKind) -> bool {
         if self.at(expected) {
             self.bump();
             return true;
@@ -112,10 +104,7 @@ impl<'t> Parser<'t> {
 
     /// Check if the parser is currently positioned at the [expected] type, consuming it and
     /// emitting an error if the current token doesn't match what is expected.
-    pub fn expect<E>(&mut self, expected: E)
-    where
-        E: SyntaxKindClass,
-    {
+    pub fn expect(&mut self, expected: TokenKind) {
         if !self.eat(expected) {
             self.error(format!("expected {:#?}", expected));
         }
@@ -124,14 +113,10 @@ impl<'t> Parser<'t> {
     /// Check if the parser is currently positioned at a token type that matches
     /// any of the expected [items], consuming the token and emitting an
     /// error if the current token doesn't match any of the inputs.
-    pub fn expect_one_of<E>(&mut self, items: Vec<E>)
-    where
-        E: SyntaxKindClass,
-    {
+    pub fn expect_one_of(&mut self, items: Vec<SyntaxKind>) {
         let current_kind = self.nth_kind(0);
-        let kinds: Vec<SyntaxKind> = items.into_iter().map(SyntaxKindClass::into_kind).collect();
 
-        if kinds.iter().any(|k| *k == current_kind) {
+        if items.iter().any(|k| *k == current_kind) {
             self.bump();
         } else {
             self.error("expected one of (todo)".to_string());
@@ -159,12 +144,12 @@ impl<'t> Parser<'t> {
     }
 
     /// Get the `nth` lookahead token type, offset from the parsers current position.
-    pub fn nth<T: SyntaxKindClass>(&self, offset: usize) -> T {
-        T::from_kind(self.token_source.kind(self.token_pos + offset))
-            .expect("current token kind does not match defined types")
+    pub fn nth(&self, offset: usize) -> SyntaxKind {
+        self.token_source.kind(self.token_pos + offset)
     }
+
     /// Get the `nth` lookahead token type, offset from the parsers current position.
-    pub fn nth_kind(&self, offset: usize) -> rowan::SyntaxKind {
+    pub fn nth_kind(&self, offset: usize) -> SyntaxKind {
         self.token_source.kind(self.token_pos + offset)
     }
 

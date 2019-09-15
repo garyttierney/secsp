@@ -1,9 +1,9 @@
-use secsp_parser::syntax::NodeKind;
+use secsp_parser::syntax::{NodeKind, SyntaxNode};
 use secsp_syntax_derive::AstType;
 
 #[derive(AstType)]
 #[repr(transparent)]
-pub struct TeRule(rowan::SyntaxNode);
+pub struct TeRule(SyntaxNode);
 
 pub enum TeRuleKind {
     Allow,
@@ -12,5 +12,4 @@ pub enum TeRuleKind {
     NeverAllow,
 }
 
-impl TeRule {
-}
+impl TeRule {}

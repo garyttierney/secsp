@@ -3,7 +3,7 @@ use std::str::FromStr;
 use crate::grammar::atom;
 use crate::grammar::block;
 use crate::parser::Parser;
-use crate::syntax::{KeywordKind, NodeKind, TokenKind};
+use crate::syntax::{KeywordKind, NodeKind, SyntaxKind, TokenKind};
 
 pub(crate) fn parse_container(p: &mut Parser) {
     let is_abstract = p.eat_keyword(KeywordKind::Abstract);
@@ -39,5 +39,5 @@ fn parse_extends_list(p: &mut Parser) {
         atom::path_expr(p);
     }
 
-    m.complete(p, NodeKind::ExtendsList);
+    m.complete(p, SyntaxKind::NODE_EXTENDS_LIST);
 }

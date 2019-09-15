@@ -1,5 +1,5 @@
+use crate::syntax::SyntaxKind;
 use crate::{ParseError, TreeSink};
-use rowan::SyntaxKind;
 use std::mem;
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
