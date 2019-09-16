@@ -2,7 +2,7 @@
 fn parse_macro_def_no_params() {
     super::test_parser(
         r#"
-        <marker type="macrodef">macro test<marker type="macroparamlist">()</marker> {
+        <marker type="NODE_MACRO_DEF">macro test<marker type="NODE_MACRO_PARAM_LIST">()</marker> {
         }</marker>
     "#,
     )
@@ -12,8 +12,8 @@ fn parse_macro_def_no_params() {
 fn parse_macro_def() {
     super::test_parser(
         r#"
-        <marker type="macrodef">macro test<marker type="macroparamlist">(
-            <marker type="macroparamlistitem">type t</marker>
+        <marker type="NODE_MACRO_DEF">macro test<marker type="NODE_MACRO_PARAM_LIST">(
+            <marker type="NODE_MACRO_PARAM_LIST_ITEM">type t</marker>
         )</marker> {
         }</marker>
     "#,
@@ -25,7 +25,7 @@ fn parse_macro_def() {
 fn parse_abstract_container_def() {
     super::test_parser(
         r#"
-        <marker type="KeywordKind(ABSTRACT)">abstract</marker> block test {}
+        <marker type="KW_ABSTRACT">abstract</marker> block test {}
     "#,
     );
 }
@@ -34,7 +34,7 @@ fn parse_abstract_container_def() {
 fn parse_abstract_container_with_extends_list() {
     super::test_parser(
         r#"
-        abstract block test <marker type="ExtendsList">extends abc</marker> {}
+        abstract block test <marker type="NODE_EXTENDS_LIST">extends abc</marker> {}
     "#,
     );
 }
@@ -43,7 +43,7 @@ fn parse_abstract_container_with_extends_list() {
 fn parse_var_def() {
     super::test_parser(
         r#"
-        <marker type="variabledef">type a;</marker>
+        <marker type="NODE_VARIABLE_DEF">type a;</marker>
     "#,
     )
 }
@@ -52,7 +52,7 @@ fn parse_var_def() {
 fn parse_var_with_initializer() {
     super::test_parser(
         r#"
-        <marker type="variabledef">type_attribute a = <marker type="binaryexpr">a | b</marker>;</marker>
+        <marker type="NODE_VARIABLE_DEF">type_attribute a = <marker type="NODE_BINARY_EXPR">a | b</marker>;</marker>
     "#,
     )
 }

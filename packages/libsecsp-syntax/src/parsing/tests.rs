@@ -43,34 +43,33 @@ pub fn ast_to_string(source: &SyntaxNode) -> String {
 }
 
 pub(crate) fn test_parser(text: &str) {
-    //    let (code, assertions) = strip_markers(0.into(), text);
-    //
-    //    if assertions.is_empty() {
-    //        panic!("No assertions found");
-    //    }
-    //
-    //    let ast = SourceFile::parse(code.as_str());
-    //    let ws_regex = Regex::new(r#"\s"#).unwrap();
-    //
-    //    for assertion in assertions.into_iter() {
-    //        let node = ast.syntax().covering_node(assertion.range);
-    //
-    //        let node_kind = SyntaxKind::NODE_from_kind(node.kind()).expect("not a node type");
-    //        let raw_kind = format!("{:#?}", node_kind);
-    //        let kind = ws_regex.replace_all(raw_kind.as_str(), "");
-    //        let expected_kind = assertion.ty;
-    //
-    //        assert_eq!(
-    //            expected_kind.to_lowercase(),
-    //            kind.to_lowercase(),
-    //            "Resulting parse tree: {}",
-    //            ast_to_string(ast.syntax())
-    //        );
-    //    }
+        let (code, assertions) = strip_markers(0.into(), text);
+
+        if assertions.is_empty() {
+            panic!("No assertions found");
+        }
+
+        let ast = SourceFile::parse(code.as_str()).tree();
+        let ws_regex = Regex::new(r#"\s"#).unwrap();
+
+        for assertion in assertions.into_iter() {
+            let node = ast.syntax().covering_element(assertion.range);
+            let node_kind = node.kind();
+            let raw_kind = format!("{:#?}", node_kind);
+            let kind = ws_regex.replace_all(raw_kind.as_str(), "");
+            let expected_kind = assertion.ty;
+
+            assert_eq!(
+                expected_kind.to_lowercase(),
+                kind.to_lowercase(),
+                "Resulting parse tree: {}",
+                ast_to_string(ast.syntax())
+            );
+        }
 }
 
 fn strip_markers(offset: TextUnit, text: &str) -> (String, Vec<Assertion>) {
-    let regex: Regex = RegexBuilder::new(r#"(<marker type="([a-zA-Z\(\)]+)">)(.*)(</marker>)"#)
+    let regex: Regex = RegexBuilder::new(r#"(<marker type="([a-zA-Z_\(\)]+)">)(.*)(</marker>)"#)
         .multi_line(true)
         .dot_matches_new_line(true)
         .build()

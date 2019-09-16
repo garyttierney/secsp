@@ -2,7 +2,7 @@
 fn parse_global_path() {
     super::test_parser(
         r#"
-        callstub(<marker type="pathexpr">.global.item</marker>);
+        callstub(<marker type="NODE_PATH_EXPR">.global.item</marker>);
     "#,
     )
 }
@@ -11,7 +11,7 @@ fn parse_global_path() {
 fn parse_nested_path() {
     super::test_parser(
         r#"
-        callstub(<marker type="pathexpr">nested1.nested2.nested3</marker>);
+        callstub(<marker type="NODE_PATH_EXPR">nested1.nested2.nested3</marker>);
     "#,
     )
 }
@@ -20,7 +20,7 @@ fn parse_nested_path() {
 fn parse_list_expr() {
     super::test_parser(
         r#"
-        callstub(<marker type="listexpr">(item1, item2, item3)</marker>);
+        callstub(<marker type="NODE_LIST_EXPR">(item1, item2, item3)</marker>);
     "#,
     )
 }
@@ -29,7 +29,7 @@ fn parse_list_expr() {
 fn parse_paren_expr() {
     super::test_parser(
         r#"
-        callstub(<marker type="parenexpr">(a && b)</marker>);
+        callstub(<marker type="NODE_PAREN_EXPR">(a && b)</marker>);
     "#,
     )
 }
@@ -38,7 +38,7 @@ fn parse_paren_expr() {
 fn parse_context_expr() {
     super::test_parser(
         r#"
-        callstub(<marker type="contextexpr">user:role:type</marker>);
+        callstub(<marker type="NODE_CONTEXT_EXPR">user:role:type</marker>);
     "#,
     )
 }
@@ -47,7 +47,9 @@ fn parse_context_expr() {
 fn parse_mls_context_expr() {
     super::test_parser(
         r#"
-        callstub(<marker type="contextexpr">user:role:type:<marker type="levelrangeexpr">s1-s2</marker></marker>);
+        callstub(
+            <marker type="NODE_CONTEXT_EXPR">user:role:type:<marker type="NODE_LEVEL_RANGE_EXPR">s1-s2</marker></marker>
+        );
     "#,
     )
 }
@@ -56,7 +58,7 @@ fn parse_mls_context_expr() {
 fn parse_mls_mcs_context_expr() {
     super::test_parser(
         r#"
-        callstub(<marker type="contextexpr">user:role:type:s1:c2..c5-s10:c1</marker>);
+        callstub(<marker type="NODE_CONTEXT_EXPR">user:role:type:s1:c2..c5-s10:c1</marker>);
     "#,
     )
 }
@@ -65,7 +67,7 @@ fn parse_mls_mcs_context_expr() {
 fn parse_level_expr() {
     super::test_parser(
         r#"
-        callstub(<marker type="levelexpr">sensitivity:category</marker>);
+        callstub(<marker type="NODE_LEVEL_EXPR">sensitivity:category</marker>);
     "#,
     )
 }
@@ -74,7 +76,7 @@ fn parse_level_expr() {
 fn parse_level_range_expr() {
     super::test_parser(
         r#"
-            callstub(<marker type="levelrangeexpr">sensitivity:category-sensitivity2</marker>);
+            callstub(<marker type="NODE_LEVEL_RANGE_EXPR">sensitivity:category-sensitivity2</marker>);
         "#,
     )
 }

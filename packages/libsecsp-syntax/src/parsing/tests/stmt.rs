@@ -2,7 +2,7 @@
 fn parse_macro_call() {
     super::test_parser(
         r#"
-        <marker type="MacroCall">macro_name(a && b, "test", 123);</marker>
+        <marker type="NODE_MACRO_CALL">macro_name(a && b, "test", 123);</marker>
     "#,
     );
 }
@@ -11,7 +11,7 @@ fn parse_macro_call() {
 fn parse_conditional() {
     super::test_parser(
         r#"
-        <marker type="conditionalstmt">if a && b {
+        <marker type="NODE_CONDITIONAL_STMT">if a && b {
         }</marker>
       "#,
     );
@@ -21,7 +21,7 @@ fn parse_conditional() {
 fn parse_conditional_with_else() {
     super::test_parser(
         r#"
-        <marker type="conditionalstmt">if a {
+        <marker type="NODE_CONDITIONAL_STMT">if a {
         } else {
         }</marker>
         "#,
@@ -32,8 +32,8 @@ fn parse_conditional_with_else() {
 fn parse_conditional_with_else_if() {
     super::test_parser(
         r#"
-        <marker type="conditionalstmt">if a {
-        } else <marker type="conditionalstmt"> if b || c {
+        <marker type="NODE_CONDITIONAL_STMT">if a {
+        } else <marker type="NODE_CONDITIONAL_STMT"> if b || c {
         }</marker></marker>
         "#,
     )
@@ -43,7 +43,7 @@ fn parse_conditional_with_else_if() {
 fn parse_allow_rule() {
     super::test_parser(
         r#"
-         <marker type="terule">allow a b : file (read);</marker>
+         <marker type="NODE_TE_RULE">allow a b : file (read);</marker>
         "#,
     )
 }
