@@ -1,6 +1,7 @@
+use std::mem;
+
 use crate::syntax::SyntaxKind;
 use crate::{ParseError, TreeSink};
-use std::mem;
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub enum Event {

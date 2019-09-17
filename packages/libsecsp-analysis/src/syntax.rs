@@ -1,7 +1,8 @@
 use salsa::Database;
 
-use crate::input::{FileId, FilesDatabase};
 use secsp_syntax::{ast, Parse};
+
+use crate::input::{FileId, FilesDatabase};
 
 #[salsa::query_group(Syntax)]
 pub trait SyntaxDatabase: FilesDatabase + Database {

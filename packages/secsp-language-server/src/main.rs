@@ -1,14 +1,14 @@
 extern crate futures;
 extern crate jsonrpc_core;
 extern crate serde_json;
-extern crate tower_lsp;
 extern crate tokio;
+extern crate tower_lsp;
 
 use futures::future;
 use jsonrpc_core::{BoxFuture, Result};
 use serde_json::Value;
-use tower_lsp::{LanguageServer, LspService, Printer, Server};
 use tower_lsp::lsp_types::*;
+use tower_lsp::{LanguageServer, LspService, Printer, Server};
 
 #[derive(Debug, Default)]
 struct Backend;

@@ -1,9 +1,3 @@
-use std::fmt::Write;
-
-use rowan::SmolStr;
-
-use secsp_parser::syntax::{NodeKind, SyntaxElement, TokenKind};
-
 use crate::ast::types::{Block, Definition};
 use crate::ast::{AstChildren, AstNode};
 
@@ -21,8 +15,7 @@ pub trait NameOwner: AstNode {}
 
 #[cfg(test)]
 mod tests {
-
-    use crate::ast::{ContainerDef, MacroDef, SourceFile, VariableDef};
+    use crate::ast::SourceFile;
 
     use super::*;
 

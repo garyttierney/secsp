@@ -1,7 +1,6 @@
 use crate::grammar::atom;
 use crate::grammar::error_recovery;
 use crate::parser::CompletedMarker;
-use crate::parser::Marker;
 use crate::parser::Parser;
 use crate::syntax::SyntaxKind;
 use crate::syntax::TokenKind;

@@ -1,8 +1,9 @@
-use secsp_parser::syntax::{NodeKind, SyntaxNode};
+pub use rowan::WalkEvent;
+
+use secsp_parser::syntax::SyntaxNode;
 use secsp_syntax_derive::AstType;
 
 pub use self::{api::*, def::*, expr::*, stmt::*};
-pub use rowan::WalkEvent;
 
 mod api;
 mod def;

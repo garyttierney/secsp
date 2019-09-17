@@ -1,12 +1,10 @@
-use std::fmt::Write;
-
 use regex::{Regex, RegexBuilder};
 use rowan::WalkEvent;
 use text_unit::TextRange;
 use text_unit::TextUnit;
 
+use secsp_parser::syntax::SyntaxElement;
 use secsp_parser::syntax::SyntaxNode;
-use secsp_parser::syntax::{NodeKind, SyntaxElement};
 
 use crate::ast::AstNode;
 use crate::SourceFile;
@@ -23,13 +21,13 @@ struct Assertion {
 
 pub fn ast_to_string(source: &SyntaxNode) -> String {
     let mut indent = 0;
-    let mut out = String::new();
+    let out = String::new();
 
     for event in source.preorder_with_tokens() {
         match event {
             WalkEvent::Enter(node) => {
-                let text = match node {
-                    SyntaxElement::Node(it) => "".to_string(),
+                let _text = match node {
+                    SyntaxElement::Node(_it) => "".to_string(),
                     SyntaxElement::Token(it) => it.text().to_string(),
                 };
 
@@ -43,29 +41,29 @@ pub fn ast_to_string(source: &SyntaxNode) -> String {
 }
 
 pub(crate) fn test_parser(text: &str) {
-        let (code, assertions) = strip_markers(0.into(), text);
+    let (code, assertions) = strip_markers(0.into(), text);
 
-        if assertions.is_empty() {
-            panic!("No assertions found");
-        }
+    if assertions.is_empty() {
+        panic!("No assertions found");
+    }
 
-        let ast = SourceFile::parse(code.as_str()).tree();
-        let ws_regex = Regex::new(r#"\s"#).unwrap();
+    let ast = SourceFile::parse(code.as_str()).tree();
+    let ws_regex = Regex::new(r#"\s"#).unwrap();
 
-        for assertion in assertions.into_iter() {
-            let node = ast.syntax().covering_element(assertion.range);
-            let node_kind = node.kind();
-            let raw_kind = format!("{:#?}", node_kind);
-            let kind = ws_regex.replace_all(raw_kind.as_str(), "");
-            let expected_kind = assertion.ty;
+    for assertion in assertions.into_iter() {
+        let node = ast.syntax().covering_element(assertion.range);
+        let node_kind = node.kind();
+        let raw_kind = format!("{:#?}", node_kind);
+        let kind = ws_regex.replace_all(raw_kind.as_str(), "");
+        let expected_kind = assertion.ty;
 
-            assert_eq!(
-                expected_kind.to_lowercase(),
-                kind.to_lowercase(),
-                "Resulting parse tree: {}",
-                ast_to_string(ast.syntax())
-            );
-        }
+        assert_eq!(
+            expected_kind.to_lowercase(),
+            kind.to_lowercase(),
+            "Resulting parse tree: {}",
+            ast_to_string(ast.syntax())
+        );
+    }
 }
 
 fn strip_markers(offset: TextUnit, text: &str) -> (String, Vec<Assertion>) {

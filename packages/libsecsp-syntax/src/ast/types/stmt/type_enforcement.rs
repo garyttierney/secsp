@@ -1,4 +1,4 @@
-use secsp_parser::syntax::{NodeKind, SyntaxNode};
+use secsp_parser::syntax::SyntaxNode;
 use secsp_syntax_derive::AstType;
 
 #[derive(AstType)]

@@ -3,7 +3,7 @@ use std::str::FromStr;
 use crate::grammar::atom;
 use crate::grammar::block;
 use crate::parser::Parser;
-use crate::syntax::{KeywordKind, NodeKind, SyntaxKind, TokenKind};
+use crate::syntax::{KeywordKind, SyntaxKind, TokenKind};
 
 pub(crate) fn parse_container(p: &mut Parser) {
     let is_abstract = p.eat_keyword(KeywordKind::Abstract);

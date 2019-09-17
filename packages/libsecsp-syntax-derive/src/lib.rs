@@ -4,9 +4,11 @@ extern crate proc_macro;
 use proc_macro::TokenStream;
 
 use inflector::Inflector;
-use quote::quote;
-use syn::{parse_macro_input, Attribute, DeriveInput, Ident, Path};
+use syn::{parse_macro_input, DeriveInput, Path};
 use syn::{Meta, NestedMeta};
+
+use quote::quote;
+
 //
 //#[proc_macro_derive(AstEnum, attributes(AstKinds))]
 //pub fn ast_enum(input: TokenStream) -> TokenStream {}

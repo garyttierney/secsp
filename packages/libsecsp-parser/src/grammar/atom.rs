@@ -1,7 +1,7 @@
 use crate::grammar::expr::{expression, ExprRestriction};
 use crate::parser::CompletedMarker;
 use crate::parser::Parser;
-use crate::syntax::{NodeKind, SyntaxKind, TokenKind};
+use crate::syntax::{SyntaxKind, TokenKind};
 
 pub(crate) fn path_expr(p: &mut Parser) -> CompletedMarker {
     let m = p.mark();

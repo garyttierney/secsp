@@ -72,7 +72,7 @@ impl<'t> TextTreeSink<'t> {
 }
 
 impl<'t> TreeSink for TextTreeSink<'t> {
-    fn error(&mut self, error: ParseError) {
+    fn error(&mut self, _error: ParseError) {
         unimplemented!()
     }
 
@@ -96,19 +96,16 @@ impl<'t> TreeSink for TextTreeSink<'t> {
         let mut trivia_end =
             self.text_pos + leading_trivias.iter().map(|it| it.len()).sum::<TextUnit>();
 
-        let n_attached_trivias = {
-            let leading_trivias = leading_trivias
-                .iter()
-                .rev()
-                .map(|it| {
-                    let next_end = trivia_end - it.len();
-                    let range = TextRange::from_to(next_end, trivia_end);
-                    trivia_end = next_end;
-                    (it.kind(), &self.text[range])
-                })
-                .count();
-            leading_trivias
-        };
+        let n_attached_trivias = leading_trivias
+            .iter()
+            .rev()
+            .map(|it| {
+                let next_end = trivia_end - it.len();
+                let range = TextRange::from_to(next_end, trivia_end);
+                trivia_end = next_end;
+                (it.kind(), &self.text[range])
+            })
+            .count();
         self.eat_n_trivias(n_trivias - n_attached_trivias);
         self.builder.start_node(kind.into());
         self.eat_n_trivias(n_attached_trivias);

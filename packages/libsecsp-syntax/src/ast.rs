@@ -1,8 +1,10 @@
 use std::marker::PhantomData;
 
-pub use self::types::*;
 pub use rowan::WalkEvent;
+
 use secsp_parser::syntax::{SyntaxNode, SyntaxNodeChildren};
+
+pub use self::types::*;
 
 mod types;
 pub mod visitor;

@@ -1,4 +1,4 @@
-use secsp_parser::syntax::{SyntaxKind, TokenKind};
+use secsp_parser::syntax::SyntaxKind;
 use secsp_parser::TokenSource;
 
 use crate::token::Token;

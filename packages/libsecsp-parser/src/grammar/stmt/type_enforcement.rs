@@ -1,12 +1,10 @@
-use crate::grammar::atom;
 use crate::grammar::expr;
 use crate::grammar::expr::ExprRestriction;
 use crate::parser::Parser;
-use crate::syntax::{KeywordKind, NodeKind, SyntaxKind, TokenKind};
-use core::borrow::Borrow;
+use crate::syntax::{KeywordKind, SyntaxKind, TokenKind};
 
 pub(super) fn te_rule(p: &mut Parser, kind: KeywordKind) -> bool {
-    let mut m = p.mark();
+    let m = p.mark();
     p.bump_as(kind);
 
     // Parse the source ID

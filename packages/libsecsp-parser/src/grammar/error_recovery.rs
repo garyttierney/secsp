@@ -1,6 +1,5 @@
 use crate::parser::Parser;
 use crate::syntax::SyntaxKind;
-use crate::syntax::TokenKind;
 
 pub(crate) fn recover_from_item(p: &mut Parser) {
     let mut brace_depth = 0;

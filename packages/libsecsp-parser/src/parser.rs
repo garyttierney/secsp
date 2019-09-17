@@ -1,11 +1,8 @@
-pub(crate) use marker::{CompletedMarker, Marker};
+pub(crate) use marker::CompletedMarker;
 
 use crate::parser::event::Event;
 use crate::syntax::{SyntaxKind, TokenKind};
-use crate::{ParseError, TokenSource};
-use rowan::GreenNode;
-use std::marker::PhantomData;
-use std::sync::Arc;
+use crate::TokenSource;
 
 pub(crate) mod event;
 mod marker;

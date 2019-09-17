@@ -1,9 +1,9 @@
 use std::ops::Range;
 
 use rowan::TextUnit;
+
 use secsp_parser::syntax::SyntaxKind;
 use secsp_parser::syntax::TokenKind;
-use text_unit::TextRange;
 
 /// A single unit of output by the lexer.
 #[derive(Copy, Clone, Debug)]
