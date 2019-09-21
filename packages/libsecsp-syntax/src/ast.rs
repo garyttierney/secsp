@@ -5,8 +5,8 @@ pub use rowan::WalkEvent;
 use secsp_parser::syntax::{SyntaxNode, SyntaxNodeChildren};
 
 pub use self::types::*;
-use text_unit::TextUnit;
 use itertools::Itertools;
+use text_unit::TextUnit;
 
 mod types;
 pub mod visitor;

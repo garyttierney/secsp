@@ -6,14 +6,14 @@ extern crate text_unit;
 extern crate tokio;
 extern crate tower_lsp;
 
-use std::{mem, panic};
 use std::sync::{Arc, Mutex};
+use std::{mem, panic};
 
-use futures::{future};
+use futures::future;
 use jsonrpc_core::{BoxFuture, Result};
 use serde_json::Value;
-use tower_lsp::{LanguageServer, LspService, Printer, Server};
 use tower_lsp::lsp_types::*;
+use tower_lsp::{LanguageServer, LspService, Printer, Server};
 
 use secsp_analysis::{Analysis, AnalysisHost, Cancelable};
 use std::path::PathBuf;
@@ -21,18 +21,24 @@ use std::path::PathBuf;
 #[derive(Debug, Default)]
 struct CspBackend {
     analysis_host: Arc<Mutex<Option<AnalysisHost>>>,
-    source_root: Arc<Option<PathBuf>>
+    source_root: Arc<Option<PathBuf>>,
 }
 
 impl CspBackend {
     fn initialize_analysis_host(&self, root: String) {
         let host = AnalysisHost::from_workspace(root);
-        let mut host_state = self.analysis_host.lock().expect("Mutex acquired before initialization");
+        let mut host_state = self
+            .analysis_host
+            .lock()
+            .expect("Mutex acquired before initialization");
 
         mem::replace(&mut *host_state, Some(host));
     }
 
-    fn with_analysis_host<T: 'static, F>(&self, executor: F) -> T where F: FnOnce(&mut AnalysisHost) -> T {
+    fn with_analysis_host<T: 'static, F>(&self, executor: F) -> T
+    where
+        F: FnOnce(&mut AnalysisHost) -> T,
+    {
         let mut host_guard = self.analysis_host.lock().unwrap();
 
         if let Some(ref mut host) = *host_guard {
@@ -42,12 +48,16 @@ impl CspBackend {
         }
     }
 
-    fn with_analysis<T: 'static, F>(&self, executor: F) -> BoxFuture<T> where T: Send, F: FnOnce(Analysis) -> Cancelable<T> {
+    fn with_analysis<T: 'static, F>(&self, executor: F) -> BoxFuture<T>
+    where
+        T: Send,
+        F: FnOnce(Analysis) -> Cancelable<T>,
+    {
         let analysis = self.with_analysis_host(|host| host.analysis());
 
         match executor(analysis) {
             Ok(t) => Box::new(future::ok(t)),
-            Err(_) => Box::new(future::empty())
+            Err(_) => Box::new(future::empty()),
         }
     }
 }

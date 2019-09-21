@@ -3,7 +3,6 @@ use secsp_parser::syntax::{SyntaxElement, SyntaxKind};
 use crate::ast::types::{Block, Definition};
 use crate::ast::{AstChildren, AstNode};
 
-
 pub trait ItemOwner: AstNode {
     fn items(&self) -> AstChildren<Definition> {
         self.child::<Block>().children()
@@ -29,11 +28,10 @@ pub trait NameOwner: AstNode {
                 _ => None,
             })
     }
-
 }
 #[cfg(test)]
 mod tests {
-    use crate::ast::{SourceFile, VariableDef, MacroDef, ContainerDef};
+    use crate::ast::{ContainerDef, MacroDef, SourceFile, VariableDef};
 
     use super::*;
 

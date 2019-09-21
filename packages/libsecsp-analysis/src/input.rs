@@ -1,10 +1,9 @@
 use std::path::PathBuf;
 use std::sync::Arc;
 
-
+use rustc_hash::FxHashSet;
 use salsa::{Database, InternId};
 use std::collections::HashSet;
-use rustc_hash::FxHashSet;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct FileId(pub salsa::InternId);

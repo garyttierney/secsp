@@ -1,7 +1,7 @@
-use std::{fs, io};
 use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
+use std::{fs, io};
 
 use rustc_hash::FxHashSet;
 
@@ -53,8 +53,8 @@ impl Default for AnalysisDatabase {
 
 impl AnalysisDatabase {
     pub fn from_workspace_root<P>(path: P) -> Result<Self, io::Error>
-        where
-            P: AsRef<Path>,
+    where
+        P: AsRef<Path>,
     {
         let ws_root_path = path.as_ref().to_path_buf();
         let mut ws_dir_stack: Vec<PathBuf> = vec![ws_root_path.clone()];

@@ -8,12 +8,12 @@ use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-use salsa::{ParallelDatabase};
+use salsa::ParallelDatabase;
 
 use secsp_syntax::{ast, Parse};
 
 use crate::cancellation::{Canceled, CheckCanceled};
-use crate::input::{FilesDatabase, SourceRoot, FileId};
+use crate::input::{FileId, FilesDatabase, SourceRoot};
 use crate::syntax::SyntaxDatabase;
 
 pub mod cancellation;
@@ -37,21 +37,15 @@ pub type Cancelable<T> = Result<T, Canceled>;
 
 impl Analysis {
     pub fn file_id(&self, path: PathBuf) -> Cancelable<FileId> {
-        self.with_db(|db| {
-            db.file_path(path)
-        })
+        self.with_db(|db| db.file_path(path))
     }
 
     pub fn source_file(&self, file_id: FileId) -> Cancelable<Parse<ast::SourceFile>> {
-        self.with_db(|db| {
-            db.source_file(file_id)
-        })
+        self.with_db(|db| db.source_file(file_id))
     }
 
     pub fn source_root(&self) -> Cancelable<SourceRoot> {
-        self.with_db(|db| {
-            (*db.source_root()).clone()
-        })
+        self.with_db(|db| (*db.source_root()).clone())
     }
 
     fn with_db<F: FnOnce(&AnalysisDatabase) -> T + std::panic::UnwindSafe, T>(
@@ -84,7 +78,9 @@ impl AnalysisHost {
     }
 
     pub fn analysis(&self) -> Analysis {
-        Analysis { db: self.db.snapshot() }
+        Analysis {
+            db: self.db.snapshot(),
+        }
     }
 }
 

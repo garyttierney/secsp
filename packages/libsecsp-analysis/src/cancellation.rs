@@ -17,7 +17,6 @@ impl Canceled {
     }
 }
 
-
 impl std::fmt::Display for Canceled {
     fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         fmt.write_str("canceled")
@@ -49,9 +48,9 @@ pub trait CheckCanceled {
     fn check_canceled(&self);
 
     fn catch_canceled<F, T>(&self, f: F) -> Result<T, Canceled>
-        where
-            Self: Sized,
-            F: FnOnce(&Self) -> T + panic::UnwindSafe,
+    where
+        Self: Sized,
+        F: FnOnce(&Self) -> T + panic::UnwindSafe,
     {
         let this = panic::AssertUnwindSafe(self);
         panic::catch_unwind(|| f(*this)).map_err(|err| match err.downcast::<Canceled>() {
