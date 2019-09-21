@@ -2,7 +2,7 @@ use secsp_parser::syntax::{SyntaxElement, SyntaxKind};
 
 use crate::ast::types::{Block, Definition};
 use crate::ast::{AstChildren, AstNode};
-use rowan::SmolStr;
+
 
 pub trait ItemOwner: AstNode {
     fn items(&self) -> AstChildren<Definition> {

@@ -69,16 +69,12 @@ fn main() {
     let analysis_db = AnalysisDatabase::from_files(input_files)
         .unwrap_or_else(|e| panic!("Unable to read input files: {}", e));
     let analysis_host = AnalysisHost::new(analysis_db);
-    let source_root = analysis_host.source_root();
 
-    debug!(
-        "Created analysis host for {} source file(s)",
-        source_root.file_ids().len()
-    );
+    let analysis = analysis_host.analysis();
+    let source_root = analysis.source_root().expect("no source root defined");
 
-    for id in source_root.file_ids() {
-        let source_file = analysis_host.source_file(*id);
-
-        println!("{}", utils::ast_to_string(&source_file.tree()));
+    for id in source_root.0 {
+        let source = analysis.source_file(id).expect("couldn't parse");
+        println!("{}", utils::ast_to_string(&source.tree()));
     }
 }

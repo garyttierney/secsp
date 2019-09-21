@@ -1,75 +1,84 @@
 extern crate futures;
 extern crate jsonrpc_core;
+extern crate secsp_analysis;
 extern crate serde_json;
+extern crate text_unit;
 extern crate tokio;
 extern crate tower_lsp;
 
-use futures::future;
+use std::{mem, panic};
+use std::sync::{Arc, Mutex};
+
+use futures::{future};
 use jsonrpc_core::{BoxFuture, Result};
 use serde_json::Value;
-use tower_lsp::lsp_types::*;
 use tower_lsp::{LanguageServer, LspService, Printer, Server};
+use tower_lsp::lsp_types::*;
+
+use secsp_analysis::{Analysis, AnalysisHost, Cancelable};
+use std::path::PathBuf;
 
 #[derive(Debug, Default)]
-struct Backend;
+struct CspBackend {
+    analysis_host: Arc<Mutex<Option<AnalysisHost>>>,
+    source_root: Arc<Option<PathBuf>>
+}
 
-impl LanguageServer for Backend {
+impl CspBackend {
+    fn initialize_analysis_host(&self, root: String) {
+        let host = AnalysisHost::from_workspace(root);
+        let mut host_state = self.analysis_host.lock().expect("Mutex acquired before initialization");
+
+        mem::replace(&mut *host_state, Some(host));
+    }
+
+    fn with_analysis_host<T: 'static, F>(&self, executor: F) -> T where F: FnOnce(&mut AnalysisHost) -> T {
+        let mut host_guard = self.analysis_host.lock().unwrap();
+
+        if let Some(ref mut host) = *host_guard {
+            executor(host)
+        } else {
+            panic!("AnalysisHost requested before initialization")
+        }
+    }
+
+    fn with_analysis<T: 'static, F>(&self, executor: F) -> BoxFuture<T> where T: Send, F: FnOnce(Analysis) -> Cancelable<T> {
+        let analysis = self.with_analysis_host(|host| host.analysis());
+
+        match executor(analysis) {
+            Ok(t) => Box::new(future::ok(t)),
+            Err(_) => Box::new(future::empty())
+        }
+    }
+}
+
+impl LanguageServer for CspBackend {
     type ShutdownFuture = BoxFuture<()>;
     type SymbolFuture = BoxFuture<Option<Vec<SymbolInformation>>>;
     type ExecuteFuture = BoxFuture<Option<Value>>;
     type HoverFuture = BoxFuture<Option<Hover>>;
     type HighlightFuture = BoxFuture<Option<Vec<DocumentHighlight>>>;
 
-    fn initialize(&self, _: InitializeParams) -> Result<InitializeResult> {
+    fn initialize(&self, params: InitializeParams) -> Result<InitializeResult> {
+        self.initialize_analysis_host(params.root_path.unwrap_or_else(|| ".".to_string()));
+
         Ok(InitializeResult {
             capabilities: ServerCapabilities {
                 text_document_sync: Some(TextDocumentSyncCapability::Kind(
-                    TextDocumentSyncKind::Incremental,
+                    TextDocumentSyncKind::Full,
                 )),
                 hover_provider: Some(true),
-                completion_provider: Some(CompletionOptions {
-                    resolve_provider: Some(false),
-                    trigger_characters: Some(vec![".".to_string()]),
-                }),
-                signature_help_provider: Some(SignatureHelpOptions {
-                    trigger_characters: None,
-                }),
-                document_highlight_provider: Some(true),
-                workspace_symbol_provider: Some(true),
-                execute_command_provider: Some(ExecuteCommandOptions {
-                    commands: vec!["dummy.do_something".to_string()],
-                }),
-                workspace: Some(WorkspaceCapability {
-                    workspace_folders: Some(WorkspaceFolderCapability {
-                        supported: Some(true),
-                        change_notifications: Some(
-                            WorkspaceFolderCapabilityChangeNotifications::Bool(true),
-                        ),
-                    }),
-                }),
                 ..ServerCapabilities::default()
             },
         })
     }
 
-    fn initialized(&self, printer: &Printer, _: InitializedParams) {
+    fn initialized(&self, printer: &Printer, _p: InitializedParams) {
         printer.log_message(MessageType::Info, "server initialized!");
     }
 
     fn shutdown(&self) -> Self::ShutdownFuture {
         Box::new(future::ok(()))
-    }
-
-    fn did_change_workspace_folders(&self, printer: &Printer, _: DidChangeWorkspaceFoldersParams) {
-        printer.log_message(MessageType::Info, "workspace folders changed!");
-    }
-
-    fn did_change_configuration(&self, printer: &Printer, _: DidChangeConfigurationParams) {
-        printer.log_message(MessageType::Info, "configuration changed!");
-    }
-
-    fn did_change_watched_files(&self, printer: &Printer, _: DidChangeWatchedFilesParams) {
-        printer.log_message(MessageType::Info, "watched files have changed!");
     }
 
     fn symbol(&self, _: WorkspaceSymbolParams) -> Self::SymbolFuture {
@@ -82,24 +91,28 @@ impl LanguageServer for Backend {
         Box::new(future::ok(None))
     }
 
-    fn did_open(&self, printer: &Printer, _: DidOpenTextDocumentParams) {
-        printer.log_message(MessageType::Info, "file opened!");
+    fn did_change(&self, _printer: &Printer, change: DidChangeTextDocumentParams) {
+        if let Ok(path) = change.text_document.uri.to_file_path() {
+            self.with_analysis_host(|host| {
+                let content = &change.content_changes;
+                host.add_file(path, content[0].text.clone());
+            })
+        }
     }
 
-    fn did_change(&self, printer: &Printer, _: DidChangeTextDocumentParams) {
-        printer.log_message(MessageType::Info, "file changed!");
-    }
+    fn hover(&self, params: TextDocumentPositionParams) -> Self::HoverFuture {
+        self.with_analysis(|analysis| {
+            let path = params.text_document.uri.to_file_path().unwrap();
 
-    fn did_save(&self, printer: &Printer, _: DidSaveTextDocumentParams) {
-        printer.log_message(MessageType::Info, "file saved!");
-    }
+            let source_id = analysis.file_id(path)?;
+            let source = analysis.source_file(source_id)?;
+            let node = source.syntax_node();
 
-    fn did_close(&self, printer: &Printer, _: DidCloseTextDocumentParams) {
-        printer.log_message(MessageType::Info, "file closed!");
-    }
-
-    fn hover(&self, _: TextDocumentPositionParams) -> Self::HoverFuture {
-        Box::new(future::ok(None))
+            Ok(Some(Hover {
+                contents: HoverContents::Scalar(MarkedString::String(node.to_string())),
+                range: None,
+            }))
+        })
     }
 
     fn document_highlight(&self, _: TextDocumentPositionParams) -> Self::HighlightFuture {
@@ -113,7 +126,7 @@ fn main() {
     let stdin = tokio::io::stdin();
     let stdout = tokio::io::stdout();
 
-    let (service, messages) = LspService::new(Backend::default());
+    let (service, messages) = LspService::new(CspBackend::default());
     let handle = service.close_handle();
     let server = Server::new(stdin, stdout)
         .interleave(messages)

@@ -7,8 +7,8 @@ autobenches = false
 
 [dependencies]
 log = "0.4"
-rustc-hash = "1.0.1"
-salsa = "0.10.0"
+rustc-hash = "1.0"
+salsa = "0.13"
 secsp_syntax = { path = "../libsecsp-syntax", version = "0.1.0 "}
 
 [lib]

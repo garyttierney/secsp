@@ -5,6 +5,8 @@ pub use rowan::WalkEvent;
 use secsp_parser::syntax::{SyntaxNode, SyntaxNodeChildren};
 
 pub use self::types::*;
+use text_unit::TextUnit;
+use itertools::Itertools;
 
 mod types;
 pub mod visitor;
@@ -52,4 +54,17 @@ pub fn descendants(tree: &SyntaxNode) -> impl Iterator<Item = SyntaxNode> {
         WalkEvent::Enter(node) => Some(node),
         WalkEvent::Leave(_) => None,
     })
+}
+
+pub fn ancestors_at_offset(
+    node: &SyntaxNode,
+    offset: TextUnit,
+) -> impl Iterator<Item = SyntaxNode> {
+    node.token_at_offset(offset)
+        .map(|token| token.parent().ancestors())
+        .kmerge_by(|node1, node2| node1.text_range().len() < node2.text_range().len())
+}
+
+pub fn find_node_at_offset<N: AstNode>(syntax: &SyntaxNode, offset: TextUnit) -> Option<N> {
+    ancestors_at_offset(syntax, offset).find_map(N::cast)
 }

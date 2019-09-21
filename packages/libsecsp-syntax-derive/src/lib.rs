@@ -4,7 +4,7 @@ extern crate proc_macro;
 use proc_macro::TokenStream;
 
 use inflector::Inflector;
-use syn::{parse_macro_input, DeriveInput, Path};
+use syn::{parse_macro_input, DeriveInput};
 use syn::{Meta, NestedMeta};
 
 use quote::quote;
