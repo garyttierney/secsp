@@ -19,11 +19,13 @@
     "docusaurus": "^1.13.0",
     "style-loader": "^1.0.0",
     "webpack": "^4.40.2",
+    "webpack-bundle-analyzer": "^3.5.1",
     "webpack-cli": "^3.3.9"
   },
   "dependencies": {
     "babel-polyfill": "^6.26.0",
     "monaco-editor": "^0.18.1",
+    "netlify-cli": "^2.15.0",
     "react": "^16.9.0",
     "react-dom": "^16.9.0",
     "react-monaco-editor": "^0.31.0"

@@ -4,7 +4,7 @@ const webpack = require('webpack');
 const dist = path.resolve(__dirname, "static", "js");
 
 module.exports = {
-    mode: "development",
+    mode: "production",
     entry: {
         "csp-wasm-editor": "./components/csp-wasm-editor/index.js"
     },

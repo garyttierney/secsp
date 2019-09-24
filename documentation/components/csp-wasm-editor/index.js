@@ -1,8 +1,4 @@
-import React from 'react';
-import ReactDOM from 'react-dom';
-import MonacoEditor from 'react-monaco-editor';
-
-import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
+import monaco from 'monaco-editor/esm/vs/editor/editor.api';
 import 'monaco-editor/esm/vs/editor/contrib/contextmenu/contextmenu';
 import 'monaco-editor/esm/vs/editor/standalone/browser/quickOpen/gotoLine';
 import 'monaco-editor/esm/vs/editor/standalone/browser/quickOpen/quickCommand';
@@ -80,67 +76,39 @@ monaco.languages.setMonarchTokensProvider(LANG_ID, {
     }
 });
 
-class CspEditor extends React.Component {
-    constructor(props) {
-        super(props);
+document.addEventListener('DOMContentLoaded', async () => {
+    let analysis;
+    let rustapi;
+    try {
+        rustapi = await import("./pkg");
+        rustapi.start();
 
-        this.state = {
-            code: `// type your code.
+        analysis = new rustapi.SingleFileAnalysis();
+    } catch (err) {
+        console.error("Unable to load analysis API", err);
+    }
+
+    const editorElement = document.getElementById('try');
+
+    const exampleCode = `// type your code.
 type t;
-allow t self : process read;`,
-            language: 'text'
-        }
-    }
+allow t self : process read;`;
 
-    async componentDidMount() {
-        try {
-            const rustapi = await import("./pkg");
-            rustapi.start();
+    const editor = monaco.editor.create(editorElement, {
+        theme: 'vs-dark',
+        value: exampleCode,
+        language: 'secsp',
+        minimap: {
+            enabled: false,
+        },
+    });
 
-            this.analysis = new rustapi.SingleFileAnalysis();
-        } catch (err) {
-            console.error("Unable to load analysis API", err);
-        }
-    }
+    editor.layout({height: 250, width: editorElement.clientWidth});
 
-    onChange(text) {
-        if (this.analysis != null) {
-            this.analysis.update(text);
-        }
+    editor.onDidChangeModelContent((e) => {
+        const model = editor.getModel();
+        const text = model.getValue();
 
-        this.setState((state) => {
-            return {...state, 'code': text};
-        });
-    }
-
-    render() {
-        const {code} = this.state;
-
-        let options = {
-            selectOnLineNumbers: true,
-            lineNumbers: 'on',
-            contextmenuenu: true,
-            renderMinimap: false,
-        };
-
-        let monacoEditor = <MonacoEditor
-            height="250"
-            language="secsp"
-            theme="vs-dark"
-            value={code}
-            options={options}
-            onChange={::this.onChange}
-        />;
-
-        return (
-            monacoEditor
-        );
-    }
-}
-
-
-document.addEventListener('DOMContentLoaded', () => {
-    let editor = <CspEditor/>;
-    ReactDOM.render(editor, document.getElementById('try'));
-
+        analysis.update(text);
+    })
 });
