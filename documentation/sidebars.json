@@ -14,5 +14,11 @@
       "reference/reference--conditionals",
       "reference/reference--macros"
     ]
+  },
+  "user-docs": {
+    "User Guide": [
+      "user",
+      "user--setup"
+    ]
   }
 }

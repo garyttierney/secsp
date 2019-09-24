@@ -1,7 +1,7 @@
 ---
 id: user
-title: document number 2
+title: User Guide
+sidebar_label: Index
 ---
 
-This is a link to [another document.](reference.md)  
-This is a link to an [external page.](http://www.example.com)
+secsp is still preview software, and the guide that follows may change frequently during the development cycle.
