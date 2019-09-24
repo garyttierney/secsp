@@ -59,6 +59,7 @@ jobs:
 
       - name: Run clippy
         run: cargo clippy --message-format json > clippy.json
+        continue-on-error: true
 
       - name: Publish clippy lints
         uses: digirati-labs/analysis-publisher@master
