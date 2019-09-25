@@ -22,6 +22,7 @@ pub mod input;
 pub mod syntax;
 
 pub use db::AnalysisDatabase;
+use rustc_hash::FxHashSet;
 
 #[derive(Debug)]
 pub struct AnalysisHost {
@@ -67,7 +68,7 @@ impl AnalysisHost {
         AnalysisHost { db }
     }
 
-    pub fn add_file(&mut self, path: PathBuf, contents: String) {
+    pub fn add_file(&mut self, path: PathBuf, contents: String) -> FileId {
         let id = self.db.file_path(path);
         let mut source_root = (*self.db.source_root()).clone();
 
@@ -75,6 +76,8 @@ impl AnalysisHost {
 
         self.db.set_source_root(Arc::new(source_root));
         self.db.set_file_text(id, Arc::new(contents));
+
+        id
     }
 
     pub fn analysis(&self) -> Analysis {
@@ -86,6 +89,9 @@ impl AnalysisHost {
 
 impl Default for AnalysisHost {
     fn default() -> Self {
-        AnalysisHost::new(AnalysisDatabase::default())
+        let mut database = AnalysisDatabase::default();
+        database.set_source_root(Arc::new(SourceRoot(FxHashSet::default())));
+
+        AnalysisHost::new(database)
     }
 }

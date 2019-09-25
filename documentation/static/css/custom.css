@@ -1,0 +1,87 @@
+/* your custom css */
+
+@media only screen and (min-device-width: 360px) and (max-device-width: 736px) {
+}
+
+@media only screen and (min-width: 1024px) {
+}
+
+@media only screen and (max-width: 1023px) {
+}
+
+@media only screen and (min-width: 1400px) {
+}
+
+@media only screen and (min-width: 1500px) {
+}
+
+#try {
+    border-top: 1px solid #4e4e4e;
+
+}
+
+#try .monaco-editor {
+    border-radius: 0 0 3px 3px;
+}
+
+.window {
+    box-shadow: 0 0 20px #acacac;
+}
+
+.titlebar {
+    padding: 0 3px;
+    background-color: #303030;
+    border-radius: 3px 3px 0 0;
+    border-bottom: 1px solid #3e3e3e;
+}
+
+.titlebar-stoplight {
+    float: left;
+    text-align: left;
+}
+
+.titlebar:after,
+.titlebar-stoplight:after {
+    content: ' ';
+    display: table;
+    clear: both;
+}
+
+.titlebar-close,
+.titlebar-minimize,
+.titlebar-fullscreen {
+    float: left;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin: 6px 4px;
+    line-height: 0;
+}
+
+
+.titlebar-close {
+    border: 1px solid #e2463f;
+    background-color: #ff5f57;
+    margin-left: 6px;
+}
+
+
+.titlebar-minimize {
+    border: 1px solid #e1a116;
+    background-color: #ffbd2e;
+}
+
+
+.titlebar-fullscreen,
+.titlebar-maximize {
+    border: 1px solid #12ac28;
+    background-color: #28c940;
+}
+
+.fixedHeaderContainer {
+    background-color: #151515;
+}
+
+a {
+    color: #ee0000;
+}

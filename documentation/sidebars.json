@@ -1,0 +1,24 @@
+{
+  "developer-docs": {
+    "Developer Documentation": [
+      "developer",
+      "developer/developer--architecture",
+      "developer/developer--testing",
+      "developer/developer--writing-documentation"
+    ]
+  },
+  "syntax-ref-docs": {
+    "Syntax Reference": [
+      "reference",
+      "reference/reference--namespaces",
+      "reference/reference--conditionals",
+      "reference/reference--macros"
+    ]
+  },
+  "user-docs": {
+    "User Guide": [
+      "user",
+      "user--setup"
+    ]
+  }
+}

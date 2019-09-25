@@ -68,6 +68,38 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+  documentation:
+    name: Generate documentation site
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+
+      - name: Install stable toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+
+      - uses: actions/setup-node@v1
+        with:
+          node-version: '10.x'
+
+      - run: cd documentation; yarn install && yarn run build
+
+      - name: Deploy netlify preview site
+        run: npx netlify-cli deploy -d ./documentation/build/secsp
+        if: github.ref != 'master'
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+
+      - name: Deploy netlify production site
+        run: npx netlify-cli deploy -d ./documentation/build/secsp --prod
+        if: github.ref == 'master'
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+
   coverage:
     name: Generate coverage report
     runs-on: ubuntu-latest
