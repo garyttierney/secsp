@@ -1,5 +1,4 @@
 status = [
-  "secsp/ci/test",
-  "secsp/ci-heavy/test",
+  "Build and test"
 ]
 delete_merged_branches = true
