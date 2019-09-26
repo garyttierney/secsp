@@ -1,11 +1,12 @@
 use secsp_parser::syntax::SyntaxNode;
+use secsp_syntax_derive::AstEnum;
 use secsp_syntax_derive::AstType;
 
 use crate::ast::types::{ItemOwner, NameOwner};
-use crate::ast::{AstNode, Expr};
 
 #[repr(transparent)]
 #[derive(AstType)]
+#[ast(kind = "NODE_CONTAINER_DEF")]
 pub struct ContainerDef(SyntaxNode);
 
 impl ContainerDef {}
@@ -14,6 +15,7 @@ impl ItemOwner for ContainerDef {}
 
 #[repr(transparent)]
 #[derive(AstType)]
+#[ast(kind = "NODE_MACRO_DEF")]
 pub struct MacroDef(SyntaxNode);
 
 impl NameOwner for MacroDef {}
@@ -21,21 +23,24 @@ impl ItemOwner for MacroDef {}
 
 #[repr(transparent)]
 #[derive(AstType)]
+#[ast(kind = "NODE_VARIABLE_DEF")]
 pub struct VariableDef(SyntaxNode);
 
 impl NameOwner for VariableDef {}
-impl VariableDef {
-    pub fn initializer(&self) -> Option<Expr> {
-        self.children::<Expr>().next()
-    }
-}
-#[repr(transparent)]
-#[derive(AstType)]
-#[kind(ContainerDef, MacroDef, VariableDef)]
-pub struct Definition(SyntaxNode);
+//impl VariableDef {
+//    pub fn initializer(&self) -> Option<Expr> {
+//        self.children::<Expr>().next()
+//    }
+//}
 
-pub enum DefinitionKind<'a> {
-    ContainerDef(&'a ContainerDef),
-    MacroDef(&'a MacroDef),
-    VariableDef(&'a VariableDef),
+#[derive(AstEnum)]
+pub enum Definition {
+    #[ast(kind = "NODE_CONTAINER_DEF")]
+    Container(ContainerDef),
+
+    #[ast(kind = "NODE_MACRO_DEF")]
+    Macro(MacroDef),
+
+    #[ast(kind = "NODE_VARIABLE_DEF")]
+    Variable(VariableDef),
 }

@@ -1,12 +1,15 @@
 use std::marker::PhantomData;
 
+use itertools::Itertools;
 pub use rowan::WalkEvent;
+use text_unit::TextUnit;
 
 use secsp_parser::syntax::{SyntaxNode, SyntaxNodeChildren};
 
 pub use self::types::*;
-use itertools::Itertools;
-use text_unit::TextUnit;
+
+#[cfg(test)]
+mod testing;
 
 mod types;
 pub mod visitor;

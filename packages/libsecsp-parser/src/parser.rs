@@ -120,20 +120,6 @@ impl<'t> Parser<'t> {
         }
     }
 
-    /// Check if the parser is currently positioned at a token has text matching
-    /// any of the expected [items], consuming the token and emitting an error
-    /// if the current token text doesn't match any of the inputs.
-    pub fn expect_one_of_str<S: Into<String>>(&mut self, items: Vec<S>) {
-        let current_text = self.current_text();
-        let strs: Vec<String> = items.into_iter().map(Into::into).collect();
-
-        if strs.iter().any(|str| *str == current_text) {
-            self.bump();
-        } else {
-            self.error("expected one of (todo)".to_string());
-        }
-    }
-
     /// Create a new empty marker at the parsers current position.
     pub fn mark(&mut self) -> marker::Marker {
         self.events.push(Event::BeginMarker);

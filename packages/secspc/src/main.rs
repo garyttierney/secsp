@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate clap;
 extern crate fern;
-#[macro_use]
+
 extern crate log;
 extern crate secsp_analysis;
 extern crate secsp_syntax;

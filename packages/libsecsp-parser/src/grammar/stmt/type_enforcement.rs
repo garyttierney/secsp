@@ -10,7 +10,7 @@ pub(super) fn te_rule(p: &mut Parser, kind: KeywordKind) -> bool {
     // Parse the source ID
     if !expr::try_expression(
         p,
-        ExprRestriction::None,
+        ExprRestriction::NoContext,
         "expected identifier or type expression",
     ) {
         m.abandon(p);
@@ -20,7 +20,7 @@ pub(super) fn te_rule(p: &mut Parser, kind: KeywordKind) -> bool {
     // Parse the target ID.
     if !expr::try_expression(
         p,
-        ExprRestriction::None,
+        ExprRestriction::NoContext,
         "expected identifier or type expression",
     ) {
         m.abandon(p);

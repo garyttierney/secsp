@@ -2,9 +2,6 @@ extern crate rustc_hash;
 extern crate salsa;
 extern crate secsp_syntax;
 
-use std::fs;
-use std::io;
-use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 

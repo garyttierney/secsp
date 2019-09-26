@@ -7,7 +7,6 @@ use rustc_hash::FxHashSet;
 
 use crate::cancellation::{Canceled, CheckCanceled};
 use crate::input::{FilesDatabase, SourceRoot};
-use crate::syntax::SyntaxDatabase;
 
 #[salsa::database(crate::input::Files, crate::syntax::Syntax)]
 #[derive(Debug)]
