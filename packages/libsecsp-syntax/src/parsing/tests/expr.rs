@@ -17,15 +17,6 @@ fn parse_nested_path() {
 }
 
 #[test]
-fn parse_list_expr() {
-    super::test_parser(
-        r#"
-        callstub(<marker type="NODE_LIST_EXPR">(item1, item2, item3)</marker>);
-    "#,
-    )
-}
-
-#[test]
 fn parse_paren_expr() {
     super::test_parser(
         r#"

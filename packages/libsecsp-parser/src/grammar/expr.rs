@@ -79,10 +79,10 @@ pub(crate) fn try_expression(
 }
 
 fn expression_lhs(p: &mut Parser) -> Option<CompletedMarker> {
-    if atom::is_at_path_start(p, 0) {
-        return Some(atom::path_expr(p));
-    } else if p.at(TokenKind::String) || p.at(TokenKind::Integer) {
+    if p.at(TokenKind::String) || p.at(TokenKind::Integer) {
         return Some(atom::literal_expr(p));
+    } else if atom::is_at_path_start(p, 0) {
+        return Some(atom::path_expr(p));
     }
 
     match p.current() {
@@ -92,7 +92,9 @@ fn expression_lhs(p: &mut Parser) -> Option<CompletedMarker> {
             expression_prec(p, 255, ExprRestriction::None);
             Some(m.complete(p, SyntaxKind::NODE_PREFIX_EXPR))
         }
-        SyntaxKind::TOK_OPEN_PARENTHESIS => Some(atom::list_or_paren_expr(p)),
+        SyntaxKind::TOK_OPEN_PARENTHESIS => {
+            Some(atom::list_or_paren_expr(p))
+        }
         _ => {
             error_recovery::recover_from_expr(p);
             None
@@ -116,6 +118,13 @@ fn expression_prec(p: &mut Parser, precedence: u8, restriction: ExprRestriction)
         SyntaxKind::TOK_HYPHEN if restriction.allows_range() => {
             return atom::range_expr(p, lhs, SyntaxKind::NODE_LEVEL_RANGE_EXPR);
         }
+         SyntaxKind::TOK_OPEN_PARENTHESIS => {
+                let m = lhs.precede(p);
+                let _ = atom::list_or_paren_expr(p);
+
+                m.complete(p, SyntaxKind::NODE_SET_EXPR);
+                return true;
+            }
         _ => {}
     };
 
