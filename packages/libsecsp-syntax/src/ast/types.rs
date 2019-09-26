@@ -10,12 +10,12 @@ mod def;
 mod expr;
 mod stmt;
 
-#[repr(transparent)]
 #[derive(AstType, Debug, Clone, PartialEq, Eq, Hash)]
+#[ast(kind = "NODE_BLOCK")]
 pub struct Block(SyntaxNode);
 
-#[repr(transparent)]
 #[derive(AstType, Debug, Clone, PartialEq, Eq, Hash)]
+#[ast(kind = "NODE_SOURCE_FILE")]
 pub struct SourceFile(SyntaxNode);
 
 impl ItemOwner for SourceFile {}

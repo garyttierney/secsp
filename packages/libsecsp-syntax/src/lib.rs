@@ -1,3 +1,5 @@
+#![allow(unused)]
+#![deny(unused_imports)]
 extern crate itertools;
 extern crate logos;
 extern crate num_enum;
