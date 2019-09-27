@@ -2,7 +2,6 @@
 #![deny(unused_imports)]
 extern crate itertools;
 extern crate logos;
-extern crate num_enum;
 extern crate rowan;
 extern crate secsp_parser;
 extern crate secsp_syntax_derive;
