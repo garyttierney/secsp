@@ -1,7 +1,6 @@
 use std::str::FromStr;
 
 use logos::Logos;
-use num_enum::{IntoPrimitive, TryFromPrimitive};
 
 #[repr(u16)]
 #[allow(non_camel_case_types)]
@@ -110,10 +109,7 @@ pub type SyntaxNodeChildren = rowan::SyntaxNodeChildren<CspLang>;
 pub type SyntaxToken = rowan::SyntaxToken<CspLang>;
 pub type SyntaxElement = rowan::NodeOrToken<SyntaxNode, SyntaxToken>;
 
-#[derive(
-    IntoPrimitive, TryFromPrimitive, Logos, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash,
-)]
-#[repr(u16)]
+#[derive(Logos, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum TokenKind {
     /// A name identifier token, containing a reference to the original source data.
     #[regex = "[a-zA-Z_][a-zA-Z0-9_]*"]
@@ -249,9 +245,7 @@ impl TokenKind {
 }
 
 #[repr(u16)]
-#[derive(
-    IntoPrimitive, TryFromPrimitive, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash,
-)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[allow(non_camel_case_types)]
 pub enum NodeKind {
     /// Syntax-tree marker for the a list of statements within `{ ... }`.
@@ -331,9 +325,7 @@ $ ( $ name::$ variant => $ val), *
 }
 
 #[repr(u16)]
-#[derive(
-    IntoPrimitive, TryFromPrimitive, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash,
-)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum KeywordKind {
     Type,
     TypeAttribute,
