@@ -17,11 +17,13 @@ database.
 Examples
 ========
 
-    macro allow_file_read(type source, type target) {
-        allow source target : file (read);
-    }
+```csp
+macro allow_file_read(type source, type target) {
+    allow source target : file (read);
+}
 
-    type a;
-    type b;
+type a;
+type b;
 
-    allow_file_read(a, b);
+allow_file_read(a, b);
+```

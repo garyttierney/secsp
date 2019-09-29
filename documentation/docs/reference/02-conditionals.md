@@ -16,10 +16,12 @@ not need to wrap the predicate expression of the conditional statement.
 Examples
 ========
 
-    if allow_file_manage && other_bool {
-        allow src file_type : manage;
-    } else if allow_file_write {
-        allow src file_type : write;
-    } else {
-        allow src file_type : read;
-    }
+```csp
+if allow_file_manage && other_bool {
+    allow src file_type : manage;
+} else if allow_file_write {
+    allow src file_type : write;
+} else {
+    allow src file_type : read;
+}
+```

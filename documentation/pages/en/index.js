@@ -87,7 +87,7 @@ class Index extends React.Component {
                                         </div>
                                     </div>
                                 </div>
-                                <div className="blockContent" id="try">
+                                <div className="blockContent content" id="try">
                                 </div>
                             </div>
                             <div className="twoByGridBlock">

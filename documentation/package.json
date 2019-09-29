@@ -15,8 +15,11 @@
     "@wasm-tool/wasm-pack-plugin": "^1.0.1",
     "babel-loader": "^8.0.6",
     "babel-plugin-transform-function-bind": "^6.22.0",
+    "bundle-stats": "^1.10.0",
     "css-loader": "^3.2.0",
     "docusaurus": "^1.13.0",
+    "monaco-editor-webpack-plugin": "^1.7.0",
+    "parcel-bundler": "^1.12.3",
     "style-loader": "^1.0.0",
     "webpack": "^4.40.2",
     "webpack-bundle-analyzer": "^3.5.1",
@@ -24,10 +27,14 @@
   },
   "dependencies": {
     "babel-polyfill": "^6.26.0",
+    "copy-webpack-plugin": "^5.0.4",
     "monaco-editor": "^0.18.1",
     "netlify-cli": "^2.15.0",
+    "prettier": "^1.18.2",
     "react": "^16.9.0",
     "react-dom": "^16.9.0",
-    "react-monaco-editor": "^0.31.0"
+    "react-monaco-editor": "^0.31.0",
+    "ts-loader": "^6.1.2",
+    "worker-loader": "^2.0.0"
   }
 }

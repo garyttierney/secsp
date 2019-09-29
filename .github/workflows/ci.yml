@@ -88,14 +88,14 @@ jobs:
 
       - name: Deploy netlify preview site
         run: npx netlify-cli deploy -d ./documentation/build/secsp
-        if: github.ref != 'master'
+        if: github.ref != 'refs/heads/master'
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
 
       - name: Deploy netlify production site
         run: npx netlify-cli deploy -d ./documentation/build/secsp --prod
-        if: github.ref == 'master'
+        if: github.ref == 'refs/heads/master'
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}

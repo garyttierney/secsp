@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "sourceMap": true,
+    "target": "es5",
+    "module": "esNext",
+    "lib": ["dom", "es2015", "webworker", "webworker.importscripts"],
+    "esModuleInterop": true,
+        "moduleResolution": "node",
+
+  }
+
+}
