@@ -38,31 +38,33 @@ namespace become available in the child.
 
 Examples:
 
-    abstract block parent {
-        type src;
+```csp
+abstract block parent {
+    type src;
 
-        macro test_read(type t) {
-            if allow_parent_test_read {
-                allow src target : file (read);
-            }
+    macro test_read(type t) {
+        if allow_parent_test_read {
+            allow src target : file (read);
         }
     }
+}
 
-    block child extends parent {
-        type tgt;
-        test_read(tgt);
-    }
+block child extends parent {
+    type tgt;
+    test_read(tgt);
+}
 
-    optional test {
-        type t;
-        allow t unresolved : file (read); // reference to unresolved will cause this block to be skipped
-    }
+optional test {
+    type t;
+    allow t unresolved : file (read); // reference to unresolved will cause this block to be skipped
+}
 
-    block test {
-        type_attribute types;
-    }
+block test {
+    type_attribute types;
+}
 
-    in test {
-        type t;
-        types |= t;
-    }
+in test {
+    type t;
+    types |= t;
+}
+```

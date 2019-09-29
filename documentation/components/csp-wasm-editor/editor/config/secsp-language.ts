@@ -1,14 +1,9 @@
-import monaco from 'monaco-editor/esm/vs/editor/editor.api';
-import 'monaco-editor/esm/vs/editor/contrib/contextmenu/contextmenu';
-import 'monaco-editor/esm/vs/editor/standalone/browser/quickOpen/gotoLine';
-import 'monaco-editor/esm/vs/editor/standalone/browser/quickOpen/quickCommand';
-import 'monaco-editor/esm/vs/editor/standalone/browser/quickOpen/quickOutline';
-import 'babel-polyfill';
+import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
+import {languages} from 'monaco-editor/esm/vs/editor/editor.api';
+import IMonarchLanguage = languages.IMonarchLanguage;
 
-const LANG_ID = 'secsp';
-
-monaco.languages.register({id: LANG_ID,});
-monaco.languages.setLanguageConfiguration(LANG_ID, {
+export const id = 'secsp';
+export const languageConfiguration: monaco.languages.LanguageConfiguration = {
     comments: {
         lineComment: "//",
         blockComment: ["/*", "*/"]
@@ -18,8 +13,8 @@ monaco.languages.setLanguageConfiguration(LANG_ID, {
         ['[', ']'],
         ['(', ')'],
     ],
-});
-monaco.languages.setMonarchTokensProvider(LANG_ID, {
+};
+export const language = <IMonarchLanguage> {
     keywords: [
         'abstract', 'block', 'optional',
         'if', 'else',
@@ -64,7 +59,7 @@ monaco.languages.setMonarchTokensProvider(LANG_ID, {
         comment: [
             [/[^\/*]+/, 'comment'],
             [/\/\*/, 'comment', '@push'],
-            ["\\*/", 'comment', '@pop'],
+            [/\\*/, 'comment', '@pop'],
             [/[\/*]/, 'comment']
         ],
 
@@ -74,41 +69,4 @@ monaco.languages.setMonarchTokensProvider(LANG_ID, {
             [/\/\/.*$/, 'comment'],
         ],
     }
-});
-
-document.addEventListener('DOMContentLoaded', async () => {
-    let analysis;
-    let rustapi;
-    try {
-        rustapi = await import("./pkg");
-        rustapi.start();
-
-        analysis = new rustapi.SingleFileAnalysis();
-    } catch (err) {
-        console.error("Unable to load analysis API", err);
-    }
-
-    const editorElement = document.getElementById('try');
-
-    const exampleCode = `// type your code.
-type t;
-allow t self : process read;`;
-
-    const editor = monaco.editor.create(editorElement, {
-        theme: 'vs-dark',
-        value: exampleCode,
-        language: 'secsp',
-        minimap: {
-            enabled: false,
-        },
-    });
-
-    editor.layout({height: 250, width: editorElement.clientWidth});
-
-    editor.onDidChangeModelContent((e) => {
-        const model = editor.getModel();
-        const text = model.getValue();
-
-        analysis.update(text);
-    })
-});
+};

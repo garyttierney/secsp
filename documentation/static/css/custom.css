@@ -26,6 +26,12 @@
 
 .window {
     box-shadow: 0 0 20px #acacac;
+    display: flex;
+    flex-direction: column;
+}
+
+.window > .content {
+    flex-grow: 1;
 }
 
 .titlebar {

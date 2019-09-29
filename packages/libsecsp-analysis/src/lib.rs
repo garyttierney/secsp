@@ -77,6 +77,10 @@ impl AnalysisHost {
         id
     }
 
+    pub fn update_file(&mut self, id: FileId, contents: String) {
+        self.db.set_file_text(id, Arc::new(contents));
+    }
+
     pub fn analysis(&self) -> Analysis {
         Analysis {
             db: self.db.snapshot(),
