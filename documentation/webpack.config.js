@@ -6,7 +6,6 @@ const CopyPlugin = require('copy-webpack-plugin');
 
 module.exports = {
     mode: "development",
-    devtool: "inline-source-map",
     entry: {
         "csp-wasm-editor": "./components/csp-wasm-editor/index.ts",
         "csp-wasm-pkg": "./components/csp-wasm-editor/pkg/index.js",
