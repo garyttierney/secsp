@@ -204,6 +204,12 @@ pub enum TokenKind {
     Tombstone,
 }
 
+impl Into<SyntaxKind> for TokenKind {
+    fn into(self) -> SyntaxKind {
+        self.syntax_kind()
+    }
+}
+
 impl TokenKind {
     pub fn syntax_kind(self) -> SyntaxKind {
         use self::{SyntaxKind::*, TokenKind::*};

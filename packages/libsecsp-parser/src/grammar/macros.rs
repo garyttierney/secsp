@@ -2,9 +2,8 @@ use std::str::FromStr;
 
 use crate::grammar::block;
 use crate::parser::Parser;
-use crate::syntax::KeywordKind;
-use crate::syntax::SyntaxKind;
-use crate::syntax::TokenKind;
+use crate::syntax::SyntaxKind::*;
+use crate::syntax::{KeywordKind, TokenKind};
 
 pub(crate) fn parse_macro(p: &mut Parser) {
     // pre-test: parser must be at a "macro" keyword.
@@ -18,9 +17,9 @@ pub(crate) fn parse_macro(p: &mut Parser) {
 fn parse_macro_param_list(p: &mut Parser) {
     let m = p.mark();
 
-    p.expect(TokenKind::OpenParenthesis);
+    p.expect(tok!['(']);
 
-    if !p.at(TokenKind::CloseParenthesis) {
+    if !p.at(tok![')']) {
         loop {
             if !parse_macro_param_list_item(p) {
                 break;
@@ -28,27 +27,27 @@ fn parse_macro_param_list(p: &mut Parser) {
         }
     }
 
-    p.expect(TokenKind::CloseParenthesis);
-    m.complete(p, SyntaxKind::NODE_MACRO_PARAM_LIST);
+    p.expect(tok![')']);
+    m.complete(p, NODE_MACRO_PARAM_LIST);
 }
 
 fn parse_macro_param_list_item(p: &mut Parser) -> bool {
     let m = p.mark();
 
-    match KeywordKind::from_str(p.current_text()).ok() {
-        Some(kw) => p.bump_as(kw),
-        None if p.at(TokenKind::Name) => {
+    match KeywordKind::from_str(p.current_text()) {
+        Ok(kw) => p.bump_as(kw),
+        Err(_) if p.at(TokenKind::Name) => {
             p.error("expected keyword");
             p.bump();
         }
-        None => {
+        _ => {
             m.abandon(p);
             return false;
         }
     }
 
     p.expect(TokenKind::Name);
-    m.complete(p, SyntaxKind::NODE_MACRO_PARAM_LIST_ITEM);
+    m.complete(p, NODE_MACRO_PARAM_LIST_ITEM);
 
-    p.eat(TokenKind::Comma)
+    p.eat(tok![,])
 }

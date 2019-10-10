@@ -27,8 +27,8 @@ impl<'t> Parser<'t> {
     }
 
     /// Check if the parser is currently positioned at the [expected] type.
-    pub fn at(&self, expected: TokenKind) -> bool {
-        self.current() == expected.syntax_kind()
+    pub fn at<K: Into<SyntaxKind>>(&self, expected: K) -> bool {
+        self.current() == expected.into()
     }
 
     pub fn eat_keyword<K>(&mut self, kw: K) -> bool
@@ -82,7 +82,7 @@ impl<'t> Parser<'t> {
 
     /// Check if the parser is currently positioned at the [expected] type and consume the token,
     /// advancing the parsers position.
-    pub fn eat(&mut self, expected: TokenKind) -> bool {
+    pub fn eat<K: Into<SyntaxKind>>(&mut self, expected: K) -> bool {
         if self.at(expected) {
             self.bump();
             return true;
@@ -101,7 +101,7 @@ impl<'t> Parser<'t> {
 
     /// Check if the parser is currently positioned at the [expected] type, consuming it and
     /// emitting an error if the current token doesn't match what is expected.
-    pub fn expect(&mut self, expected: TokenKind) {
+    pub fn expect<K: Into<SyntaxKind>>(&mut self, expected: K) {
         if !self.eat(expected) {
             self.error(format!("expected {:#?}", expected));
         }

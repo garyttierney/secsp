@@ -3,6 +3,7 @@ use crate::grammar::error_recovery;
 use crate::parser::CompletedMarker;
 use crate::parser::Parser;
 use crate::syntax::SyntaxKind;
+use crate::syntax::SyntaxKind::*;
 use crate::syntax::TokenKind;
 
 pub enum BinaryOperator {
@@ -28,14 +29,13 @@ impl BinaryOperator {
 
     pub fn from(tok: SyntaxKind) -> Option<Self> {
         use self::BinaryOperator::*;
-        use self::SyntaxKind::*;
 
         let op = match tok {
-            TOK_CARET => BitwiseXor,
-            TOK_PIPE => BitwiseOr,
-            TOK_AMPERSAND => BitwiseAnd,
-            TOK_DOUBLE_AMPERSAND => LogicalAnd,
-            TOK_DOUBLE_PIPE => LogicalOr,
+            tok![^] => BitwiseXor,
+            tok![|] => BitwiseOr,
+            tok![&] => BitwiseAnd,
+            tok![&&] => LogicalAnd,
+            tok![||] => LogicalOr,
             _ => return None,
         };
 
@@ -86,15 +86,13 @@ fn expression_lhs(p: &mut Parser) -> Option<CompletedMarker> {
     }
 
     match p.current() {
-        SyntaxKind::TOK_EXCLAMATION | SyntaxKind::TOK_TILDE => {
+        tok![!] | tok![~] => {
             let m = p.mark();
             p.bump();
             expression_prec(p, 255, ExprRestriction::None);
-            Some(m.complete(p, SyntaxKind::NODE_PREFIX_EXPR))
+            Some(m.complete(p, NODE_PREFIX_EXPR))
         }
-        SyntaxKind::TOK_OPEN_PARENTHESIS => {
-            Some(atom::list_or_paren_expr(p))
-        }
+        tok!['('] => Some(atom::list_or_paren_expr(p)),
         _ => {
             error_recovery::recover_from_expr(p);
             None
@@ -109,22 +107,19 @@ fn expression_prec(p: &mut Parser, precedence: u8, restriction: ExprRestriction)
     };
 
     match p.current() {
-        SyntaxKind::TOK_COLON if restriction.allows_context() => {
+        tok![:] if restriction.allows_context() => {
             return atom::context_expr(p, lhs);
         }
-        SyntaxKind::TOK_DOT_DOT => {
+        tok![..] => {
             return atom::range_expr(p, lhs, SyntaxKind::NODE_CATEGORY_RANGE_EXPR);
         }
-        SyntaxKind::TOK_HYPHEN if restriction.allows_range() => {
-            return atom::range_expr(p, lhs, SyntaxKind::NODE_LEVEL_RANGE_EXPR);
-        }
-         SyntaxKind::TOK_OPEN_PARENTHESIS => {
-                let m = lhs.precede(p);
-                let _ = atom::list_or_paren_expr(p);
+        tok!['('] => {
+            let m = lhs.precede(p);
+            let _ = atom::list_or_paren_expr(p);
 
-                m.complete(p, SyntaxKind::NODE_SET_EXPR);
-                return true;
-            }
+            m.complete(p, NODE_SET_EXPR);
+            return true;
+        }
         _ => {}
     };
 
@@ -141,7 +136,7 @@ fn expression_prec(p: &mut Parser, precedence: u8, restriction: ExprRestriction)
         p.bump();
 
         expression_prec(p, precedence + 1, ExprRestriction::None);
-        lhs = m.complete(p, SyntaxKind::NODE_BINARY_EXPR);
+        lhs = m.complete(p, NODE_BINARY_EXPR);
     }
 
     true

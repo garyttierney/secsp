@@ -35,7 +35,7 @@ fn parse_extends_list(p: &mut Parser) {
     assert!(p.eat_keyword(KeywordKind::Extends));
     atom::path_expr(p);
 
-    while p.eat(TokenKind::Comma) {
+    while p.eat(tok![,]) {
         atom::path_expr(p);
     }
 

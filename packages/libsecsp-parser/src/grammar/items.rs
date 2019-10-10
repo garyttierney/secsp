@@ -15,7 +15,7 @@ use crate::syntax::TokenKind;
 
 pub(crate) fn parse_item(p: &mut Parser) -> bool {
     fn at_kw(p: &Parser) -> bool {
-        p.at(TokenKind::Name) || p.at(TokenKind::IfKw) || p.at(TokenKind::ElseKw)
+        p.at(TokenKind::Name) || p.at(tok![if]) || p.at(tok![else])
     }
 
     if !at_kw(p) {

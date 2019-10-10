@@ -62,13 +62,13 @@ fn finish_stmt(p: &mut Parser, block_type: BlockType) {
 
 fn conditional(p: &mut Parser) {
     let m = p.mark();
-    assert!(p.eat(TokenKind::IfKw));
+    assert!(p.eat(tok![if]));
 
     expression(p, ExprRestriction::NoContext);
     parse_block(p, true);
 
-    if p.eat(TokenKind::ElseKw) {
-        if p.at(TokenKind::IfKw) {
+    if p.eat(tok![else]) {
+        if p.at(tok![if]) {
             conditional(p);
         } else {
             parse_block(p, true);
@@ -79,15 +79,15 @@ fn conditional(p: &mut Parser) {
 }
 
 fn macro_call(p: &mut Parser) {
-    assert!(p.eat(TokenKind::OpenParenthesis));
+    assert!(p.eat(tok!['(']));
 
-    while !p.at(TokenKind::CloseParenthesis) {
+    while !p.at(tok![')']) {
         if !expression(p, ExprRestriction::None) {
             break;
         }
 
-        p.eat(TokenKind::Comma);
+        p.eat(tok![,]);
     }
 
-    p.expect(TokenKind::CloseParenthesis);
+    p.expect(tok![')']);
 }

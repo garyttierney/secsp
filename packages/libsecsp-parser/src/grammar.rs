@@ -1,6 +1,9 @@
 use crate::parser::Parser;
 use crate::syntax::SyntaxKind;
 
+#[macro_use]
+pub(crate) mod rules;
+
 pub(crate) mod atom;
 pub(crate) mod block;
 pub(crate) mod container;
