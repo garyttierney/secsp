@@ -61,7 +61,7 @@ pub(crate) fn context_expr(p: &mut Parser, lhs: CompletedMarker) -> bool {
         return false;
     }
 
-    if p.eat(tok![,]) {
+    if p.eat(tok![:]) {
         let m = lhs.precede(p);
 
         // :type

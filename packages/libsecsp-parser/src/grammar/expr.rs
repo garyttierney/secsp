@@ -113,6 +113,9 @@ fn expression_prec(p: &mut Parser, precedence: u8, restriction: ExprRestriction)
         tok![..] => {
             return atom::range_expr(p, lhs, SyntaxKind::NODE_CATEGORY_RANGE_EXPR);
         }
+        tok![-] if restriction.allows_context() => {
+            return atom::range_expr(p, lhs, NODE_LEVEL_RANGE_EXPR);
+        }
         tok!['('] => {
             let m = lhs.precede(p);
             let _ = atom::list_or_paren_expr(p);

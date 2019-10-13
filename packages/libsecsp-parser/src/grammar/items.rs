@@ -1,86 +1,86 @@
 use std::str::FromStr;
 
-use crate::grammar::atom;
-use crate::grammar::block::BlockType;
-use crate::grammar::{
-    container::parse_container,
-    macros::parse_macro,
-    stmt::{kw_statement, statement},
-    var::parse_var,
-};
+use crate::grammar::def;
+use crate::grammar::{atom, stmt};
 use crate::parser::Parser;
 use crate::syntax::KeywordKind;
-use crate::syntax::SyntaxKind;
 use crate::syntax::TokenKind;
 
-pub(crate) fn parse_item(p: &mut Parser) -> bool {
+pub(crate) fn parse_item(p: &mut Parser) {
     fn at_kw(p: &Parser) -> bool {
         p.at(TokenKind::Name) || p.at(tok![if]) || p.at(tok![else])
     }
 
     if !at_kw(p) {
         p.error("expected keyword");
-        return false;
+        return;
     }
 
-    fn do_parse_item(
-        p: &mut Parser,
-        ty: BlockType,
-        kind: SyntaxKind,
-        parser: fn(&mut Parser),
-    ) -> Option<(BlockType, SyntaxKind)> {
-        parser(p);
-        Some((ty, kind))
-    }
-
-    let m = p.mark();
-
-    let item = match KeywordKind::from_str(p.current_text()) {
-        Ok(KeywordKind::Abstract)
-        | Ok(KeywordKind::Block)
-        | Ok(KeywordKind::Optional)
-        | Ok(KeywordKind::In) => do_parse_item(
-            p,
-            BlockType::BlockLike,
-            SyntaxKind::NODE_CONTAINER_DEF,
-            parse_container,
-        ),
-        Ok(KeywordKind::Macro) => do_parse_item(
-            p,
-            BlockType::BlockLike,
-            SyntaxKind::NODE_MACRO_DEF,
-            parse_macro,
-        ),
-        Ok(kw) if kw.is_var_type() && atom::is_at_path_start(p, 1) => do_parse_item(
-            p,
-            BlockType::NotBlockLike,
-            SyntaxKind::NODE_VARIABLE_DEF,
-            parse_var,
-        ),
+    match KeywordKind::from_str(p.current_text()) {
         Ok(kw) => {
-            m.abandon(p);
-            return kw_statement(p, kw);
+            match kw {
+                // test concrete_block
+                // block abc {
+                // }
+
+                // test abstract_block {
+                // abstract block abc extends dfg {
+                // }
+                kw![abstract] | kw![block] | kw![optional] | kw![in] => def::container(p),
+
+                // test te_rule
+                // allow src target : expr;
+
+                // test te_rule_inline_classpermission
+                // allow src target : file (read);
+                kw![allow] | kw![audit_allow] | kw![never_allow] | kw![dont_audit] => {
+                    stmt::te_rule(p, kw)
+                }
+
+                // test if_stmt
+                // if expr {
+                // }
+
+                // test if_else_stmt
+                // if expr {
+                // } else {
+                // }
+                kw![if] => stmt::conditional(p),
+
+                // test macro_def
+                // macro my_macro() {
+                // }
+
+                // test macro_def_with_params
+                // macro my_macro(type t) {
+                // }
+                kw![macro] => def::macro_(p),
+
+                // test var_def
+                // type t;
+
+                // test var_def_with_initializer
+                // type_attribute t = a & b;
+                kw if kw.is_var_type() && atom::is_at_path_start(p, 1) => def::variable(p),
+                _kw => {}
+            }
         }
-        _ => {
-            m.abandon(p);
-            return statement(p);
+        Err(_) => {
+            let ident = atom::path_expr(p);
+
+            // We didn't find a keyword statement, so determine if the current
+            // token stream represents a statement that begins with an identifier.
+            // e.g.,
+            // `macro_call(a);`
+            // `my_ident |= val;`
+            match p.current() {
+                tok!['('] => stmt::macro_call(p, ident),
+                _ => {
+                    p.bump();
+                }
+            };
+
+            return;
         }
     };
-
-    match item {
-        Some((ty, kind)) => {
-            if ty == BlockType::NotBlockLike {
-                p.expect(TokenKind::Semicolon);
-            } else {
-                p.eat(TokenKind::Semicolon);
-            }
-
-            m.complete(p, kind);
-            true
-        }
-        None => {
-            m.abandon(p);
-            false
-        }
-    }
 }

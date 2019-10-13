@@ -1,7 +1,7 @@
 pub(crate) use marker::CompletedMarker;
 
 use crate::parser::event::Event;
-use crate::syntax::{SyntaxKind, TokenKind};
+use crate::syntax::SyntaxKind;
 use crate::TokenSource;
 
 pub(crate) mod event;
@@ -101,7 +101,7 @@ impl<'t> Parser<'t> {
 
     /// Check if the parser is currently positioned at the [expected] type, consuming it and
     /// emitting an error if the current token doesn't match what is expected.
-    pub fn expect<K: Into<SyntaxKind>>(&mut self, expected: K) {
+    pub fn expect<K: Into<SyntaxKind> + std::fmt::Debug + Copy>(&mut self, expected: K) {
         if !self.eat(expected) {
             self.error(format!("expected {:#?}", expected));
         }

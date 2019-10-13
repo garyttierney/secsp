@@ -3,7 +3,7 @@ use crate::grammar::expr::ExprRestriction;
 use crate::parser::Parser;
 use crate::syntax::{KeywordKind, SyntaxKind, TokenKind};
 
-pub(super) fn te_rule(p: &mut Parser, kind: KeywordKind) -> bool {
+pub(crate) fn te_rule(p: &mut Parser, kind: KeywordKind) {
     let m = p.mark();
     p.bump_as(kind);
 
@@ -14,7 +14,7 @@ pub(super) fn te_rule(p: &mut Parser, kind: KeywordKind) -> bool {
         "expected identifier or type expression",
     ) {
         m.abandon(p);
-        return false;
+        return;
     }
 
     // Parse the target ID.
@@ -24,7 +24,7 @@ pub(super) fn te_rule(p: &mut Parser, kind: KeywordKind) -> bool {
         "expected identifier or type expression",
     ) {
         m.abandon(p);
-        return false;
+        return;
     }
 
     // Parse the target class and access vector expression
@@ -34,5 +34,4 @@ pub(super) fn te_rule(p: &mut Parser, kind: KeywordKind) -> bool {
 
     p.expect(TokenKind::Semicolon);
     m.complete(p, SyntaxKind::NODE_TE_RULE);
-    true
 }

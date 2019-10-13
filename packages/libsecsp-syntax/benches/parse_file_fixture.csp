@@ -37,4 +37,4 @@ abstract block my_block {
 }
 
 
-block abc extends a, b, c, , {}
+block abc extends a, b, c {}

@@ -14,5 +14,12 @@ rowan = "0.6"
 smol_str = "0.1"
 text_unit = "0.1"
 
+[build-dependencies]
+ron = "0.5"
+quote = "1.0"
+serde = "1.0"
+Inflector = "0.11"
+syn = "1.0"
+
 [lib]
 bench = false

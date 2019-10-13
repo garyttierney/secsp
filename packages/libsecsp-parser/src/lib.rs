@@ -1,3 +1,5 @@
+#![allow(unused)]
+#![deny(unused_imports)]
 extern crate rowan;
 
 use crate::parser::event;

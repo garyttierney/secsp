@@ -83,3 +83,74 @@ macro_rules! tok {
         $crate::syntax::SyntaxKind::TOK_PIPE_EQUALS
     };
 }
+
+#[macro_export]
+macro_rules! kw {
+    (abstract) => {
+        $crate::syntax::KeywordKind::Abstract
+    };
+
+    (type) => {
+        $crate::syntax::KeywordKind::Type
+    };
+    (type_attribute) => {
+        $crate::syntax::KeywordKind::TypeAttribute
+    };
+    (role) => {
+        $crate::syntax::KeywordKind::Role
+    };
+    (role_attribute) => {
+        $crate::syntax::KeywordKind::RoleAttribute
+    };
+    (user) => {
+        $crate::syntax::KeywordKind::User
+    };
+    (user_attribute) => {
+        $crate::syntax::KeywordKind::UserAttribute
+    };
+    (optional) => {
+        $crate::syntax::KeywordKind::Optional
+    };
+    (sensitivity) => {
+        $crate::syntax::KeywordKind::Sensitivity
+    };
+    (categoriy) => {
+        $crate::syntax::KeywordKind::Category
+    };
+    (level_range) => {
+        $crate::syntax::KeywordKind::LevelRange
+    };
+    (block) => {
+        $crate::syntax::KeywordKind::Block
+    };
+    (in) => {
+        $crate::syntax::KeywordKind::In
+    };
+    (abstract) => {
+        $crate::syntax::KeywordKind::Abstract
+    };
+    (extends) => {
+        $crate::syntax::KeywordKind::Extends
+    };
+    (allow) => {
+        $crate::syntax::KeywordKind::Allow
+    };
+    (audit_allow) => {
+        $crate::syntax::KeywordKind::AuditAllow
+    };
+    (never_allow) => {
+        $crate::syntax::KeywordKind::NeverAllow
+    };
+    (dont_audit) => {
+        $crate::syntax::KeywordKind::DontAudit
+    };
+    (macro) => {
+        $crate::syntax::KeywordKind::Macro
+    };
+    (if) => {
+        $crate::syntax::KeywordKind::If
+    };
+    (UNKNOWN) => {
+        $crate::syntax::KeywordKind::Unknown
+    };
+}

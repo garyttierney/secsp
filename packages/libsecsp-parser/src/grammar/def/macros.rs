@@ -5,13 +5,16 @@ use crate::parser::Parser;
 use crate::syntax::SyntaxKind::*;
 use crate::syntax::{KeywordKind, TokenKind};
 
-pub(crate) fn parse_macro(p: &mut Parser) {
+pub(crate) fn macro_(p: &mut Parser) {
+    let m = p.mark();
     // pre-test: parser must be at a "macro" keyword.
-    assert!(p.eat_keyword(KeywordKind::Macro));
-    p.expect(TokenKind::Name);
+    assert!(p.eat_keyword(kw![macro]));
+    p.expect(TOK_NAME);
 
     parse_macro_param_list(p);
-    block::parse_block(p, true);
+    block::parse_block(p);
+
+    m.complete(p, NODE_MACRO_DEF);
 }
 
 fn parse_macro_param_list(p: &mut Parser) {
