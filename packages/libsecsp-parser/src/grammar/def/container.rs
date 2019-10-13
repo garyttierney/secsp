@@ -8,14 +8,14 @@ use crate::syntax::SyntaxKind::*;
 
 pub(crate) fn container(p: &mut Parser) {
     let m = p.mark();
-    let is_abstract = p.eat_keyword(kw![abstract]);
+    let is_abstract = p.eat_keyword(kw!["abstract"]);
     let kw = KeywordKind::from_str(p.current_text());
 
     match kw {
-        Ok(kw![block]) | Ok(kw![optional]) | Ok(kw![in]) => {
+        Ok(kw!["block"]) | Ok(kw!["optional"]) | Ok(kw!["in"]) => {
             let kw = kw.unwrap();
 
-            if is_abstract && (kw == kw![optional] || kw == kw![in]) {
+            if is_abstract && (kw == kw!["optional"] || kw == kw!["in"]) {
                 p.error("only blocks can be declared as abstract");
             }
 
@@ -26,7 +26,7 @@ pub(crate) fn container(p: &mut Parser) {
 
     p.expect(TOK_NAME);
 
-    if p.at_text(kw![extends]) {
+    if p.at_text(kw!["extends"]) {
         parse_extends_list(p);
     }
 
@@ -37,10 +37,10 @@ pub(crate) fn container(p: &mut Parser) {
 fn parse_extends_list(p: &mut Parser) {
     let m = p.mark();
 
-    assert!(p.eat_keyword(KeywordKind::Extends));
+    assert!(p.eat_keyword(kw!["extends"]));
     atom::path_expr(p);
 
-    while p.eat(tok![, ]) {
+    while p.eat(tok![","]) {
         atom::path_expr(p);
     }
 

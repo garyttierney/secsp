@@ -8,7 +8,7 @@ use crate::syntax::{KeywordKind, TokenKind};
 pub(crate) fn macro_(p: &mut Parser) {
     let m = p.mark();
     // pre-test: parser must be at a "macro" keyword.
-    assert!(p.eat_keyword(kw![macro]));
+    assert!(p.eat_keyword(kw!["macro"]));
     p.expect(TOK_NAME);
 
     parse_macro_param_list(p);
@@ -20,9 +20,9 @@ pub(crate) fn macro_(p: &mut Parser) {
 fn parse_macro_param_list(p: &mut Parser) {
     let m = p.mark();
 
-    p.expect(tok!['(']);
+    p.expect(tok!["("]);
 
-    if !p.at(tok![')']) {
+    if !p.at(tok![")"]) {
         loop {
             if !parse_macro_param_list_item(p) {
                 break;
@@ -30,7 +30,7 @@ fn parse_macro_param_list(p: &mut Parser) {
         }
     }
 
-    p.expect(tok![')']);
+    p.expect(tok![")"]);
     m.complete(p, NODE_MACRO_PARAM_LIST);
 }
 
@@ -52,5 +52,5 @@ fn parse_macro_param_list_item(p: &mut Parser) -> bool {
     p.expect(TokenKind::Name);
     m.complete(p, NODE_MACRO_PARAM_LIST_ITEM);
 
-    p.eat(tok![,])
+    p.eat(tok![","])
 }

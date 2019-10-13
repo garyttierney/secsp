@@ -6,6 +6,9 @@ use crate::parser::event;
 use crate::parser::Parser;
 use crate::syntax::SyntaxKind;
 
+#[macro_use]
+mod rules;
+
 mod grammar;
 mod parser;
 pub mod syntax;

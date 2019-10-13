@@ -112,5 +112,3 @@ SyntaxKinds(
         "TOK_WHITESPACE",
     ],
 )
-
-

@@ -8,7 +8,7 @@ use crate::syntax::TokenKind;
 
 pub(crate) fn parse_item(p: &mut Parser) {
     fn at_kw(p: &Parser) -> bool {
-        p.at(TokenKind::Name) || p.at(tok![if]) || p.at(tok![else])
+        p.at(TokenKind::Name) || p.at(tok!["if"]) || p.at(tok!["else"])
     }
 
     if !at_kw(p) {
@@ -26,14 +26,14 @@ pub(crate) fn parse_item(p: &mut Parser) {
                 // test abstract_block {
                 // abstract block abc extends dfg {
                 // }
-                kw![abstract] | kw![block] | kw![optional] | kw![in] => def::container(p),
+                kw!["abstract"] | kw!["block"] | kw!["optional"] | kw!["in"] => def::container(p),
 
                 // test te_rule
                 // allow src target : expr;
 
                 // test te_rule_inline_classpermission
                 // allow src target : file (read);
-                kw![allow] | kw![audit_allow] | kw![never_allow] | kw![dont_audit] => {
+                kw!["allow"] | kw!["audit_allow"] | kw!["never_allow"] | kw!["dont_audit"] => {
                     stmt::te_rule(p, kw)
                 }
 
@@ -45,7 +45,7 @@ pub(crate) fn parse_item(p: &mut Parser) {
                 // if expr {
                 // } else {
                 // }
-                kw![if] => stmt::conditional(p),
+                kw!["if"] => stmt::conditional(p),
 
                 // test macro_def
                 // macro my_macro() {
@@ -54,7 +54,7 @@ pub(crate) fn parse_item(p: &mut Parser) {
                 // test macro_def_with_params
                 // macro my_macro(type t) {
                 // }
-                kw![macro] => def::macro_(p),
+                kw!["macro"] => def::macro_(p),
 
                 // test var_def
                 // type t;
@@ -74,7 +74,7 @@ pub(crate) fn parse_item(p: &mut Parser) {
             // `macro_call(a);`
             // `my_ident |= val;`
             match p.current() {
-                tok!['('] => stmt::macro_call(p, ident),
+                tok!["("] => stmt::macro_call(p, ident),
                 _ => {
                     p.bump();
                 }

@@ -31,11 +31,11 @@ impl BinaryOperator {
         use self::BinaryOperator::*;
 
         let op = match tok {
-            tok![^] => BitwiseXor,
-            tok![|] => BitwiseOr,
-            tok![&] => BitwiseAnd,
-            tok![&&] => LogicalAnd,
-            tok![||] => LogicalOr,
+            tok!["^"] => BitwiseXor,
+            tok!["|"] => BitwiseOr,
+            tok!["&"] => BitwiseAnd,
+            tok!["&&"] => LogicalAnd,
+            tok!["||"] => LogicalOr,
             _ => return None,
         };
 
@@ -86,13 +86,13 @@ fn expression_lhs(p: &mut Parser) -> Option<CompletedMarker> {
     }
 
     match p.current() {
-        tok![!] | tok![~] => {
+        tok!["!"] | tok!["~"] => {
             let m = p.mark();
             p.bump();
             expression_prec(p, 255, ExprRestriction::None);
             Some(m.complete(p, NODE_PREFIX_EXPR))
         }
-        tok!['('] => Some(atom::list_or_paren_expr(p)),
+        tok!["("] => Some(atom::list_or_paren_expr(p)),
         _ => {
             error_recovery::recover_from_expr(p);
             None
@@ -107,16 +107,16 @@ fn expression_prec(p: &mut Parser, precedence: u8, restriction: ExprRestriction)
     };
 
     match p.current() {
-        tok![:] if restriction.allows_context() => {
+        tok![":"] if restriction.allows_context() => {
             return atom::context_expr(p, lhs);
         }
-        tok![..] => {
+        tok![".."] => {
             return atom::range_expr(p, lhs, SyntaxKind::NODE_CATEGORY_RANGE_EXPR);
         }
-        tok![-] if restriction.allows_context() => {
+        tok!["-"] if restriction.allows_context() => {
             return atom::range_expr(p, lhs, NODE_LEVEL_RANGE_EXPR);
         }
-        tok!['('] => {
+        tok!["("] => {
             let m = lhs.precede(p);
             let _ = atom::list_or_paren_expr(p);
 

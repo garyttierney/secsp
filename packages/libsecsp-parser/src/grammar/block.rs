@@ -6,7 +6,7 @@ use crate::syntax::SyntaxKind::*;
 pub(crate) fn parse_block(p: &mut Parser) {
     let m = p.mark();
 
-    if !p.eat(tok!['{']) {
+    if !p.eat(tok!["{"]) {
         p.error("expected open brace");
         m.abandon(p);
         error_recovery::recover_from_item(p);
@@ -14,14 +14,14 @@ pub(crate) fn parse_block(p: &mut Parser) {
     }
 
     while !p.at(TOK_EOF) {
-        if p.at(tok!['}']) {
+        if p.at(tok!["}"]) {
             break;
         }
 
         items::parse_item(p);
     }
 
-    if !p.eat(tok!['}']) {
+    if !p.eat(tok!["}"]) {
         p.error("expected closing brace");
     }
 

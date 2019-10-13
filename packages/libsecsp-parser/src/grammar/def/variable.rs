@@ -14,10 +14,10 @@ pub(crate) fn variable(p: &mut Parser) {
     p.bump_as(kw);
     p.expect(TOK_NAME);
 
-    if p.eat(tok![=]) {
+    if p.eat(tok!["="]) {
         expression(p, ExprRestriction::None);
     }
 
-    p.expect(tok![;]);
+    p.expect(tok![";"]);
     m.complete(p, NODE_VARIABLE_DEF);
 }

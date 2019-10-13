@@ -1,9 +1,6 @@
 use crate::parser::Parser;
 use crate::syntax::SyntaxKind::*;
 
-#[macro_use]
-pub(crate) mod rules;
-
 pub(crate) mod atom;
 pub(crate) mod block;
 pub(crate) mod def;
@@ -17,7 +14,7 @@ pub(super) fn root(p: &mut Parser) {
 
     while !p.at(TOK_EOF) {
         match p.current() {
-            tok![;] => p.bump(),
+            tok![";"] => p.bump(),
             _ => {
                 items::parse_item(p);
             }
