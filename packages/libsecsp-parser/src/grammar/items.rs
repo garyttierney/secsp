@@ -12,6 +12,7 @@ pub(crate) fn parse_item(p: &mut Parser) {
     }
 
     if !at_kw(p) {
+        p.bump();
         p.error("expected keyword");
         return;
     }

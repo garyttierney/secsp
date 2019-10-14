@@ -1,9 +1,10 @@
+use std::fmt::Write;
+
 use regex::{Regex, RegexBuilder};
 use rowan::WalkEvent;
 use text_unit::TextRange;
 use text_unit::TextUnit;
 
-use secsp_parser::syntax::SyntaxElement;
 use secsp_parser::syntax::SyntaxNode;
 
 use crate::ast::AstNode;
@@ -21,20 +22,29 @@ struct Assertion {
 
 pub fn ast_to_string(source: &SyntaxNode) -> String {
     let mut indent = 0;
-    let out = String::new();
+    let mut out = String::new();
+    let regex = Regex::new(r#"[\s\n ]+"#).unwrap();
 
-    for event in source.preorder_with_tokens() {
+    for event in source.preorder() {
         match event {
-            WalkEvent::Enter(node) => {
-                let _text = match node {
-                    SyntaxElement::Node(_it) => "".to_string(),
-                    SyntaxElement::Token(it) => it.text().to_string(),
-                };
+            WalkEvent::Enter(el) => {
+                let code_inline = format!("{:#}", el);
+                let code_inline_normalized = regex.replace_all(&code_inline, " ");
+
+                writeln!(
+                    out,
+                    "{:indent$}{:?} {}",
+                    "",
+                    el,
+                    code_inline_normalized,
+                    indent = indent
+                )
+                .unwrap();
 
                 indent += 2;
             }
             WalkEvent::Leave(_) => indent -= 2,
-        }
+        };
     }
 
     out
@@ -60,7 +70,9 @@ pub(crate) fn test_parser(text: &str) {
         assert_eq!(
             expected_kind.to_lowercase(),
             kind.to_lowercase(),
-            "Resulting parse tree: {}",
+            "Expected {} at {:?}. Resulting parse tree:\n {}",
+            kind,
+            assertion.range,
             ast_to_string(ast.syntax())
         );
     }
