@@ -21,6 +21,9 @@ SyntaxKinds(
         "macro",
         "if",
         "context",
+        "class",
+        "common",
+        "class_permission",
     ],
     terminals: [
         ("..", "TOK_DOT_DOT"),
@@ -54,6 +57,7 @@ SyntaxKinds(
         "NODE_BINARY_EXPR",
         "NODE_BLOCK",
         "NODE_CATEGORY_RANGE_EXPR",
+        "NODE_CLASS_DEF",
         "NODE_CONDITIONAL_STMT",
         "NODE_CONTAINER_DEF",
         "NODE_CONTEXT_EXPR",

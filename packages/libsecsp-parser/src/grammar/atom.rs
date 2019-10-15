@@ -116,3 +116,17 @@ pub(crate) fn is_at_path_start(p: &Parser, offset: usize) -> bool {
 
     tok == tok!["."] || tok == TOK_NAME
 }
+
+
+pub(crate) fn parse_extends_list(p: &mut Parser) {
+    let m = p.mark();
+
+    assert!(p.eat_keyword(kw!["extends"]));
+    path_expr(p);
+
+    while p.eat(tok![","]) {
+        path_expr(p);
+    }
+
+    m.complete(p, SyntaxKind::NODE_EXTENDS_LIST);
+}

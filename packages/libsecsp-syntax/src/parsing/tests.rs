@@ -71,7 +71,7 @@ pub(crate) fn test_parser(text: &str) {
             expected_kind.to_lowercase(),
             kind.to_lowercase(),
             "Expected {} at {:?}. Resulting parse tree:\n {}",
-            kind,
+            expected_kind,
             assertion.range,
             ast_to_string(ast.syntax())
         );

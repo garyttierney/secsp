@@ -56,3 +56,19 @@ fn parse_var_with_initializer() {
     "#,
     )
 }
+
+#[test]
+fn parse_class_def() {
+    super::test_parser(
+        r#"
+        <marker type="NODE_CLASS_DEF">class abc { read write }</marker>
+        "#,
+    );
+}
+
+#[test]
+fn parse_class_def_with_extends() {
+    super::test_parser(r#"
+        <marker type="NODE_CLASS_DEF">class abc <marker type="NODE_EXTENDS_LIST">extends base</marker> { read write }</marker>
+    "#)
+}

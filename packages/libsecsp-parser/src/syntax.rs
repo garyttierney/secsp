@@ -174,7 +174,7 @@ impl KeywordKind {
 
         match self {
             Type | TypeAttribute | Role | RoleAttribute | User | UserAttribute | Sensitivity
-            | Category | LevelRange | Context => true,
+            | Category | LevelRange | Context | ClassPermission => true,
             _ => false,
         }
     }

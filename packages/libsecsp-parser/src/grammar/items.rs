@@ -4,11 +4,10 @@ use crate::grammar::def;
 use crate::grammar::{atom, stmt};
 use crate::parser::Parser;
 use crate::syntax::KeywordKind;
-use crate::syntax::TokenKind;
 
 pub(crate) fn parse_item(p: &mut Parser) {
     fn at_kw(p: &Parser) -> bool {
-        p.at(TokenKind::Name) || p.at(tok!["if"]) || p.at(tok!["else"])
+        atom::is_at_path_start(p, 0) || p.at(tok!["if"]) || p.at(tok!["else"])
     }
 
     if !at_kw(p) {
@@ -36,6 +35,18 @@ pub(crate) fn parse_item(p: &mut Parser) {
                 // allow src target : file (read);
                 kw!["allow"] | kw!["audit_allow"] | kw!["never_allow"] | kw!["dont_audit"] => {
                     stmt::te_rule(p, kw)
+                }
+
+                // test class_def
+                // class file { read, write }
+
+                // test common_class_def
+                // common class filecommon { read, write }
+
+                // test class_extends_def
+                // class file extends filecommon {}
+                kw!["class"] | kw!["common"] => {
+                    def::class(p);
                 }
 
                 // test if_stmt

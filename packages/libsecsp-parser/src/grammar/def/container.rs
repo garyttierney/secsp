@@ -3,7 +3,7 @@ use std::str::FromStr;
 use crate::grammar::atom;
 use crate::grammar::block;
 use crate::parser::Parser;
-use crate::syntax::{KeywordKind, SyntaxKind};
+use crate::syntax::{KeywordKind};
 use crate::syntax::SyntaxKind::*;
 
 pub(crate) fn container(p: &mut Parser) {
@@ -27,22 +27,9 @@ pub(crate) fn container(p: &mut Parser) {
     p.expect(TOK_NAME);
 
     if p.at_text(kw!["extends"]) {
-        parse_extends_list(p);
+        atom::parse_extends_list(p);
     }
 
     block::parse_block(p);
     m.complete(p, NODE_CONTAINER_DEF);
-}
-
-fn parse_extends_list(p: &mut Parser) {
-    let m = p.mark();
-
-    assert!(p.eat_keyword(kw!["extends"]));
-    atom::path_expr(p);
-
-    while p.eat(tok![","]) {
-        atom::path_expr(p);
-    }
-
-    m.complete(p, SyntaxKind::NODE_EXTENDS_LIST);
 }
