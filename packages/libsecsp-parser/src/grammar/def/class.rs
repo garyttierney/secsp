@@ -6,7 +6,7 @@ pub(crate) fn class(p: &mut Parser) {
     let m = p.mark();
     let is_common = p.eat_keyword(kw!["common"]);
 
-    if !p.eat_keyword(kw!["class"]) {
+    if !p.eat_keyword(kw!["class"]) && !p.eat_keyword(kw!["class_map"]) {
         p.error("expected 'class'");
     }
 

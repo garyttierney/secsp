@@ -1,7 +1,7 @@
 use crate::grammar::expr;
-use crate::grammar::expr::ExprRestriction;
+use crate::grammar::expr::ExprParseRestriction;
 use crate::parser::Parser;
-use crate::syntax::{KeywordKind, SyntaxKind, TokenKind};
+use crate::syntax::{KeywordKind, SyntaxKind};
 
 pub(crate) fn te_rule(p: &mut Parser, kind: KeywordKind) {
     let m = p.mark();
@@ -10,7 +10,7 @@ pub(crate) fn te_rule(p: &mut Parser, kind: KeywordKind) {
     // Parse the source ID
     if !expr::try_expression(
         p,
-        ExprRestriction::NoContext,
+        ExprParseRestriction::NO_SECURITY_LITERALS,
         "expected identifier or type expression",
     ) {
         m.abandon(p);
@@ -20,7 +20,7 @@ pub(crate) fn te_rule(p: &mut Parser, kind: KeywordKind) {
     // Parse the target ID.
     if !expr::try_expression(
         p,
-        ExprRestriction::NoContext,
+        ExprParseRestriction::NO_SECURITY_LITERALS,
         "expected identifier or type expression",
     ) {
         m.abandon(p);
@@ -28,10 +28,39 @@ pub(crate) fn te_rule(p: &mut Parser, kind: KeywordKind) {
     }
 
     // Parse the target class and access vector expression
-    p.expect(TokenKind::Colon);
+    p.expect(tok![":"]);
 
-    if !expr::expression(p, ExprRestriction::AccessVector) {}
+    expr::expression(p, ExprParseRestriction::NAMES_ONLY);
 
-    p.expect(TokenKind::Semicolon);
+    if !p.at(tok![";"]) {
+        expr::expression(p, ExprParseRestriction::NO_SECURITY_LITERALS);
+    }
+
+    p.expect(tok![";"]);
     m.complete(p, SyntaxKind::NODE_TE_RULE);
+}
+
+pub(crate) fn te_transition(p: &mut Parser, kind: KeywordKind) {
+    let m = p.mark();
+    p.bump_as(kind);
+
+    let found_src =
+        expr::try_expression(p, ExprParseRestriction::NAMES_ONLY, "expected identifier");
+
+    // Only attempt to parse the target if a source expression was found
+    if found_src {
+        expr::try_expression(p, ExprParseRestriction::NAMES_ONLY, "expected identifier");
+    }
+
+    p.expect(tok![":"]);
+
+    expr::expression(p, ExprParseRestriction::NAMES_ONLY);
+    expr::expression(p, ExprParseRestriction::NO_SECURITY_LITERALS);
+
+    if !p.at(tok![";"]) && kind == KeywordKind::TypeTransition {
+        expr::expression(p, ExprParseRestriction::LITERAL_ONLY);
+    }
+
+    p.expect(tok![";"]);
+    m.complete(p, SyntaxKind::NODE_TE_TRANSITION);
 }

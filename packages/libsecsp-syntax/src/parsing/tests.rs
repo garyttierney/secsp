@@ -57,7 +57,8 @@ pub(crate) fn test_parser(text: &str) {
         panic!("No assertions found");
     }
 
-    let ast = SourceFile::parse(code.as_str()).tree();
+    let parse = SourceFile::parse(code.as_str());
+    let ast = parse.tree();
     let ws_regex = Regex::new(r#"\s"#).unwrap();
 
     for assertion in assertions.into_iter() {

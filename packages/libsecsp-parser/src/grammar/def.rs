@@ -1,4 +1,5 @@
 pub(crate) mod class;
+pub(crate) mod class_map;
 pub(crate) mod container;
 pub(crate) mod macros;
 pub(crate) mod variable;

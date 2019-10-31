@@ -6,6 +6,9 @@ SyntaxKinds(
         "role_attribute",
         "user",
         "user_attribute",
+        "type_transition",
+        "type_change",
+        "type_member",
         "optional",
         "sensitivity",
         "category",
@@ -24,6 +27,8 @@ SyntaxKinds(
         "class",
         "common",
         "class_permission",
+        "class_map",
+        "class_mapping"
     ],
     terminals: [
         ("..", "TOK_DOT_DOT"),
@@ -58,6 +63,9 @@ SyntaxKinds(
         "NODE_BLOCK",
         "NODE_CATEGORY_RANGE_EXPR",
         "NODE_CLASS_DEF",
+        "NODE_CLASS_MAP_DEF",
+        "NODE_CLASS_MAPPING",
+        "NODE_CLASS_PERMISSION_DEF",
         "NODE_CONDITIONAL_STMT",
         "NODE_CONTAINER_DEF",
         "NODE_CONTEXT_EXPR",
@@ -80,6 +88,7 @@ SyntaxKinds(
         "NODE_SET_EXPR",
         "NODE_SOURCE_FILE",
         "NODE_TE_RULE",
+        "NODE_TE_TRANSITION",
         "NODE_VARIABLE_DEF",
     ],
     tokens: [

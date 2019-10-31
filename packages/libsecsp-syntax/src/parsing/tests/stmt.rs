@@ -43,7 +43,16 @@ fn parse_conditional_with_else_if() {
 fn parse_allow_rule() {
     super::test_parser(
         r#"
-         <marker type="NODE_TE_RULE">allow a b : file (read);</marker>
+         <marker type="NODE_TE_RULE">allow a b : file { read write };</marker>
+        "#,
+    )
+}
+
+#[test]
+fn parse_type_transition() {
+    super::test_parser(
+        r#"
+        <marker type="NODE_TE_TRANSITION">type_transition a b : file c "file_name";</marker>
         "#,
     )
 }

@@ -2,6 +2,9 @@
 #![deny(unused_imports)]
 extern crate rowan;
 
+#[macro_use]
+extern crate bitflags;
+
 use crate::parser::event;
 use crate::parser::Parser;
 use crate::syntax::SyntaxKind;

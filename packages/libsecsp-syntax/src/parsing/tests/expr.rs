@@ -71,3 +71,28 @@ fn parse_level_range_expr() {
         "#,
     )
 }
+
+#[test]
+fn parse_set_expr() {
+    super::test_parser(
+        r#"
+        callstub(<marker type="NODE_SET_EXPR">{ id1 id2 }</marker>);
+    "#,
+    )
+}
+
+#[test]
+fn parse_negated_set_expr() {
+    super::test_parser(r#"
+        callstub(<marker type="NODE_PREFIX_EXPR">~<marker type="NODE_SET_EXPR">{ id1 id2 }</marker></marker>);
+    "#)
+}
+
+#[test]
+fn parse_bin_set_expr() {
+    super::test_parser(
+        r#"
+        callstub(<marker type="NODE_BINARY_EXPR"><marker type="NODE_SET_EXPR">{ id1 }</marker> | abc</marker>);
+    "#,
+    )
+}

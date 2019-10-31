@@ -37,15 +37,19 @@ pub(crate) fn parse_item(p: &mut Parser) {
                     stmt::te_rule(p, kw)
                 }
 
+                kw!["type_transition"] | kw!["type_member"] | kw!["type_change"] => {
+                    stmt::te_transition(p, kw)
+                }
+
                 // test class_def
-                // class file { read, write }
+                // class file { read write }
 
                 // test common_class_def
-                // common class filecommon { read, write }
+                // common class filecommon { read write }
 
                 // test class_extends_def
                 // class file extends filecommon {}
-                kw!["class"] | kw!["common"] => {
+                kw!["class"] | kw!["common"] | kw!["class_map"] => {
                     def::class(p);
                 }
 
@@ -74,7 +78,7 @@ pub(crate) fn parse_item(p: &mut Parser) {
                 // test var_def_with_initializer
                 // type_attribute t = a & b;
                 kw if kw.is_var_type() && atom::is_at_path_start(p, 1) => def::variable(p),
-                _kw => {}
+                _kw => unimplemented!("Parsing {:?} is unimplemented", kw),
             }
         }
         Err(_) => {
@@ -91,8 +95,6 @@ pub(crate) fn parse_item(p: &mut Parser) {
                     p.bump();
                 }
             };
-
-            return;
         }
     };
 }

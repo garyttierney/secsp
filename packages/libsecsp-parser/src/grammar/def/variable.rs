@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use crate::grammar::expr::{expression, ExprRestriction};
+use crate::grammar::expr::{expression, ExprParseRestriction};
 use crate::parser::Parser;
 use crate::syntax::KeywordKind;
 use crate::syntax::SyntaxKind::*;
@@ -15,7 +15,7 @@ pub(crate) fn variable(p: &mut Parser) {
     p.expect(TOK_NAME);
 
     if p.eat(tok!["="]) {
-        expression(p, ExprRestriction::None);
+        expression(p, ExprParseRestriction::empty());
     }
 
     p.expect(tok![";"]);

@@ -31,6 +31,11 @@ impl<'t> Parser<'t> {
         self.current() == expected.into()
     }
 
+    /// Check if the parser is currently positioned at the [expected] type, or at EOF.
+    pub fn at_end<K: Into<SyntaxKind>>(&self, expected: K) -> bool {
+        self.current() == expected.into() || self.current() == SyntaxKind::TOK_EOF
+    }
+
     pub fn eat_keyword<K>(&mut self, kw: K) -> bool
     where
         K: AsRef<str> + Into<SyntaxKind>,
@@ -97,6 +102,7 @@ impl<'t> Parser<'t> {
     where
         S: AsRef<str>,
     {
+        self.events.push(Event::Error);
     }
 
     /// Check if the parser is currently positioned at the [expected] type, consuming it and

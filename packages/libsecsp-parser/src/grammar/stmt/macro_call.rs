@@ -1,4 +1,4 @@
-use crate::grammar::expr::{expression, ExprRestriction};
+use crate::grammar::expr::{expression, ExprParseRestriction};
 use crate::parser::{CompletedMarker, Parser};
 use crate::syntax::SyntaxKind::*;
 
@@ -8,7 +8,7 @@ pub(crate) fn macro_call(p: &mut Parser, lhs: CompletedMarker) {
     assert!(p.eat(tok!["("]));
 
     while !p.at(tok![")"]) && !p.at(TOK_EOF) {
-        if !expression(p, ExprRestriction::None) {
+        if !expression(p, ExprParseRestriction::empty()) {
             break;
         }
 
