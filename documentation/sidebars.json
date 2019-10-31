@@ -12,7 +12,8 @@
       "reference",
       "reference/reference--namespaces",
       "reference/reference--conditionals",
-      "reference/reference--macros"
+      "reference/reference--macros",
+      "reference/reference--class-and-permissions"
     ]
   },
   "user-docs": {

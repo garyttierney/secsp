@@ -23,18 +23,17 @@
     "style-loader": "^1.0.0",
     "webpack": "^4.40.2",
     "webpack-bundle-analyzer": "^3.5.1",
-    "webpack-cli": "^3.3.9"
+    "webpack-cli": "^3.3.9",
+    "ts-loader": "^6.1.2",
+    "netlify-cli": "^2.15.0",
+    "copy-webpack-plugin": "^5.0.4",
+    "prettier": "^1.18.2",
+    "worker-loader": "^2.0.0"
   },
   "dependencies": {
     "babel-polyfill": "^6.26.0",
-    "copy-webpack-plugin": "^5.0.4",
     "monaco-editor": "^0.18.1",
-    "netlify-cli": "^2.15.0",
-    "prettier": "^1.18.2",
     "react": "^16.9.0",
-    "react-dom": "^16.9.0",
-    "react-monaco-editor": "^0.31.0",
-    "ts-loader": "^6.1.2",
-    "worker-loader": "^2.0.0"
+    "react-dom": "^16.9.0"
   }
 }

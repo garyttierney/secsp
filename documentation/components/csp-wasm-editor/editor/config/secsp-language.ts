@@ -19,7 +19,8 @@ export const language = <IMonarchLanguage> {
         'abstract', 'block', 'optional',
         'if', 'else',
         'true', 'false',
-        'allow', 'never_allow', 'audit_allow', 'dont_audit'
+        'allow', 'never_allow', 'audit_allow', 'dont_audit',
+        'macro',
     ],
     typeKeywords: [
         'type', 'type_attribute', 'type_alias',
@@ -38,10 +39,10 @@ export const language = <IMonarchLanguage> {
     tokenizer: {
         root: [
             [/[a-z_$][\w$]*/, {
-                cases: {
+                cases: {    
                     '@keywords': 'keyword',
                     '@typeKeywords': 'type',
-                    '@default': 'identifier'
+                    '@default': 'variable'
                 }
             }],
             {include: '@whitespace'},
@@ -50,7 +51,7 @@ export const language = <IMonarchLanguage> {
             [/[<>](?!@symbols)/, '@brackets'],
             [/@symbols/, {
                 cases: {
-                    '@operators': 'delimiter',
+                    '@operators': 'operator.misc',
                     '@default': ''
                 }
             }],
