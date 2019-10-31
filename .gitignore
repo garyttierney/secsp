@@ -1,8 +1,8 @@
+*-generated.rs
 /target/
 /packages/**/target/
 /test_out/
 /.vscode/
 **/*.rs.bk
-Cargo.lock
 .antlr/
 .project
