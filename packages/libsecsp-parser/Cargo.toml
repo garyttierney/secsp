@@ -6,6 +6,7 @@ edition = "2018"
 autobenches = false
 
 [dependencies]
+bitflags = "1.2"
 drop_bomb = "0.1"
 itertools = "0.8"
 logos = "0.9"
