@@ -112,6 +112,14 @@ jobs:
     steps:
       - uses: actions/checkout@master
 
+      - name: Cache node modules
+        uses: actions/cache@preview
+        with:
+          path: documentation/node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
       - name: Install stable toolchain
         uses: actions-rs/toolchain@v1
         with:
