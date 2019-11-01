@@ -5,7 +5,6 @@ members = [
     "packages/libsecsp-syntax",
     "packages/libsecsp-syntax-derive",
     "packages/secsp-language-server",
-    "packages/secspc",
 ]
 
 [profile.release]
