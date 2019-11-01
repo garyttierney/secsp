@@ -228,26 +228,14 @@ jobs:
           toolchain: nightly
           override: true
 
-      - name: Install afl.rs
-        uses: actions-rs/cargo@v1
-        with:
-          command: install
-          args: afl --force
-
-      - name: Build with afl.rs instrumentation
-        uses: actions-rs/cargo@v1
-        with:
-          command: afl
-          args: build --manifest-path=packages/secsp-fuzzer/Cargo.toml
-        env:
-          RUSTFLAGS: '-Clink-arg=-fuse-ld=gold'
-
       - name: Disable coredumps
         run: sudo sh -c 'echo core >/proc/sys/kernel/core_pattern'
 
-      - name: Run afl.rs
-        run: timeout 5m cargo afl fuzz -i documentation/examples -o fuzzer-output/ -- packages/secsp-fuzzer/target/debug/secsp-fuzzer
-        continue-on-error: true
+      - name: Run fuzzer
+        uses: actions-rs/cargo@v1
+        with:
+          command: xtask
+          args: fuzz
 
       - name: Create fuzzing results tarball
         run: tar cvf fuzzer-output.tar.gz fuzzer-output/
