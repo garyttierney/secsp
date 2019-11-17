@@ -1,4 +1,4 @@
-use crate::grammar::expr::{expression, expression_prec, ExprParseRestriction};
+use crate::grammar::expr::{expression, expression_prec, ExprContext};
 use crate::parser::CompletedMarker;
 use crate::parser::Parser;
 use crate::syntax::SyntaxKind::*;
@@ -33,7 +33,7 @@ pub(crate) fn list_or_paren_expr(p: &mut Parser) -> CompletedMarker {
     while !p.at(TOK_EOF) && !p.at(tok![")"]) {
         // TODO: Validate that we're at a valid expression token.
         non_empty = true;
-        expression(p, ExprParseRestriction::NO_SECURITY_LITERALS);
+        expression(p, ExprContext::NO_SECURITY_LITERALS);
 
         if !p.at(tok![")"]) {
             has_comma = true;
@@ -58,7 +58,7 @@ pub(crate) fn context_expr(p: &mut Parser, lhs: CompletedMarker) -> CompletedMar
     // The `:category` part of a level expression, or the `:role` part of a context expression.
     if !expression(
         p,
-        ExprParseRestriction::NO_CONTEXT | ExprParseRestriction::NO_LEVEL_RANGE,
+        ExprContext::NO_CONTEXT | ExprContext::NO_LEVEL_RANGE | ExprContext::NO_INT_RANGE,
     ) {
         return lhs;
     }
@@ -67,13 +67,16 @@ pub(crate) fn context_expr(p: &mut Parser, lhs: CompletedMarker) -> CompletedMar
         let m = lhs.precede(p);
 
         // :type
-        if !expression(p, ExprParseRestriction::NO_SECURITY_LITERALS) {
+        if !expression(
+            p,
+            ExprContext::NO_SECURITY_LITERALS | ExprContext::NO_INT_RANGE,
+        ) {
             return m.complete(p, NODE_CONTEXT_EXPR);
         }
 
         // optional (:mls)
         if p.eat(tok![":"]) {
-            expression(p, ExprParseRestriction::empty())
+            expression(p, ExprContext::empty())
         } else {
             return m.complete(p, NODE_CONTEXT_EXPR);
         };
@@ -96,15 +99,15 @@ pub(crate) fn range_expr(
 ) -> CompletedMarker {
     let m = lhs.precede(p);
     let expected = match kind {
-        NODE_LEVEL_RANGE_EXPR => TokenKind::Hyphen,
-        NODE_CATEGORY_RANGE_EXPR => TokenKind::DotDot,
+        NODE_LEVEL_RANGE_EXPR | NODE_INT_RANGE_EXPR => tok!["-"],
+        NODE_CATEGORY_RANGE_EXPR => tok![".."],
         _ => unreachable!(),
     };
 
     p.expect(expected);
     let successful = expression(
         p,
-        ExprParseRestriction::NO_LEVEL_RANGE | ExprParseRestriction::NO_CATEGORY_RANGE,
+        ExprContext::NO_LEVEL_RANGE | ExprContext::NO_CATEGORY_RANGE,
     );
 
     m.complete(p, kind)
@@ -122,18 +125,22 @@ pub(crate) fn is_at_path_start(p: &Parser, offset: usize) -> bool {
     tok == tok!["."] || tok == TOK_NAME
 }
 
-pub(crate) fn set_expr(p: &mut Parser) -> CompletedMarker {
-    let m = p.mark();
+pub(crate) fn set_expr(p: &mut Parser, name: Option<CompletedMarker>) -> CompletedMarker {
+    let (kind, m) = match name {
+        Some(n) => (NODE_NAMED_SET_EXPR, n.precede(p)),
+        None => (NODE_SET_EXPR, p.mark()),
+    };
+
     assert!(p.eat(tok!["{"]));
 
     while !p.at_end(tok!["}"]) {
-        if !expression(p, ExprParseRestriction::NO_CONTEXT) {
+        if !expression(p, ExprContext::NO_CONTEXT) {
             break;
         }
     }
 
     p.expect(tok!["}"]);
-    m.complete(p, NODE_SET_EXPR)
+    m.complete(p, kind)
 }
 
 pub(crate) fn parse_extends_list(p: &mut Parser) {
@@ -152,6 +159,6 @@ pub(crate) fn parse_extends_list(p: &mut Parser) {
 pub(crate) fn prefix_expr(p: &mut Parser) -> CompletedMarker {
     let m = p.mark();
     p.bump();
-    expression_prec(p, 255, ExprParseRestriction::empty());
+    expression_prec(p, 255, ExprContext::empty());
     m.complete(p, NODE_PREFIX_EXPR)
 }

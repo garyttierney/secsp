@@ -2,7 +2,7 @@
 fn parse_macro_def_no_params() {
     super::test_parser(
         r#"
-        <marker type="NODE_MACRO_DEF">macro test<marker type="NODE_MACRO_PARAM_LIST">()</marker> {
+        <marker type="NODE_MACRO_DEF">macro test() {
         }</marker>
     "#,
     )
@@ -12,9 +12,9 @@ fn parse_macro_def_no_params() {
 fn parse_macro_def() {
     super::test_parser(
         r#"
-        <marker type="NODE_MACRO_DEF">macro test<marker type="NODE_MACRO_PARAM_LIST">(
+        <marker type="NODE_MACRO_DEF">macro test(
             <marker type="NODE_MACRO_PARAM_LIST_ITEM">type t</marker>
-        )</marker> {
+        ) {
         }</marker>
     "#,
     )

@@ -1,22 +1,20 @@
-use crate::grammar::expr::{expression, ExprParseRestriction};
-use crate::parser::{CompletedMarker, Parser};
+use crate::grammar::expr::{expression, ExprContext};
+use crate::grammar::items::{ItemParseError, ItemParser};
 use crate::syntax::SyntaxKind::*;
 
-pub(crate) fn macro_call(p: &mut Parser, lhs: CompletedMarker) {
-    let m = lhs.precede(p);
-
-    assert!(p.eat(tok!["("]));
+pub(crate) fn macro_call(p: &mut ItemParser) -> Result<(), ItemParseError> {
+    assert!(p.eat(tok!["("])?);
 
     while !p.at(tok![")"]) && !p.at(TOK_EOF) {
-        if !expression(p, ExprParseRestriction::empty()) {
+        if !expression(p.inner, ExprContext::empty()) {
             break;
         }
 
-        p.eat(tok![","]);
+        p.eat(tok![","])?;
     }
 
-    p.expect(tok![")"]);
-    p.expect(tok![";"]);
+    p.expect(tok![")"])?;
+    p.expect(tok![";"])?;
 
-    m.complete(p, NODE_MACRO_CALL);
+    Ok(())
 }

@@ -1,23 +1,21 @@
 use std::str::FromStr;
 
-use crate::grammar::expr::{expression, ExprParseRestriction};
-use crate::parser::Parser;
+use crate::grammar::expr::{expression, ExprContext};
+use crate::grammar::items::{ItemParseError, ItemParser};
 use crate::syntax::KeywordKind;
 use crate::syntax::SyntaxKind::*;
 
-pub(crate) fn variable(p: &mut Parser) {
-    let m = p.mark();
-
+pub(crate) fn variable(p: &mut ItemParser) -> Result<(), ItemParseError> {
     let kw = KeywordKind::from_str(p.current_text()).expect("should be at var type keyword");
     assert!(kw.is_var_type());
+    p.bump_as(kw.into())?;
+    p.expect(TOK_NAME)?;
 
-    p.bump_as(kw);
-    p.expect(TOK_NAME);
-
-    if p.eat(tok!["="]) {
-        expression(p, ExprParseRestriction::empty());
+    if p.eat(tok!["="])? && !expression(p.inner, ExprContext::empty()) {
+        p.error_check()?;
     }
 
-    p.expect(tok![";"]);
-    m.complete(p, NODE_VARIABLE_DEF);
+    p.expect(tok![";"])?;
+
+    Ok(())
 }

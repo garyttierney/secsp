@@ -133,6 +133,17 @@ fn main() {
             }
         }
 
+        impl std::convert::TryFrom<SyntaxKind> for KeywordKind {
+            type Error = ();
+            fn try_from(kind: SyntaxKind) -> Result<Self, Self::Error> {
+                match kind {
+                    #(SyntaxKind::#kw_syntax_kinds => Ok(KeywordKind::#kw_kinds),)*
+                    _ => Err(())
+
+                }
+            }
+        }
+
         impl AsRef<str> for KeywordKind {
             fn as_ref(&self) -> &str {
                 match self {

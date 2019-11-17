@@ -1,5 +1,4 @@
 #![allow(unused)]
-#![deny(unused_imports)]
 extern crate rowan;
 
 #[macro_use]
@@ -17,7 +16,7 @@ mod parser;
 pub mod syntax;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct ParseError(String);
+pub struct SyntaxError(pub String);
 
 pub trait TokenSource {
     fn kind(&self, idx: usize) -> SyntaxKind;
@@ -26,7 +25,7 @@ pub trait TokenSource {
 }
 
 pub trait TreeSink {
-    fn error(&mut self, error: ParseError);
+    fn error(&mut self, error: SyntaxError);
 
     fn start_node(&mut self, ty: SyntaxKind);
 

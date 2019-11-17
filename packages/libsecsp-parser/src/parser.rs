@@ -5,7 +5,7 @@ use crate::syntax::SyntaxKind;
 use crate::TokenSource;
 
 pub(crate) mod event;
-mod marker;
+pub(crate) mod marker;
 
 pub(crate) struct Parser<'t> {
     token_source: &'t dyn TokenSource,
@@ -98,18 +98,21 @@ impl<'t> Parser<'t> {
 
     /// Notify the parser that an error occurred at the given position with [text] as the error
     /// message.
-    pub fn error<S>(&mut self, _text: S)
+    pub fn error<S>(&mut self, text: S)
     where
         S: AsRef<str>,
     {
-        self.events.push(Event::Error);
+        self.events.push(Event::Error(text.as_ref().to_string()));
     }
 
     /// Check if the parser is currently positioned at the [expected] type, consuming it and
     /// emitting an error if the current token doesn't match what is expected.
-    pub fn expect<K: Into<SyntaxKind> + std::fmt::Debug + Copy>(&mut self, expected: K) {
+    pub fn expect<K: Into<SyntaxKind> + std::fmt::Debug + Copy>(&mut self, expected: K) -> bool {
         if !self.eat(expected) {
             self.error(format!("expected {:#?}", expected));
+            false
+        } else {
+            true
         }
     }
 
@@ -122,7 +125,7 @@ impl<'t> Parser<'t> {
         if items.iter().any(|k| *k == current_kind) {
             self.bump();
         } else {
-            self.error("expected one of (todo)".to_string());
+            self.error("expected one of (todo)");
         }
     }
 

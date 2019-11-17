@@ -56,3 +56,35 @@ fn parse_type_transition() {
         "#,
     )
 }
+
+#[test]
+fn parse_constrain() {
+    super::test_parser(
+        r#"
+        <marker type="NODE_CONSTRAIN">constrain file { read write } (u1 || u2);</marker>
+    "#,
+    )
+}
+
+#[test]
+fn parse_portcon() {
+    super::test_parser(
+        r#"
+        <marker type="NODE_PORTCON">portcon tcp 5050 my_ctx;</marker>
+    "#,
+    )
+}
+
+#[test]
+fn parse_portcon_range() {
+    super::test_parser(r#"
+        <marker type="NODE_PORTCON">portcon tcp <marker type="NODE_INT_RANGE_EXPR">6667-6669</marker> my_ctx;</marker>
+    "#)
+}
+
+#[test]
+fn parse_portcon_inline_ctx() {
+    super::test_parser(r#"
+        <marker type="NODE_PORTCON">portcon tcp 5050 <marker type="NODE_CONTEXT_EXPR">my_user:my_role:my_type</marker>;</marker>
+    "#)
+}

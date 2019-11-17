@@ -18,4 +18,4 @@ pub struct Block(SyntaxNode);
 #[ast(kind = "NODE_SOURCE_FILE")]
 pub struct SourceFile(SyntaxNode);
 
-impl ItemOwner for SourceFile {}
+impl BlockItemOwner for SourceFile {}

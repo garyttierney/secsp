@@ -1,4 +1,4 @@
-use crate::ast::{AstNode, ItemOwner};
+use crate::ast::{AstNode, BlockItemOwner};
 use crate::SourceFile;
 
 pub(crate) fn parse_and_find<T: AstNode>(text: &str) -> T {

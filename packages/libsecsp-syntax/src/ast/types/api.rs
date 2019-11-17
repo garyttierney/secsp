@@ -1,10 +1,30 @@
-use secsp_parser::syntax::{SyntaxElement, SyntaxKind};
+use secsp_parser::syntax::{SyntaxElement, SyntaxKind, SyntaxNode};
 
 use crate::ast::types::{Block, Definition};
-use crate::ast::{AstChildren, AstNode};
+use crate::ast::{AstChildren, AstNode, Statement};
 
-pub trait ItemOwner: AstNode {
-    fn items(&self) -> AstChildren<Definition> {
+pub enum BlockItem {
+    Definition(Definition),
+    Statement(Statement),
+}
+
+impl AstNode for BlockItem {
+    fn cast(syntax: SyntaxNode) -> Option<Self> {
+        Definition::cast(syntax.clone())
+            .map(BlockItem::Definition)
+            .or_else(|| Statement::cast(syntax).map(BlockItem::Statement))
+    }
+
+    fn syntax(&self) -> &SyntaxNode {
+        match self {
+            BlockItem::Definition(def) => def.syntax(),
+            BlockItem::Statement(stmt) => stmt.syntax(),
+        }
+    }
+}
+
+pub trait BlockItemOwner: AstNode {
+    fn items(&self) -> AstChildren<BlockItem> {
         self.child::<Block>().children()
     }
 
