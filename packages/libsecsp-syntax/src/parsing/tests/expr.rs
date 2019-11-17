@@ -96,3 +96,12 @@ fn parse_bin_set_expr() {
     "#,
     )
 }
+
+#[test]
+fn parse_named_set_expr() {
+    super::test_parser(
+        r#"
+        callstub(<marker type="NODE_NAMED_SET_EXPR">file { read }</marker>);"
+    "#,
+    )
+}

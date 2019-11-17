@@ -153,3 +153,13 @@ fn parse_class_mapping() {
     "#,
     )
 }
+
+#[test]
+fn parse_stmt_recover() {
+    super::test_parser(
+        r#"
+        type t
+        <marker type="NODE_CONTAINER_DEF">block abc {}</marker>
+    "#,
+    )
+}
