@@ -13,19 +13,19 @@ jobs:
         uses: actions/cache@preview
         with:
           path: ~/.cargo/registry
-          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}-build
 
       - name: Cache cargo index
         uses: actions/cache@preview
         with:
           path: ~/.cargo/git
-          key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}-build
 
       - name: Cache cargo local build
         uses: actions/cache@preview
         with:
           path: target/debug
-          key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}-build
 
       - name: Install stable toolchain
         uses: actions-rs/toolchain@v1
@@ -54,19 +54,19 @@ jobs:
         uses: actions/cache@preview
         with:
           path: ~/.cargo/registry
-          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}-lint
 
       - name: Cache cargo index
         uses: actions/cache@preview
         with:
           path: ~/.cargo/git
-          key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}-lint
 
       - name: Cache cargo local build
         uses: actions/cache@preview
         with:
           path: target/debug
-          key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}-lint
 
       - id: component
         name: Search for latest nightly clippy
@@ -159,19 +159,19 @@ jobs:
         uses: actions/cache@preview
         with:
           path: ~/.cargo/registry
-          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}-coverage
 
       - name: Cache cargo index
         uses: actions/cache@preview
         with:
           path: ~/.cargo/git
-          key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}-coverage
 
       - name: Cache cargo local build
         uses: actions/cache@preview
         with:
           path: target/debug
-          key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}-coverage
 
       - name: Install stable toolchain
         uses: actions-rs/toolchain@v1
@@ -203,24 +203,23 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@master
 
-
       - name: Cache cargo registry
         uses: actions/cache@preview
         with:
           path: ~/.cargo/registry
-          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}-fuzz
 
       - name: Cache cargo index
         uses: actions/cache@preview
         with:
           path: ~/.cargo/git
-          key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}-fuzz
 
       - name: Cache cargo local build
         uses: actions/cache@preview
         with:
           path: target/debug
-          key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}-fuzz
 
       - name: Install nightly toolchain
         uses: actions-rs/toolchain@v1
@@ -254,24 +253,23 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@master
 
-
       - name: Cache cargo registry
         uses: actions/cache@preview
         with:
           path: ~/.cargo/registry
-          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}-bench
 
       - name: Cache cargo index
         uses: actions/cache@preview
         with:
           path: ~/.cargo/git
-          key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}-bench
 
       - name: Cache cargo local build
         uses: actions/cache@preview
         with:
           path: target/debug
-          key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}-bench
 
       - name: Install stable toolchain
         uses: actions-rs/toolchain@v1
