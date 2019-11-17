@@ -179,6 +179,12 @@ pub(crate) fn parse_item(p: &mut Parser) {
                     item_parser.try_parse(NODE_CONSTRAIN, |p| stmt::constrain(p, kw))
                 }
 
+                kw!["type_attribute_set"]
+                | kw!["role_attribute_set"]
+                | kw!["user_attribute_set"] => {
+                    item_parser.try_parse(NODE_ATTRIBUTE_SET, |p| stmt::attribute_set(p, kw))
+                }
+
                 kw!["role_transition"] => {
                     item_parser.try_parse(NODE_ROLE_TRANSITION, stmt::role_transition)
                 }
@@ -191,8 +197,9 @@ pub(crate) fn parse_item(p: &mut Parser) {
                     item_parser.try_parse(NODE_TE_TRANSITION, |p| stmt::type_transition(p, kw));
                 }
 
-                kw!["netifcon"] => item_parser.try_parse(NODE_NETIFCON, stmt::netifcon),
-                kw!["portcon"] => item_parser.try_parse(NODE_PORTCON, stmt::portcon),
+                kw!["netifcon"] => item_parser.try_parse(NODE_NETIF_CONTEXT, stmt::netifcon),
+                kw!["portcon"] => item_parser.try_parse(NODE_PORT_CONTEXT, stmt::portcon),
+                kw!["filecon"] => item_parser.try_parse(NODE_FILE_CONTEXT, stmt::filecon),
 
                 kw!["role_transition"] => {
                     item_parser.try_parse(NODE_ROLE_TRANSITION, stmt::role_transition)

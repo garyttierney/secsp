@@ -21,35 +21,14 @@ pub(crate) fn path_expr(p: &mut Parser) -> CompletedMarker {
     m.complete(p, NODE_PATH_EXPR)
 }
 
-pub(crate) fn list_or_paren_expr(p: &mut Parser) -> CompletedMarker {
-    assert!(p.at(tok!["("]));
-
+pub(crate) fn paren_expr(p: &mut Parser) -> CompletedMarker {
     let m = p.mark();
-    p.bump();
+    assert!(p.eat(tok!["("]));
 
-    let mut non_empty = false;
-    let mut has_comma = false;
-
-    while !p.at(TOK_EOF) && !p.at(tok![")"]) {
-        // TODO: Validate that we're at a valid expression token.
-        non_empty = true;
-        expression(p, ExprContext::NO_SECURITY_LITERALS);
-
-        if !p.at(tok![")"]) {
-            has_comma = true;
-            p.expect(tok![","]);
-        }
-    }
-
+    expression(p, ExprContext::NO_SECURITY_LITERALS);
     p.expect(tok![")"]);
-    m.complete(
-        p,
-        if non_empty && !has_comma {
-            NODE_PAREN_EXPR
-        } else {
-            NODE_LIST_EXPR
-        },
-    )
+
+    m.complete(p, NODE_PAREN_EXPR)
 }
 
 pub(crate) fn context_expr(p: &mut Parser, lhs: CompletedMarker) -> CompletedMarker {

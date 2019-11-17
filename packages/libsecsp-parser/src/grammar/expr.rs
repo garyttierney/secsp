@@ -84,7 +84,7 @@ fn expression_lhs(p: &mut Parser, r: ExprContext) -> Option<CompletedMarker> {
             Some(atom::prefix_expr(p))
         }
         tok!["-"] => Some(atom::prefix_expr(p)),
-        tok!["("] => Some(atom::list_or_paren_expr(p)),
+        tok!["("] => Some(atom::paren_expr(p)),
         tok!["{"] => Some(atom::set_expr(p, None)),
         TOK_STRING if !r.contains(ExprContext::NO_LITERAL) => Some(atom::literal_expr(p)),
         tok => {
