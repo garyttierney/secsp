@@ -15,8 +15,13 @@ pub(crate) fn type_transition(p: &mut ItemParser, kind: KeywordKind) -> Result<(
 
     p.expect(tok![":"])?;
 
-    expr::expression(p.inner, ExprContext::NAMES_ONLY);
-    expr::expression(p.inner, ExprContext::NO_SECURITY_LITERALS);
+    if !expr::expression(p.inner, ExprContext::IDENTIFIER) {
+        p.error_check()?;
+    }
+
+    if !expr::expression(p.inner, ExprContext::IDENTIFIER) {
+        p.error_check()?;
+    }
 
     if !p.at(tok![";"]) && kind == kw!["type_transition"] {
         expr::expression(p.inner, ExprContext::LITERAL_ONLY);

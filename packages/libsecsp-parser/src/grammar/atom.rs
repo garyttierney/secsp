@@ -25,7 +25,7 @@ pub(crate) fn paren_expr(p: &mut Parser) -> CompletedMarker {
     let m = p.mark();
     assert!(p.eat(tok!["("]));
 
-    expression(p, ExprContext::NO_SECURITY_LITERALS);
+    expression(p, ExprContext::BIN_EXPR);
     p.expect(tok![")"]);
 
     m.complete(p, NODE_PAREN_EXPR)
@@ -35,10 +35,7 @@ pub(crate) fn context_expr(p: &mut Parser, lhs: CompletedMarker) -> CompletedMar
     assert!(p.eat(tok![":"]));
 
     // The `:category` part of a level expression, or the `:role` part of a context expression.
-    if !expression(
-        p,
-        ExprContext::NO_CONTEXT | ExprContext::NO_LEVEL_RANGE | ExprContext::NO_INT_RANGE,
-    ) {
+    if !expression(p, ExprContext::CATEGORY_RANGE & ExprContext::IDENTIFIER) {
         return lhs;
     }
 
@@ -46,19 +43,14 @@ pub(crate) fn context_expr(p: &mut Parser, lhs: CompletedMarker) -> CompletedMar
         let m = lhs.precede(p);
 
         // :type
-        if !expression(
-            p,
-            ExprContext::NO_SECURITY_LITERALS | ExprContext::NO_INT_RANGE,
-        ) {
+        if !expression(p, ExprContext::IDENTIFIER) {
             return m.complete(p, NODE_CONTEXT_EXPR);
         }
 
         // optional (:mls)
         if p.eat(tok![":"]) {
-            expression(p, ExprContext::empty())
-        } else {
-            return m.complete(p, NODE_CONTEXT_EXPR);
-        };
+            expression(p, ExprContext::IDENTIFIER & ExprContext::LEVEL_RANGE);
+        }
 
         m.complete(p, NODE_CONTEXT_EXPR)
     } else if p.at(tok!["-"]) {
@@ -113,7 +105,7 @@ pub(crate) fn set_expr(p: &mut Parser, name: Option<CompletedMarker>) -> Complet
     assert!(p.eat(tok!["{"]));
 
     while !p.at_end(tok!["}"]) {
-        if !expression(p, ExprContext::NO_CONTEXT) {
+        if !expression(p, ExprContext::IDENTIFIER & ExprContext::SET_ELEMENT) {
             break;
         }
     }

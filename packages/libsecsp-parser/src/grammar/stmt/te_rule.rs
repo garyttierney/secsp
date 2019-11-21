@@ -9,7 +9,7 @@ pub(crate) fn te_rule(p: &mut ItemParser, kind: KeywordKind) -> Result<(), ItemP
     // Parse the source ID
     if !expr::try_expression(
         p.inner,
-        ExprContext::NO_SECURITY_LITERALS,
+        ExprContext::NAMES_ONLY,
         "expected identifier or type expression",
     ) {
         return Ok(());
@@ -18,19 +18,17 @@ pub(crate) fn te_rule(p: &mut ItemParser, kind: KeywordKind) -> Result<(), ItemP
     // Parse the target ID.
     if !expr::try_expression(
         p.inner,
-        ExprContext::NO_SECURITY_LITERALS,
+        ExprContext::NAMES_ONLY,
         "expected identifier or type expression",
     ) {
         return Ok(());
     }
 
     // Parse the target class and access vector expression
-    p.expect(tok![":"]);
+    p.expect(tok![":"])?;
 
-    expr::expression(p.inner, ExprContext::NAMES_ONLY);
-
-    if !p.at(tok![";"]) {
-        expr::expression(p.inner, ExprContext::NO_SECURITY_LITERALS);
+    if !expr::expression(p.inner, ExprContext::IDENTIFIER & ExprContext::NAMED_SET) {
+        p.error_check()?;
     }
 
     p.expect(tok![";"])?;

@@ -6,10 +6,17 @@ use crate::syntax::SyntaxKind::*;
 pub(crate) fn constrain(p: &mut ItemParser, kw: KeywordKind) -> Result<(), ItemParseError> {
     assert!(p.eat_keyword(kw)?);
 
-    expression(p.inner, ExprContext::NO_SECURITY_LITERALS);
-    p.expect(tok!["("]);
-    expression(p.inner, ExprContext::NO_SECURITY_LITERALS);
-    p.expect(tok![")"]);
+    if !expression(p.inner, ExprContext::NAMED_SET & ExprContext::IDENTIFIER) {
+        p.error_check()?;
+    }
+
+    p.expect(tok!["("])?;
+
+    if !expression(p.inner, ExprContext::BIN_EXPR) {
+        p.error_check()?;
+    }
+
+    p.expect(tok![")"])?;
     p.expect(tok![";"])?;
 
     Ok(())

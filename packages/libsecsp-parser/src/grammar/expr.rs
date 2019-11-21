@@ -44,26 +44,43 @@ impl BinaryOperator {
 
 bitflags! {
     pub(crate) struct ExprContext: u32 {
-        const NO_CONTEXT = 0b0000_0001;
-        const NO_ATTR_EXPR = 0b0000_0100;
-        const NO_LITERAL = 0b0000_1000;
-        const NO_LEVEL_RANGE = 0b0001_0000;
-        const NO_CATEGORY_RANGE = 0b0010_0000;
-        const NO_NAMED_SET  = 0b0100_0000;
-        const NO_INT_RANGE = 0b1000_0000;
+        const NO_CONTEXT = 1;
+        const NO_ATTR_EXPR = 1 << 1;
+        const NO_LITERAL = 1 << 2;
+        const NO_LEVEL_RANGE = 1 << 3;
+        const NO_CATEGORY_RANGE = 1 << 4;
+        const NO_NAMED_SET  = 1 << 5;
+        const NO_INT_RANGE = 1 << 6;
+        const NO_SET = 1 << 7;
+        const NO_IDENTIFIER = 1 << 8;
+        const NO_SET_ELEMENT = 1 << 9;
 
-        const NONE = 0b1111_1111;
+        const NONE = 0b1111_1111_1111_1111;
+
+        const SET_ELEMENT = Self::NONE.bits ^ Self::NO_SET_ELEMENT.bits;
+        const CATEGORY_RANGE = Self::NONE.bits ^ Self::NO_CATEGORY_RANGE.bits;
+        const IDENTIFIER = Self::NONE.bits ^ Self::NO_IDENTIFIER.bits;
+        const LEVEL_RANGE = Self::NONE.bits ^ Self::NO_LEVEL_RANGE.bits;
+        const NAMED_SET = Self::NONE.bits^ Self::NO_NAMED_SET.bits;
+
         const CONTEXT = Self::NONE.bits ^ Self::NO_CONTEXT.bits;
         const INT_RANGE = Self::NONE.bits ^ (Self::NO_INT_RANGE.bits | Self::NO_LITERAL.bits);
         const LITERAL = Self::NONE.bits ^ Self::NO_LITERAL.bits;
 
         const NO_SECURITY_LITERALS = Self::NO_CONTEXT.bits | Self::NO_LEVEL_RANGE.bits | Self::NO_CATEGORY_RANGE.bits;
         const RANGE_OR_NAME_ONLY = Self::NO_CONTEXT.bits | Self::NO_ATTR_EXPR.bits | Self::NO_LITERAL.bits;
-        const NAMES_ONLY = Self::NO_CONTEXT.bits | Self::NO_ATTR_EXPR.bits | Self::NO_LITERAL.bits;
+        const NAMES_ONLY = Self::NO_CONTEXT.bits | Self::NO_ATTR_EXPR.bits | Self::NO_LITERAL.bits | Self::NO_NAMED_SET.bits;
         const LITERAL_ONLY = Self::NO_SECURITY_LITERALS.bits | Self::NO_ATTR_EXPR.bits;
         const BIN_EXPR = Self::NO_SECURITY_LITERALS.bits | Self::NO_LITERAL.bits | Self::NO_NAMED_SET.bits;
     }
 }
+
+// TODO: remove error recovery from expression parsing code, delegate up to item parsers
+//       convert ExprContext blacklist to whitelist
+//       class permission expression should never refer to classpermissionset when using nested set expressions
+//       when a class permission expression refers to a named classpermissionset, it can only be the identifier
+//       when a class permission expression refers to an anonymous classpermissionset, it can use bitwise operators on permissions, but never named sets
+//            e.g. file { read } & ~write;
 
 pub(crate) fn expression(p: &mut Parser, restriction: ExprContext) -> bool {
     expression_prec(p, 1, restriction)
@@ -108,7 +125,12 @@ fn expression_postfix(
     restriction: ExprContext,
 ) -> CompletedMarker {
     match p.current() {
-        tok![":"] if !restriction.contains(ExprContext::NO_CONTEXT) => atom::context_expr(p, lhs),
+        tok![":"]
+            if !restriction.contains(ExprContext::NO_CONTEXT)
+                || !restriction.contains(ExprContext::NO_LEVEL_RANGE) =>
+        {
+            atom::context_expr(p, lhs)
+        }
         tok![".."] if !restriction.contains(ExprContext::NO_CATEGORY_RANGE) => {
             atom::range_expr(p, lhs, SyntaxKind::NODE_CATEGORY_RANGE_EXPR)
         }

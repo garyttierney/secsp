@@ -21,9 +21,6 @@ pub(crate) fn parse_block(p: &mut Parser) {
         items::parse_item(p);
     }
 
-    if !p.eat(tok!["}"]) {
-        p.error("expected closing brace");
-    }
-
+    p.expect(tok!["}"]);
     m.complete(p, NODE_BLOCK);
 }

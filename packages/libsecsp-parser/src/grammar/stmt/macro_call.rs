@@ -7,6 +7,7 @@ pub(crate) fn macro_call(p: &mut ItemParser) -> Result<(), ItemParseError> {
 
     while !p.at(tok![")"]) && !p.at(TOK_EOF) {
         if !expression(p.inner, ExprContext::empty()) {
+            p.error_check()?;
             break;
         }
 
