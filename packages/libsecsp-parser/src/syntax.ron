@@ -32,6 +32,7 @@ SyntaxKinds(
         "class",
         "common",
         "class_permission",
+        "class_permission_set",
         "class_map",
         "class_mapping",
         "filecon",

@@ -101,7 +101,7 @@ impl<'p, 't> ItemParser<'p, 't> {
             tok![";"] | tok!["{"] | tok!["}"] => Err(ItemParseError::AtDelimiter),
             tok => {
                 let kw = KeywordKind::from_str(self.inner.current_text());
-                if let Err(_) = kw {
+                if kw.is_err() {
                     Ok(())
                 } else {
                     Err(ItemParseError::AtDelimiter)
@@ -179,7 +179,8 @@ pub(crate) fn parse_item(p: &mut Parser) {
                     item_parser.try_parse(NODE_CONSTRAIN, |p| stmt::constrain(p, kw))
                 }
 
-                kw!["type_attribute_set"]
+                kw!["class_permission_set"]
+                | kw!["type_attribute_set"]
                 | kw!["role_attribute_set"]
                 | kw!["user_attribute_set"] => {
                     item_parser.try_parse(NODE_ATTRIBUTE_SET, |p| stmt::attribute_set(p, kw))

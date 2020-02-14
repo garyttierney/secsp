@@ -11,7 +11,7 @@ pub(crate) fn variable(p: &mut ItemParser) -> Result<(), ItemParseError> {
     p.bump_as(kw.into())?;
     p.expect(TOK_NAME)?;
 
-    if p.eat(tok!["="])? && !expression(p.inner, ExprContext::empty()) {
+    if p.eat(tok!["="])? && !expression(p.inner, ExprContext::all()) {
         p.error_check()?;
     }
 

@@ -17,9 +17,9 @@ pub(crate) fn attribute_set(p: &mut ItemParser, kind: KeywordKind) -> Result<(),
     }
 
     atom::path_expr(p.inner);
-    if !expression(p.inner, ExprContext::BIN_EXPR & ExprContext::NAMES_ONLY) {
+    if !expression(p.inner, ExprContext::BIN_EXPR | ExprContext::NAMES_ONLY) {
         p.error_check()?;
-    } // ExprContext::BIN_EXPR | ExprContext::NAMES
+    }
 
     p.expect(tok![";"])?;
     Ok(())

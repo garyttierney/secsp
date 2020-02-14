@@ -31,11 +31,11 @@ pub(crate) fn paren_expr(p: &mut Parser) -> CompletedMarker {
     m.complete(p, NODE_PAREN_EXPR)
 }
 
-pub(crate) fn context_expr(p: &mut Parser, lhs: CompletedMarker) -> CompletedMarker {
+pub(crate) fn security_context_expr(p: &mut Parser, lhs: CompletedMarker) -> CompletedMarker {
     assert!(p.eat(tok![":"]));
 
     // The `:category` part of a level expression, or the `:role` part of a context expression.
-    if !expression(p, ExprContext::CATEGORY_RANGE & ExprContext::IDENTIFIER) {
+    if !expression(p, ExprContext::CATEGORY_RANGE | ExprContext::IDENTIFIER) {
         return lhs;
     }
 
@@ -49,7 +49,7 @@ pub(crate) fn context_expr(p: &mut Parser, lhs: CompletedMarker) -> CompletedMar
 
         // optional (:mls)
         if p.eat(tok![":"]) {
-            expression(p, ExprContext::IDENTIFIER & ExprContext::LEVEL_RANGE);
+            expression(p, ExprContext::IDENTIFIER | ExprContext::LEVEL_RANGE);
         }
 
         m.complete(p, NODE_CONTEXT_EXPR)
@@ -76,9 +76,9 @@ pub(crate) fn range_expr(
     };
 
     p.expect(expected);
-    let successful = expression(
+    expression(
         p,
-        ExprContext::NO_LEVEL_RANGE | ExprContext::NO_CATEGORY_RANGE,
+        ExprContext::IDENTIFIER | ExprContext::LITERAL | ExprContext::LEVEL,
     );
 
     m.complete(p, kind)
@@ -105,7 +105,7 @@ pub(crate) fn set_expr(p: &mut Parser, name: Option<CompletedMarker>) -> Complet
     assert!(p.eat(tok!["{"]));
 
     while !p.at_end(tok!["}"]) {
-        if !expression(p, ExprContext::IDENTIFIER & ExprContext::SET_ELEMENT) {
+        if !expression(p, ExprContext::IDENTIFIER | ExprContext::SET_ELEMENT) {
             break;
         }
     }
@@ -130,6 +130,6 @@ pub(crate) fn parse_extends_list(p: &mut Parser) {
 pub(crate) fn prefix_expr(p: &mut Parser) -> CompletedMarker {
     let m = p.mark();
     p.bump();
-    expression_prec(p, 255, ExprContext::empty());
+    expression_prec(p, 255, ExprContext::all());
     m.complete(p, NODE_PREFIX_EXPR)
 }

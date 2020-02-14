@@ -9,7 +9,10 @@ use crate::syntax::SyntaxKind;
 pub(crate) fn conditional(p: &mut ItemParser) -> Result<(), ItemParseError> {
     assert!(p.eat(tok!["if"])?);
 
-    expression(p.inner, ExprContext::BIN_EXPR);
+    if !expression(p.inner, ExprContext::BIN_EXPR) {
+        p.error_check()?;
+    }
+
     parse_block(p.inner);
 
     if p.eat(tok!["else"])? {

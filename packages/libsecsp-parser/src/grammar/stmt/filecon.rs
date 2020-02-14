@@ -51,7 +51,7 @@ fn filecon_fragment(p: &mut ItemParser) -> Result<(), ItemParseError> {
         p.error_check()?;
     }
 
-    if !expression(p.inner, ExprContext::LITERAL & ExprContext::CONTEXT) {
+    if !expression(p.inner, ExprContext::LITERAL | ExprContext::CONTEXT) {
         p.error_check()?;
     }
 

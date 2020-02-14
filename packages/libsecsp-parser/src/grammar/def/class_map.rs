@@ -10,7 +10,7 @@ pub(crate) fn class_mapping(p: &mut ItemParser) -> Result<(), ItemParseError> {
     atom::path_expr(p.inner);
     p.expect(TOK_NAME)?;
 
-    expression(p.inner, ExprContext::NAMED_SET & ExprContext::IDENTIFIER);
+    expression(p.inner, ExprContext::NAMED_SET | ExprContext::IDENTIFIER);
     p.expect(tok![";"])?;
 
     Ok(())

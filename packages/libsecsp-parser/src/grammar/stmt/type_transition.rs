@@ -6,11 +6,12 @@ use crate::syntax::KeywordKind;
 pub(crate) fn type_transition(p: &mut ItemParser, kind: KeywordKind) -> Result<(), ItemParseError> {
     p.bump_as(kind.into());
 
-    let found_src = expr::try_expression(p.inner, ExprContext::NAMES_ONLY, "expected identifier");
+    if !expr::expression(p.inner, ExprContext::NAMES_ONLY) {
+        p.error_check()?;
+    }
 
-    // Only attempt to parse the target if a source expression was found
-    if found_src {
-        expr::try_expression(p.inner, ExprContext::NAMES_ONLY, "expected identifier");
+    if !expr::expression(p.inner, ExprContext::NAMES_ONLY) {
+        p.error_check()?;
     }
 
     p.expect(tok![":"])?;

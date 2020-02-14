@@ -7,11 +7,11 @@ pub(crate) fn netifcon(p: &mut ItemParser) -> Result<(), ItemParseError> {
 
     p.expect(TOK_NAME)?;
 
-    if !expression(p.inner, ExprContext::CONTEXT) {
+    if !expression(p.inner, ExprContext::CONTEXT | ExprContext::IDENTIFIER) {
         p.error_check()?;
     }
 
-    if !expression(p.inner, ExprContext::CONTEXT) {
+    if !expression(p.inner, ExprContext::CONTEXT | ExprContext::IDENTIFIER) {
         p.error_check()?;
     }
 
