@@ -1,0 +1,11 @@
+[package]
+name = "xtask"
+version = "0.1.0"
+authors = ["Gary Tierney <gary.tierney@fastmail.com>"]
+edition = "2018"
+publish = false
+
+[workspace]
+
+[dependencies]
+wait-timeout = "0.1.5"

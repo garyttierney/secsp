@@ -2,7 +2,7 @@
 fn parse_macro_def_no_params() {
     super::test_parser(
         r#"
-        <marker type="NODE_MACRO_DEF">macro test<marker type="NODE_MACRO_PARAM_LIST">()</marker> {
+        <marker type="NODE_MACRO_DEF">macro test() {
         }</marker>
     "#,
     )
@@ -12,9 +12,9 @@ fn parse_macro_def_no_params() {
 fn parse_macro_def() {
     super::test_parser(
         r#"
-        <marker type="NODE_MACRO_DEF">macro test<marker type="NODE_MACRO_PARAM_LIST">(
+        <marker type="NODE_MACRO_DEF">macro test(
             <marker type="NODE_MACRO_PARAM_LIST_ITEM">type t</marker>
-        )</marker> {
+        ) {
         }</marker>
     "#,
     )
@@ -55,4 +55,20 @@ fn parse_var_with_initializer() {
         <marker type="NODE_VARIABLE_DEF">type_attribute a = <marker type="NODE_BINARY_EXPR">a | b</marker>;</marker>
     "#,
     )
+}
+
+#[test]
+fn parse_class_def() {
+    super::test_parser(
+        r#"
+        <marker type="NODE_CLASS_DEF">class abc { read write }</marker>
+        "#,
+    );
+}
+
+#[test]
+fn parse_class_def_with_extends() {
+    super::test_parser(r#"
+        <marker type="NODE_CLASS_DEF">class abc <marker type="NODE_EXTENDS_LIST">extends base</marker> { read write }</marker>
+    "#)
 }

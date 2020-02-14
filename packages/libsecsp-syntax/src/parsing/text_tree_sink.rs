@@ -4,8 +4,9 @@ use rowan::{GreenNode, GreenNodeBuilder, SmolStr};
 use text_unit::{TextRange, TextUnit};
 
 use secsp_parser::syntax::SyntaxKind;
-use secsp_parser::{ParseError, TreeSink};
+use secsp_parser::{SyntaxError, TreeSink};
 
+use crate::parsing::ParseError;
 use crate::token::Token;
 
 enum State {
@@ -72,8 +73,11 @@ impl<'t> TextTreeSink<'t> {
 }
 
 impl<'t> TreeSink for TextTreeSink<'t> {
-    fn error(&mut self, _error: ParseError) {
-        unimplemented!()
+    fn error(&mut self, error: SyntaxError) {
+        self.eat_trivias();
+
+        let range = TextRange::offset_len(self.text_pos, 1.into());
+        self.errors.push(ParseError { range, error })
     }
 
     fn start_node(&mut self, kind: SyntaxKind) {

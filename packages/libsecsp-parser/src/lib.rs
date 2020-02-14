@@ -1,15 +1,22 @@
+#![allow(unused)]
 extern crate rowan;
+
+#[macro_use]
+extern crate bitflags;
 
 use crate::parser::event;
 use crate::parser::Parser;
 use crate::syntax::SyntaxKind;
+
+#[macro_use]
+mod rules;
 
 mod grammar;
 mod parser;
 pub mod syntax;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct ParseError(String);
+pub struct SyntaxError(pub String);
 
 pub trait TokenSource {
     fn kind(&self, idx: usize) -> SyntaxKind;
@@ -18,7 +25,7 @@ pub trait TokenSource {
 }
 
 pub trait TreeSink {
-    fn error(&mut self, error: ParseError);
+    fn error(&mut self, error: SyntaxError);
 
     fn start_node(&mut self, ty: SyntaxKind);
 

@@ -5,8 +5,6 @@
     "module": "esNext",
     "lib": ["dom", "es2015", "webworker", "webworker.importscripts"],
     "esModuleInterop": true,
-        "moduleResolution": "node",
-
+        "moduleResolution": "node"
   }
-
 }

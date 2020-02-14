@@ -6,7 +6,7 @@ autobenches = false
 
 [dependencies]
 afl = "0.4"
-secsp_syntax = { path = "../libsecsp-syntax" }
+secsp-syntax = { path = "../libsecsp-syntax" }
 
 [workspace]
 members = ["."]

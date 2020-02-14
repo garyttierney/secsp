@@ -29,7 +29,7 @@ abstract block my_block {
 
     if allow_write_other_type {
         allow my_type my_other_type : file (read write);
-    } elseif allow_append_other_type {
+    } else if allow_append_other_type {
         allow my_type my_other_type : file (read append);
     } else {
         allow my_type my_other_type : file (read);
@@ -37,4 +37,4 @@ abstract block my_block {
 }
 
 
-block abc extends a, b, c, , {}
+block abc extends a, b, c {}

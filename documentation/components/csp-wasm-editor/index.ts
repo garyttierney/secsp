@@ -19,12 +19,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.error("Unable to initialize analysis client");
     }
 
-    const editorSettings = {
+    const editorSettings: monaco.editor.IEditorConstructionOptions  = {
         theme: 'vs-dark',
         language: 'secsp',
         minimap: {
             enabled: false,
         },
+        scrollbar: {
+            // Don't interfere with regular browser scrolling.
+            handleMouseWheel: false
+        }
     };
 
     monaco.languages.register({id: secsp.id, extensions: ['.csp']});
@@ -35,7 +39,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (el.tagName === 'CODE') {
             const parent = el.parentElement;
             const code = el.innerText;
-            const {clientWidth, clientHeight} = parent;
+            const {clientWidth, clientHeight} = el;
 
             const newElement = document.createElement("div");
             parent.replaceWith(newElement);

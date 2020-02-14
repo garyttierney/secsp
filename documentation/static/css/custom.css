@@ -84,10 +84,27 @@
     background-color: #28c940;
 }
 
-.fixedHeaderContainer {
-    background-color: #151515;
+a {
+    color: #4f7cac;
 }
 
-a {
-    color: #ee0000;
+a:hover {
+    color: #2c445e;
+}
+
+input[type=text]  {
+    padding: 12px 20px;
+    margin: 8px 0;
+    display: block;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+input[type=text]:valid {
+    border: 1px solid green !important;
+}
+
+input[type=text]:invalid {
+    border: 1px solid red !important;
 }

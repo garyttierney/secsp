@@ -1,5 +1,5 @@
 [package]
-name = "secsp_analysis"
+name = "secsp-analysis"
 version = "0.1.0"
 authors = ["Gary Tierney <gary.tierney@gmx.com>"]
 edition = "2018"
@@ -9,7 +9,7 @@ autobenches = false
 log = "0.4"
 rustc-hash = "1.0"
 salsa = "0.13"
-secsp_syntax = { path = "../libsecsp-syntax", version = "0.1.0 "}
+secsp-syntax = { path = "../libsecsp-syntax", version = "0.1.0 "}
 
 [lib]
 bench = false

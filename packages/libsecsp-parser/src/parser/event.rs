@@ -1,15 +1,15 @@
 use std::mem;
 
 use crate::syntax::SyntaxKind;
-use crate::{ParseError, TreeSink};
+use crate::{SyntaxError, TreeSink};
 
-#[derive(Copy, Clone, PartialEq, Eq, Debug)]
+#[derive(Clone, PartialEq, Eq, Debug)]
 pub enum Event {
     BeginMarker,
     Begin(SyntaxKind, Option<usize>),
     Leaf(SyntaxKind),
     End,
-    Error,
+    Error(String),
     Tombstone,
 }
 
@@ -49,7 +49,7 @@ pub fn process(sink: &mut dyn TreeSink, mut events: Vec<Event>) {
             Event::Leaf(kind) => {
                 sink.token(kind);
             }
-            Event::Error => sink.error(ParseError("no error message handling yet".to_string())),
+            Event::Error(msg) => sink.error(SyntaxError(msg.to_string())),
         }
     }
 }

@@ -1,11 +1,12 @@
 use crate::ast::AstNode;
+use crate::ast::Expr;
 
 use secsp_parser::syntax::{SyntaxKind, SyntaxNode};
 use secsp_syntax_derive::AstType;
 
 #[derive(AstType)]
 #[ast(kind = "NODE_TE_RULE")]
-pub struct TeRule(SyntaxNode);
+pub struct TeRule(pub(crate) SyntaxNode);
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum TeRuleKind {
@@ -16,7 +17,7 @@ pub enum TeRuleKind {
 }
 
 impl TeRule {
-    fn rule_kind(&self) -> TeRuleKind {
+    pub fn rule_kind(&self) -> TeRuleKind {
         self.syntax()
             .children_with_tokens()
             .find_map(|child| {
@@ -35,6 +36,18 @@ impl TeRule {
                 }
             })
             .expect("TeRule nodes must have a TeRuleType token")
+    }
+
+    pub fn source(&self) -> Option<Expr> {
+        self.children().nth(0)
+    }
+
+    pub fn target(&self) -> Option<Expr> {
+        self.children().nth(1)
+    }
+
+    pub fn perms(&self) -> Option<Expr> {
+        self.children().nth(2)
     }
 }
 

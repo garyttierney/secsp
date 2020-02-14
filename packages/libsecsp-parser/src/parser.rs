@@ -1,11 +1,11 @@
 pub(crate) use marker::CompletedMarker;
 
 use crate::parser::event::Event;
-use crate::syntax::{SyntaxKind, TokenKind};
+use crate::syntax::SyntaxKind;
 use crate::TokenSource;
 
 pub(crate) mod event;
-mod marker;
+pub(crate) mod marker;
 
 pub(crate) struct Parser<'t> {
     token_source: &'t dyn TokenSource,
@@ -27,8 +27,13 @@ impl<'t> Parser<'t> {
     }
 
     /// Check if the parser is currently positioned at the [expected] type.
-    pub fn at(&self, expected: TokenKind) -> bool {
-        self.current() == expected.syntax_kind()
+    pub fn at<K: Into<SyntaxKind>>(&self, expected: K) -> bool {
+        self.current() == expected.into()
+    }
+
+    /// Check if the parser is currently positioned at the [expected] type, or at EOF.
+    pub fn at_end<K: Into<SyntaxKind>>(&self, expected: K) -> bool {
+        self.current() == expected.into() || self.current() == SyntaxKind::TOK_EOF
     }
 
     pub fn eat_keyword<K>(&mut self, kw: K) -> bool
@@ -82,7 +87,7 @@ impl<'t> Parser<'t> {
 
     /// Check if the parser is currently positioned at the [expected] type and consume the token,
     /// advancing the parsers position.
-    pub fn eat(&mut self, expected: TokenKind) -> bool {
+    pub fn eat<K: Into<SyntaxKind>>(&mut self, expected: K) -> bool {
         if self.at(expected) {
             self.bump();
             return true;
@@ -93,17 +98,21 @@ impl<'t> Parser<'t> {
 
     /// Notify the parser that an error occurred at the given position with [text] as the error
     /// message.
-    pub fn error<S>(&mut self, _text: S)
+    pub fn error<S>(&mut self, text: S)
     where
         S: AsRef<str>,
     {
+        self.events.push(Event::Error(text.as_ref().to_string()));
     }
 
     /// Check if the parser is currently positioned at the [expected] type, consuming it and
     /// emitting an error if the current token doesn't match what is expected.
-    pub fn expect(&mut self, expected: TokenKind) {
+    pub fn expect<K: Into<SyntaxKind> + std::fmt::Debug + Copy>(&mut self, expected: K) -> bool {
         if !self.eat(expected) {
             self.error(format!("expected {:#?}", expected));
+            false
+        } else {
+            true
         }
     }
 
@@ -116,7 +125,7 @@ impl<'t> Parser<'t> {
         if items.iter().any(|k| *k == current_kind) {
             self.bump();
         } else {
-            self.error("expected one of (todo)".to_string());
+            self.error("expected one of (todo)");
         }
     }
 

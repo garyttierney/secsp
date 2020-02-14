@@ -21,4 +21,3 @@ self.onmessage = async (message) => {
         payload: response
     });
 };
-

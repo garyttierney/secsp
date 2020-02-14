@@ -9,6 +9,24 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@master
 
+      - name: Cache cargo registry
+        uses: actions/cache@preview
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}-build
+
+      - name: Cache cargo index
+        uses: actions/cache@preview
+        with:
+          path: ~/.cargo/git
+          key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}-build
+
+      - name: Cache cargo local build
+        uses: actions/cache@preview
+        with:
+          path: target/debug
+          key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}-build
+
       - name: Install stable toolchain
         uses: actions-rs/toolchain@v1
         with:
@@ -31,18 +49,32 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
-      - id: component
-        name: Search for latest nightly clippy
-        uses: actions-rs/components-nightly@v1
-        with:
-          target: x86_64-unknown-linux-gnu
-          component: clippy
 
-      - name: Install nightly toolchain with clippy available
+      - name: Cache cargo registry
+        uses: actions/cache@preview
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}-lint
+
+      - name: Cache cargo index
+        uses: actions/cache@preview
+        with:
+          path: ~/.cargo/git
+          key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}-lint
+
+      - name: Cache cargo local build
+        uses: actions/cache@preview
+        with:
+          path: target/debug
+          key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}-lint
+
+      - name: Install Rust toolchain with clippy and rustfmt
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: ${{ steps.component.outputs.toolchain }}
+          profile: minimal
+          toolchain: nightly
           override: true
+          components: rustfmt, clippy
 
       - name: Install nightly rustfmt
         run: rustup component add rustfmt --toolchain ${{ steps.component.outputs.toolchain }}
@@ -73,6 +105,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@master
+
+      - name: Cache node modules
+        uses: actions/cache@preview
+        with:
+          path: documentation/node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
 
       - name: Install stable toolchain
         uses: actions-rs/toolchain@v1
@@ -108,6 +148,25 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@master
 
+
+      - name: Cache cargo registry
+        uses: actions/cache@preview
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}-coverage
+
+      - name: Cache cargo index
+        uses: actions/cache@preview
+        with:
+          path: ~/.cargo/git
+          key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}-coverage
+
+      - name: Cache cargo local build
+        uses: actions/cache@preview
+        with:
+          path: target/debug
+          key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}-coverage
+
       - name: Install stable toolchain
         uses: actions-rs/toolchain@v1
         with:
@@ -115,7 +174,9 @@ jobs:
           override: true
 
       - name: Run cargo-tarpaulin
-        uses: garyttierney/tarpaulin@feat/draft-version
+        uses: actions-rs/tarpaulin@v0.1.1
+        with:
+          args: '-- --test-threads 1'
 
       - name: Upload to codecov.io
         uses: codecov/codecov-action@v1.0.2
@@ -136,32 +197,38 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@master
 
+      - name: Cache cargo registry
+        uses: actions/cache@preview
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}-fuzz
+
+      - name: Cache cargo index
+        uses: actions/cache@preview
+        with:
+          path: ~/.cargo/git
+          key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}-fuzz
+
+      - name: Cache cargo local build
+        uses: actions/cache@preview
+        with:
+          path: target/debug
+          key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}-fuzz
+
       - name: Install nightly toolchain
         uses: actions-rs/toolchain@v1
         with:
           toolchain: nightly
           override: true
 
-      - name: Install afl.rs
-        uses: actions-rs/cargo@v1
-        with:
-          command: install
-          args: afl --force
-
-      - name: Build with afl.rs instrumentation
-        uses: actions-rs/cargo@v1
-        with:
-          command: afl
-          args: build --manifest-path=packages/secsp-fuzzer/Cargo.toml
-        env:
-          RUSTFLAGS: '-Clink-arg=-fuse-ld=gold'
-
       - name: Disable coredumps
         run: sudo sh -c 'echo core >/proc/sys/kernel/core_pattern'
 
-      - name: Run afl.rs
-        run: timeout 5m cargo afl fuzz -i documentation/examples -o fuzzer-output/ -- packages/secsp-fuzzer/target/debug/secsp-fuzzer
-        continue-on-error: true
+      - name: Run fuzzer
+        uses: actions-rs/cargo@v1
+        with:
+          command: xtask
+          args: fuzz
 
       - name: Create fuzzing results tarball
         run: tar cvf fuzzer-output.tar.gz fuzzer-output/
@@ -179,6 +246,24 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@master
+
+      - name: Cache cargo registry
+        uses: actions/cache@preview
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}-bench
+
+      - name: Cache cargo index
+        uses: actions/cache@preview
+        with:
+          path: ~/.cargo/git
+          key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}-bench
+
+      - name: Cache cargo local build
+        uses: actions/cache@preview
+        with:
+          path: target/debug
+          key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}-bench
 
       - name: Install stable toolchain
         uses: actions-rs/toolchain@v1
