@@ -68,19 +68,13 @@ jobs:
           path: target/debug
           key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}-lint
 
-      - id: component
-        name: Search for latest nightly clippy
-        uses: actions-rs/components-nightly@v1
-        with:
-          target: x86_64-unknown-linux-gnu
-          component: clippy
-
-
-      - name: Install nightly toolchain with clippy available
+      - name: Install Rust toolchain with clippy and rustfmt
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: ${{ steps.component.outputs.toolchain }}
+          profile: minimal
+          toolchain: nightly
           override: true
+          components: rustfmt, clippy
 
       - name: Install nightly rustfmt
         run: rustup component add rustfmt --toolchain ${{ steps.component.outputs.toolchain }}
