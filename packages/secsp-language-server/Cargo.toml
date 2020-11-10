@@ -6,7 +6,7 @@ autobenches = false
 
 [dependencies]
 env_logger = "0.7"
-futures = "0.1.28"
+futures = "0.3.8"
 jsonrpc-core = "13.1"
 jsonrpc-derive = "13.1"
 log = "0.4"
